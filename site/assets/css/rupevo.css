@@ -450,6 +450,25 @@ html[data-theme="dark"] .coffee-btn { color: #1f1300; }
                background: var(--soft); border: 1px solid var(--line); color: var(--fg);
                user-select: all; overflow-wrap: anywhere; }
 .coffee-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+/* Phones: one button per UPI app (coffee.js), then a compact QR row. */
+.upi-box { display: grid; gap: 6px; }
+.pay-here { display: grid; gap: 10px; padding: 12px; border: 1px solid var(--line);
+            border-radius: var(--radius-sm); background: var(--card-2); }
+.pay-here h3 { margin: 0; font-size: 14px; }
+.upi-apps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.upi-app { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 10px;
+           border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--card);
+           color: var(--fg); font-size: 13.5px; font-weight: 700; line-height: 1.2; text-decoration: none; }
+.upi-app:hover { border-color: var(--accent); text-decoration: none; }
+.upi-app:focus-visible { outline: none; border-color: var(--accent); box-shadow: var(--ring); }
+.upi-app-mark { flex: none; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 8px;
+                color: #fff; font-size: 12px; font-weight: 800; letter-spacing: -.02em; }
+.qr-row { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; align-items: center; }
+.qr-row .qr-card img { width: 120px; height: 120px; }
+.qr-row .qr-card figcaption { font-size: 11px; }
+.qr-side { display: grid; gap: 6px; }
+.qr-side p { margin: 0; }
+@media (min-width: 560px) { .upi-apps { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 
 /* Breadcrumbs */
 .crumbs { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin: 0 0 8px;
@@ -680,7 +699,7 @@ dialog.modal::backdrop { background: rgba(8, 12, 24, .6); }
 
 @media (max-width: 520px) {
   .coffee-grid { grid-template-columns: 1fr; justify-items: center; text-align: center; }
-  .upi-id, .coffee-actions { justify-content: center; }
+  .coffee-grid .upi-id, .coffee-grid .coffee-actions { justify-content: center; }
 }
 
 @media (max-width: 860px) {

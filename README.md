@@ -136,10 +136,16 @@ is not replaced.
 6. **UPI for "Buy me a coffee"** — done (`yash040599@okhdfcbank`). To change
    it, edit `upi` in `site/assets/js/config.js` and regenerate the QR image:
    `python scripts/make_upi_qr.py <upi-id> --payee "<name>"` (a test fails
-   while the QR and config disagree). The dialog shows the QR, the UPI ID
-   with a copy button, a "Save QR image" download, and an "Open UPI app"
-   link on phones. Some UPI apps block web links to personal UPI IDs, which
-   is why the QR and UPI ID come first.
+   while the QR and config disagree). The dialog shows the QR and the UPI ID
+   with a copy button. On phones it adds a button per UPI app (Google Pay,
+   slice, PhonePe, Paytm, CRED, BHIM) that copies the UPI ID and opens the
+   app: on iPhone through the app's own URL scheme, on Android through its
+   Play Store page (tap Open). The visitor then pays the UPI ID from inside the app.
+   There is deliberately no `upi://pay` payment link: UPI apps reject
+   payment links to personal UPI IDs (the payment fails after the PIN),
+   and on iPhone `upi://` opens one app chosen by iOS, often WhatsApp. "Save
+   QR image" uses the share sheet on iPhone, so the image lands in Photos
+   for the UPI app's scanner. The app list is in `site/assets/js/upi.js`.
 
 No secrets are stored in the repository or in GitHub Actions: the pipeline
 uses only public data, and the admin token lives in your browser.
@@ -196,7 +202,8 @@ site/
   index.html, india/, us/, 404.html
   tax/             Tax tools → rsu/ → fidelity/ → msft/ (Schedule FA calculator), orcl/
   assets/css/rupevo.css   design tokens ported from the local dashboard
-  assets/js/              core, shell (nav/footer/coffee), ranking, admin,
+  assets/js/              core, shell (nav/footer), coffee (UPI dialog) +
+                          upi (UPI app links), ranking, admin,
                           mail (forms → Web3Forms/mailto), request, tax,
                           fy (financial-year slider + trivia), config,
                           fidelity (export parser), schedule-fa (the maths),
@@ -208,7 +215,8 @@ site/
 tests/             engine, snapshot, universe, parser, publication-safety,
                    tax-data and site-structure (links, assets, QR) tests;
                    tests/js/ holds Node tests for the financial-year maths,
-                   the Fidelity parser and the Schedule FA engine
+                   the Fidelity parser, the Schedule FA engine and the UPI
+                   app links
 .github/workflows/ ci.yml · pages.yml (deploy) · refresh-data.yml (refresh + deploy)
 ```
 

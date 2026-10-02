@@ -2,8 +2,9 @@
 // "Buy me a coffee" (nav, floating button on mobile, footer), footer with the
 // disclaimer and the admin entry point.
 import { SITE } from './config.js';
-import { currency, esc, istDateTime, num, openModal, siteUrl, toggleTheme } from './core.js';
+import { currency, esc, istDateTime, num, siteUrl, toggleTheme } from './core.js';
 import { openAdminPanel } from './admin.js';
+import { openCoffee } from './coffee.js';
 import { contactAddress, mailtoHref } from './mail.js';
 
 const NAV = [
@@ -124,63 +125,4 @@ export function showFx(fx) {
   badge.innerHTML = `USD/INR <strong>${num(fx.usd_inr, 2)}</strong>`;
   badge.title = `${fx.source || 'Exchange rate'}, ${fx.as_of ? istDateTime(fx.as_of) : 'date unknown'}`
     + (fx.stale ? ' (last known rate)' : '');
-}
-
-export function openCoffee() {
-  const { id, payee } = SITE.upi;
-  if (!id) {
-    openModal({
-      title: 'Buy me a coffee ☕',
-      body: `<p>Thank you for thinking of it! Rupevo is free and ad-free. UPI payments are being
-        set up and will be available here very soon.</p>`,
-      actions: [{ label: 'Close' }],
-    });
-    return;
-  }
-  // Same payload as the QR image (scripts/make_upi_qr.py) — no amount, so the
-  // payer chooses it in their app.
-  const link = `upi://pay?pa=${id}&pn=${encodeURIComponent(payee)}&cu=INR`;
-  const touch = window.matchMedia?.('(pointer: coarse)').matches;
-  const ui = openModal({
-    title: 'Buy me a coffee ☕',
-    body: `
-      <p>Rupevo is free and ad-free. If it helped you, chip in any amount you like — a coffee is
-        about ₹100. Thank you!</p>
-      <div class="coffee-grid">
-        <figure class="qr-card">
-          <img src="${siteUrl('assets/img/upi-qr.svg')}" alt="UPI QR code to pay ${esc(id)}" width="196" height="196">
-          <figcaption>Scan with any UPI app</figcaption>
-        </figure>
-        <div class="coffee-side">
-          <div class="small muted">UPI ID</div>
-          <div class="upi-id"><code id="upi-id-text">${esc(id)}</code>
-            <button class="btn alt small" type="button" id="copy-upi">Copy</button></div>
-          <div class="small muted">Paid to ${esc(payee)}</div>
-          <div class="coffee-actions">
-            ${touch ? `<a class="btn" href="${esc(link)}">Open UPI app</a>` : ''}
-            <a class="btn alt" href="${siteUrl('assets/img/upi-qr.png')}" download="rupevo-upi-qr.png">Save QR image</a>
-          </div>
-        </div>
-      </div>
-      <p class="small muted">${touch
-        ? 'Some UPI apps block payment links to personal UPI IDs. If yours does, copy the UPI ID and pay it from the app, or save the QR image and scan it from your gallery.'
-        : 'Scan the code with your phone, or pay the UPI ID from any UPI app.'}
-        Payments go straight to the maintainer's bank account; Rupevo never sees your payment details.</p>`,
-    actions: [{ label: 'Close', kind: 'alt' }],
-  });
-  ui.body.querySelector('#copy-upi').addEventListener('click', async (e) => {
-    const btn = e.currentTarget;
-    try {
-      await navigator.clipboard.writeText(id);
-      btn.textContent = 'Copied ✓';
-    } catch {
-      const range = document.createRange();
-      range.selectNodeContents(ui.body.querySelector('#upi-id-text'));
-      const sel = window.getSelection();
-      sel.removeAllRanges();
-      sel.addRange(range);
-      btn.textContent = 'Press Ctrl+C';
-    }
-    setTimeout(() => { btn.textContent = 'Copy'; }, 2500);
-  });
 }
