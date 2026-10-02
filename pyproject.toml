@@ -1,0 +1,13 @@
+[project]
+name = "rupevo"
+version = "0.1.0"
+description = "Rupevo — public market rankings (Nifty 100, NASDAQ-100) published as a static site."
+requires-python = ">=3.11"
+
+[tool.ruff]
+target-version = "py311"
+extend-exclude = [".venv", ".cache"]
+
+[tool.ruff.lint]
+# Bug-class rules only; style is not gated in CI.
+select = ["F", "B", "E711", "E712", "E713", "E714", "E722", "PLE", "PLW0602"]

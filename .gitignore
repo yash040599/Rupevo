@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# Pipeline working state (fundamentals cache etc.) — rebuilt on demand,
+# persisted in CI through actions/cache, never committed.
+.cache/
+
+# Local secrets / editor noise
+.env
+.env.*
+!.env.example
+.vscode/
+.idea/
+*.log
+Thumbs.db
+.DS_Store

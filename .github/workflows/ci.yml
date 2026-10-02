@@ -1,0 +1,43 @@
+# Lint, tests and a JavaScript syntax check on every code change. Fully
+# offline: no market data is downloaded here.
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ["site/data/**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Lint
+        run: ruff check .
+
+      - name: Tests
+        run: python -m unittest discover -s tests -t . -v
+
+      - name: JavaScript syntax
+        run: |
+          for f in site/assets/js/*.js; do
+            node --experimental-default-type=module --check "$f"
+          done

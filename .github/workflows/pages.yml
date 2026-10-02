@@ -1,0 +1,40 @@
+# Publishes site/ to GitHub Pages.
+#
+# Runs on pushes that touch the site, by hand, and as a reusable step at the
+# end of "Refresh market data" (data commits made with GITHUB_TOKEN do not
+# trigger push workflows, so that workflow calls this one directly).
+name: Deploy site
+
+on:
+  push:
+    branches: [main]
+    paths: ["site/**", ".github/workflows/pages.yml"]
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: pages-deploy
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      # Check out the branch head rather than the triggering SHA so a data
+      # commit pushed earlier in a calling workflow is part of the deploy.
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.ref }}
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+      - id: deployment
+        uses: actions/deploy-pages@v5

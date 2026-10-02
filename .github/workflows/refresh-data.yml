@@ -1,0 +1,107 @@
+# Rebuilds the ranking snapshots, commits them and redeploys the site.
+#
+# Triggered by the admin "Analyse now" button on the website (workflow
+# dispatch through the GitHub API), by "Run workflow" on the Actions tab, or
+# on a schedule if you uncomment it below.
+name: Refresh market data
+run-name: Refresh market data (${{ inputs.market || 'both' }})
+
+on:
+  workflow_dispatch:
+    inputs:
+      market:
+        description: Ranking to refresh
+        type: choice
+        options: [both, india, us]
+        default: both
+  # Automatic refresh (times are UTC). Uncomment to enable.
+  # schedule:
+  #   - cron: "15 11 * * 1-5"   # 16:45 IST, after the NSE close
+  #   - cron: "45 21 * * 1-5"   # after the US close
+
+concurrency:
+  group: refresh-data
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    outputs:
+      changed: ${{ steps.commit.outputs.changed }}
+    env:
+      MARKET: ${{ inputs.market || 'both' }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # US fundamentals are cached for 14 days between runs.
+      - name: Restore pipeline cache
+        uses: actions/cache/restore@v6
+        with:
+          path: .cache/us_fundamentals.json
+          key: pipeline-cache-${{ github.run_id }}
+          restore-keys: pipeline-cache-
+
+      # NSE / Nasdaq sometimes block cloud IPs; the checked-in lists are kept then.
+      - name: Update index constituents
+        continue-on-error: true
+        run: python -m pipeline universe
+
+      - name: Build rankings
+        id: refresh
+        continue-on-error: true
+        run: python -m pipeline refresh --market "$MARKET"
+
+      - name: Save pipeline cache
+        if: always() && hashFiles('.cache/us_fundamentals.json') != ''
+        uses: actions/cache/save@v6
+        with:
+          path: .cache/us_fundamentals.json
+          key: pipeline-cache-${{ github.run_id }}
+
+      - name: Check the snapshots are safe to publish
+        run: python -m unittest tests.test_published_data -v
+
+      - name: Commit snapshot
+        id: commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/data pipeline/universes/*.json
+          if git diff --cached --quiet; then
+            echo "Nothing changed."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git commit -m "data: refresh ${MARKET} ($(TZ=Asia/Kolkata date '+%Y-%m-%d %H:%M IST'))"
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Report a market that could not be refreshed
+        if: steps.refresh.outcome == 'failure'
+        run: |
+          echo "::error::A market failed to refresh and kept its previous snapshot. See the 'Build rankings' step."
+          exit 1
+
+  deploy:
+    needs: refresh
+    if: always() && needs.refresh.outputs.changed == 'true'
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/pages.yml

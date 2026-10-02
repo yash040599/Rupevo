@@ -1,0 +1,6 @@
+# Data pipeline runtime dependencies (the website itself has none).
+#
+# Bounded so a breaking major release never lands silently during a refresh.
+requests>=2.32,<3
+yfinance>=1.3.0,<2        # US company fundamentals (Ticker.info + statements)
+tzdata>=2025.2            # IST / New York zoneinfo on Windows
