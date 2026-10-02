@@ -12,7 +12,7 @@ Live site: **https://yash040599.github.io/Rupevo/**
 |---|---|---|
 | [Nifty 100 Ranking](site/india/index.html) | Technical setups, technical score (A–D), risk grade, 52-week dips, sector strength | Migrated from the ai-portfolio-manager swing scanner |
 | [NASDAQ-100 Ranking](site/us/index.html) | Six-pillar long-term scorecard: quality, valuation vs sector, growth, momentum, balance sheet, risk | Migrated from the ai-portfolio-manager US long-term scorer |
-| [Tax tools](site/tax/index.html) | RSU taxation → broker (Fidelity) → company (Microsoft, Oracle — in progress); request another company | Static guides (the per-company tools are being built) |
+| [Tax tools](site/tax/index.html) | RSU taxation → broker (Fidelity) → company (Microsoft, Oracle — in progress); request another company. Every tax page has an interactive "how far through the financial year are we" slider (advance-tax and ITR dates marked) and rotating tax trivia | Static guides (the per-company tools are being built) |
 
 Every page has light/dark theme, a **Buy me a coffee** button (in the top
 bar, a floating ☕ on phones once the bar scrolls away, and the footer) and a
@@ -136,6 +136,7 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
 
 .\.venv\Scripts\python.exe -m unittest discover -s tests -t .   # tests
+node --test "tests/js/*.test.mjs"                               # JS unit tests
 .\.venv\Scripts\python.exe -m ruff check .                      # lint
 
 # Quick partial run into a scratch folder (never overwrites site/data)
@@ -167,22 +168,27 @@ site/
   tax/             Tax tools → rsu/ → fidelity/ → msft/, orcl/
   assets/css/rupevo.css   design tokens ported from the local dashboard
   assets/js/              core, shell (nav/footer/coffee), ranking, admin,
-                          mail (forms → Web3Forms/mailto), request, tax, config
+                          mail (forms → Web3Forms/mailto), request, tax,
+                          fy (financial-year slider + trivia), config
   assets/img/             favicon, UPI QR (svg + png)
   data/                   published snapshots (written by the pipeline)
 tests/             engine, snapshot, universe, parser, publication-safety and
-                   site-structure (links, assets, QR) tests
+                   site-structure (links, assets, QR) tests; tests/js/ holds
+                   Node tests for the financial-year maths
 .github/workflows/ ci.yml · pages.yml (deploy) · refresh-data.yml (refresh + deploy)
 ```
 
 ### Adding a tax guide page
 
 Tax pages are plain HTML loading `assets/js/tax.js` (nav, footer, contact
-links and the request-a-company form). Copy a page from `site/tax/`, fix the
-relative `../` depth of its asset links and breadcrumbs, and run the tests —
-`tests/test_site.py` fails on any link or asset that does not resolve. Mark
-email links with `<a data-contact data-contact-subject="…">` and the address
-is filled in from `config.js`.
+links, the financial-year slider, trivia and the request-a-company form).
+Copy a page from `site/tax/`, fix the relative `../` depth of its asset
+links and breadcrumbs, and run the tests — `tests/test_site.py` fails on any
+link or asset that does not resolve. Mark email links with
+`<a data-contact data-contact-subject="…">` and the address is filled in
+from `config.js`. Add `data-fy-progress` / `data-trivia` placeholders (see
+any tax page's `fun-grid`) to show the slider and trivia; facts and tax
+dates live in `assets/js/fy.js`.
 
 ---
 

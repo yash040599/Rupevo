@@ -476,6 +476,81 @@ html[data-theme="dark"] .coffee-btn { color: #1f1300; }
 .contact-form { display: grid; gap: 12px; }
 .status-steps { margin: 0; padding-left: 20px; display: grid; gap: 6px; color: var(--fg-2); }
 
+/* ── Tax pages: financial-year slider + trivia (fy.js) ─────── */
+.fun-grid { display: grid; gap: 16px; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); margin: 18px 0; }
+.fun-grid > .card { margin: 0; }
+
+.fy-card { --thumb: 24px; --rail-top: 32px; display: grid; gap: 12px; align-content: start; }
+.fy-head { display: flex; gap: 12px; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; }
+.fy-big { margin-top: 2px; font-size: 24px; font-weight: 800; letter-spacing: -.02em; line-height: 1.2; }
+.fy-big .fy-pct { font-size: 34px; font-variant-numeric: tabular-nums;
+                  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+                  -webkit-background-clip: text; background-clip: text; color: transparent; }
+.fy-sub { margin-top: 2px; font-size: 13px; color: var(--muted); }
+
+/* Everything on the track is positioned with --p (0..1) inside an inset of
+   half a thumb on each side — the same range the native thumb travels. */
+.fy-slider { position: relative; height: 96px; }
+.fy-track { position: absolute; top: 0; bottom: 0; left: calc(var(--thumb) / 2); right: calc(var(--thumb) / 2); }
+.fy-bubble { position: absolute; top: 0; left: clamp(2.8rem, calc(var(--p, 0) * 100%), calc(100% - 2.8rem));
+             transform: translateX(-50%); white-space: nowrap; pointer-events: none;
+             padding: 3px 10px; border-radius: var(--radius-pill); font-size: 12px; font-weight: 700;
+             background: var(--accent); color: var(--accent-fg); box-shadow: var(--shadow-sm); }
+.fy-rail { position: absolute; left: 0; right: 0; top: calc(var(--rail-top) + var(--thumb) / 2 - 6px);
+           height: 12px; border-radius: var(--radius-pill); overflow: hidden;
+           background: var(--soft); border: 1px solid var(--line); }
+.fy-fill { height: 100%; width: 0; border-radius: var(--radius-pill);
+           background: linear-gradient(90deg, #22c55e, var(--accent) 55%, var(--accent-2)); }
+.fy-qline { position: absolute; left: calc(var(--p) * 100%); top: calc(var(--rail-top) + var(--thumb) / 2 - 6px);
+            width: 2px; height: 12px; margin-left: -1px; background: var(--card); pointer-events: none; }
+.fy-now { position: absolute; left: calc(var(--p) * 100%); top: calc(var(--rail-top) - 3px);
+          width: 2px; height: calc(var(--thumb) + 6px); margin-left: -1px; border-radius: 2px;
+          background: var(--fg-2); opacity: .5; pointer-events: none; }
+.fy-pin { position: absolute; left: calc(var(--p) * 100%); top: calc(var(--rail-top) + var(--thumb) + 7px);
+          width: 11px; height: 11px; margin: 0 0 0 -5.5px; padding: 0; cursor: pointer;
+          border: 2px solid var(--card); border-radius: 2px; transform: rotate(45deg);
+          background: var(--accent); box-shadow: 0 0 0 1px var(--line-strong);
+          transition: transform .12s ease; }
+.fy-pin.itr { background: var(--warn-fg); }
+.fy-pin.end { background: var(--pos); }
+.fy-pin:hover, .fy-pin:focus-visible { transform: rotate(45deg) scale(1.4); outline: none; box-shadow: var(--ring); }
+.fy-month { position: absolute; left: calc(var(--p) * 100%); bottom: 0; transform: translateX(-50%);
+            font-size: 11.5px; font-weight: 600; color: var(--muted); }
+.fy-month .short { display: none; }
+
+.fy-range { position: absolute; left: 0; right: 0; top: var(--rail-top); z-index: 2;
+            width: 100%; height: var(--thumb); margin: 0; padding: 0; background: transparent;
+            -webkit-appearance: none; appearance: none; cursor: grab; }
+.fy-range:active { cursor: grabbing; }
+.fy-range:focus, .fy-range:focus-visible { outline: none; box-shadow: none; }
+.fy-range::-webkit-slider-runnable-track { height: var(--thumb); background: transparent; border: 0; }
+.fy-range::-moz-range-track { height: var(--thumb); background: transparent; border: 0; }
+.fy-range::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; box-sizing: border-box;
+                                  width: var(--thumb); height: var(--thumb); border-radius: 50%;
+                                  background: var(--card); border: 5px solid var(--accent);
+                                  box-shadow: var(--shadow-md); }
+.fy-range::-moz-range-thumb { box-sizing: border-box; width: var(--thumb); height: var(--thumb);
+                              border-radius: 50%; background: var(--card);
+                              border: 5px solid var(--accent); box-shadow: var(--shadow-md); }
+.fy-range:focus-visible::-webkit-slider-thumb { box-shadow: var(--ring), var(--shadow-md); }
+.fy-range:focus-visible::-moz-range-thumb { box-shadow: var(--ring), var(--shadow-md); }
+
+.fy-legend { display: flex; gap: 6px 14px; flex-wrap: wrap; align-items: center; font-size: 11.5px; color: var(--fg-2); }
+.fy-legend > span { display: inline-flex; gap: 6px; align-items: center; }
+.fy-dot { display: inline-block; flex: none; width: 8px; height: 8px; margin: 0 3px 1px 2px;
+          border-radius: 2px; transform: rotate(45deg); background: var(--accent); }
+.fy-dot.itr { background: var(--warn-fg); }
+.fy-dot.end { background: var(--pos); }
+.fy-readout { display: flex; gap: 4px 8px; flex-wrap: wrap; align-items: baseline; font-size: 13px; color: var(--fg-2); }
+.fy-readout .sep { color: var(--faint); }
+.fy-quip { margin: 0; font-size: 14px; font-weight: 600; color: var(--fg); }
+
+.trivia-card { display: flex; flex-direction: column; gap: 10px;
+               background: linear-gradient(160deg, var(--accent-soft), var(--card) 70%); }
+.trivia-card .card-head { margin-bottom: 0; }
+.trivia-card .trivia-text { flex: 1; margin: 0; font-size: 14.5px; line-height: 1.6; color: var(--fg); }
+.trivia-card .btn { align-self: flex-start; }
+
 /* ── Dialogs and toasts ─────────────────────────────────── */
 dialog.modal {
   width: min(520px, calc(100vw - 32px)); padding: 0; border: 1px solid var(--line);
@@ -528,6 +603,17 @@ dialog.modal::backdrop { background: rgba(8, 12, 24, .6); }
 @media (max-width: 520px) {
   .coffee-grid { grid-template-columns: 1fr; justify-items: center; text-align: center; }
   .upi-id, .coffee-actions { justify-content: center; }
+}
+
+@media (max-width: 860px) {
+  .fun-grid { grid-template-columns: 1fr; }
+  .fy-big { font-size: 20px; }
+  .fy-big .fy-pct { font-size: 28px; }
+}
+
+@media (max-width: 560px) {
+  .fy-month .full { display: none; }
+  .fy-month .short { display: inline; }
 }
 
 @media (max-width: 389px) {
