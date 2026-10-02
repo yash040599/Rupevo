@@ -30,6 +30,12 @@ const dipCell = (v) => {
 const stockCell = (r, ctx) => `<div class="stock">
     <button class="sym" type="button" aria-expanded="${ctx.open ? 'true' : 'false'}">${esc(r.symbol)}</button>
     <span class="nm" title="${esc(r.name)}">${esc(r.name)}</span></div>`;
+// Current open state of a card's collapsible section, so re-rendering after a
+// data refresh does not reopen what the reader collapsed.
+const isOpen = (card, fallback) => {
+  const fold = card.querySelector(':scope > details.fold');
+  return fold ? fold.open : fallback;
+};
 
 function bars(rows) {
   return `<div class="bars">${rows.map(({ label, value, note, off }) => `
@@ -541,10 +547,12 @@ export async function start(marketKey) {
         item(d, `${esc(d.previous)} → ${esc(d.now)}`)).join('')}</ul></div>`);
     }
     const since = c.compared_to?.data_through ? ` vs. prices of ${esc(tradingDay(c.compared_to.data_through))}` : '';
-    els.changes.innerHTML = `<div class="card-head"><h2>What changed</h2>
-        ${c.compared_to ? `<span class="hint">${esc(c.summary)}${since}</span>` : ''}</div>
+    els.changes.innerHTML = `<details class="fold"${isOpen(els.changes, true) ? ' open' : ''}>
+      <summary><h2>What changed</h2>
+        ${c.compared_to ? `<span class="hint">${esc(c.summary)}${since}</span>` : ''}</summary>
       ${groups.length ? `<div class="changes">${groups.join('')}</div>`
-        : `<p class="muted" style="margin:0">${c.compared_to ? 'Nothing moved enough to report since the previous refresh.' : esc(c.summary)}</p>`}`;
+        : `<p class="muted" style="margin:0">${c.compared_to ? 'Nothing moved enough to report since the previous refresh.' : esc(c.summary)}</p>`}
+      </details>`;
   }
 
   function buildRanked() {
@@ -554,15 +562,15 @@ export async function start(marketKey) {
       return `<select data-filter="${f.key}" aria-label="${esc(f.all)}"><option value="">${esc(f.all)}</option>${
         values.map((v) => `<option value="${esc(v)}"${filters[f.key] === v ? ' selected' : ''}>${esc(v)}</option>`).join('')}</select>`;
     }).join('');
-    els.rankedCard.innerHTML = `
-      <div class="card-head"><h2>${esc(M.rankedTitle)} (${snap.ranked.length})</h2>
-        <span class="hint">${esc(M.rankedHint)}</span></div>
+    els.rankedCard.innerHTML = `<details class="fold"${isOpen(els.rankedCard, true) ? ' open' : ''}>
+      <summary><h2>${esc(M.rankedTitle)} (${snap.ranked.length})</h2>
+        <span class="hint">${esc(M.rankedHint)}</span></summary>
       <div class="toolbar">
         <input type="search" id="q" placeholder="${esc(M.searchPlaceholder)}" aria-label="${esc(M.searchPlaceholder)}" value="${esc(filters.query)}">
         ${filterOptions}
         <span class="count" id="count"></span>
       </div>
-      <div id="ranked-table"></div>`;
+      <div id="ranked-table"></div></details>`;
     const match = (r) => {
       const q = filters.query.trim().toLowerCase();
       if (q && !r.symbol.toLowerCase().includes(q) && !String(r.name || '').toLowerCase().includes(q)) return false;
@@ -589,8 +597,9 @@ export async function start(marketKey) {
   function buildOthers() {
     if (!snap.others?.length) { els.othersCard.hidden = true; othersTable = null; return; }
     els.othersCard.hidden = false;
-    els.othersCard.innerHTML = `<details class="fold"><summary><h2>${esc(M.othersTitle)} (${snap.others.length})</h2>
-        <span class="hint muted small">No qualifying setup or not enough history</span></summary>
+    els.othersCard.innerHTML = `<details class="fold"${isOpen(els.othersCard, false) ? ' open' : ''}>
+        <summary><h2>${esc(M.othersTitle)} (${snap.others.length})</h2>
+        <span class="hint">No qualifying setup or not enough history</span></summary>
         <div id="others-table"></div></details>`;
     othersTable = makeTable(els.othersCard.querySelector('#others-table'), {
       columns: M.otherColumns, rows: () => snap.others, detail: M.detail,

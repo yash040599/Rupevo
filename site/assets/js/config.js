@@ -15,15 +15,15 @@ export const SITE = {
   // Refresh requests are delivered by Web3Forms (https://web3forms.com).
   // Paste the access key emailed to the maintainer to enable in-page sending.
   // Web3Forms keys are designed to be public: a key can only email its owner.
-  // While empty, the "Request refresh" button falls back to a mailto: link.
+  // While empty, the request forms fall back to a pre-filled mailto: link.
   web3formsKey: '',
 
   // Assembled at runtime so the address is not sitting in the HTML for scrapers.
   contact: { user: 'yash040599', domain: 'gmail.com' },
 
-  // "Buy me a coffee" via UPI — next step. Leave `id` empty until the UPI ID
-  // (e.g. name@okhdfcbank) is ready; the button shows "coming soon" meanwhile.
-  upi: { id: '', payee: 'Rupevo' },
+  // "Buy me a coffee" via UPI. After changing `id`, regenerate the QR image:
+  //   python scripts/make_upi_qr.py <id> --payee "<payee>"
+  upi: { id: 'yash040599@okhdfcbank', payee: 'Yash Agrawal' },
 
   // A visitor can send one refresh request per page per this many hours.
   requestCooldownHours: 6,

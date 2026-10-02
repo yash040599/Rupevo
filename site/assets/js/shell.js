@@ -1,12 +1,15 @@
 // Page chrome shared by every page: navigation, currency/theme toggles,
-// footer with the disclaimer, "Buy me a coffee" and the admin entry point.
+// "Buy me a coffee" (nav, floating button on mobile, footer), footer with the
+// disclaimer and the admin entry point.
 import { SITE } from './config.js';
 import { currency, esc, istDateTime, num, openModal, siteUrl, toggleTheme } from './core.js';
 import { openAdminPanel } from './admin.js';
+import { contactAddress, mailtoHref } from './mail.js';
 
 const NAV = [
   { key: 'india', label: 'Nifty 100', href: 'india/', title: 'Indian Nifty 100 Ranking' },
   { key: 'us', label: 'NASDAQ-100', href: 'us/', title: 'US NASDAQ-100 Ranking' },
+  { key: 'tax', label: 'Tax', href: 'tax/', title: 'Tax tools: RSU taxation and more' },
 ];
 
 const DISCLAIMER = `<strong>Disclaimer.</strong> Rupevo is an independent, educational
@@ -16,14 +19,17 @@ const DISCLAIMER = `<strong>Disclaimer.</strong> Rupevo is an independent, educa
   is not registered with SEBI as an Investment Adviser or Research Analyst, nor with any other
   regulator. Data may be delayed, incomplete or inaccurate, and past performance does not
   guarantee future results. Investments in securities markets are subject to market risks;
-  read all related documents carefully and consult a SEBI-registered adviser before investing.`;
+  read all related documents carefully and consult a SEBI-registered adviser before investing.
+  The tax guides are general information, not tax or legal advice; tax rules change and depend
+  on your circumstances, so verify with a chartered accountant before filing.`;
 
 export function renderShell(page, { showCurrency = true, onAdminRefreshed } = {}) {
   const nav = document.getElementById('site-nav');
   nav.className = 'topnav';
   nav.innerHTML = `
-    <a class="brand" href="${siteUrl('')}" title="Rupevo home"><span class="brand-mark">R</span>Rupevo</a>
-    <nav class="nav-links" aria-label="Rankings">
+    <a class="brand" href="${siteUrl('')}" title="Rupevo home"><span class="brand-mark">R</span><span
+      class="brand-text">Rupevo</span></a>
+    <nav class="nav-links" aria-label="Main">
       ${NAV.map((item) => `<a href="${siteUrl(item.href)}" title="${esc(item.title)}"${
         item.key === page ? ' aria-current="page"' : ''}>${esc(item.label)}</a>`).join('')}
     </nav>
@@ -35,14 +41,34 @@ export function renderShell(page, { showCurrency = true, onAdminRefreshed } = {}
       </button>` : ''}
     <button class="icon-btn" id="theme-toggle" type="button" title="Switch light / dark theme"
       aria-label="Toggle colour theme"><span class="theme-sun" aria-hidden="true">☀</span><span
-      class="theme-moon" aria-hidden="true">☾</span></button>`;
+      class="theme-moon" aria-hidden="true">☾</span></button>
+    <button class="btn coffee-btn nav-coffee" id="nav-coffee" type="button"
+      title="Buy me a coffee — support Rupevo via UPI" aria-label="Buy me a coffee"><span
+      aria-hidden="true">☕</span><span class="nav-coffee-text">Buy me a coffee</span></button>`;
 
   nav.querySelector('#theme-toggle').addEventListener('click', toggleTheme);
+  nav.querySelector('#nav-coffee').addEventListener('click', openCoffee);
   nav.querySelector('#cur-toggle')?.addEventListener('click', () => {
     if (!currency.rate) return;
     currency.set(currency.display === 'INR' ? 'USD' : 'INR');
     syncCurrencyToggle();
   });
+
+  // The nav is sticky on wide screens, so its coffee button is always on
+  // screen there. On phones the nav scrolls away, so a floating button
+  // takes over once it is out of view.
+  const fab = document.createElement('button');
+  fab.className = 'coffee-fab';
+  fab.type = 'button';
+  fab.title = 'Buy me a coffee';
+  fab.setAttribute('aria-label', 'Buy me a coffee');
+  fab.textContent = '☕';
+  fab.addEventListener('click', openCoffee);
+  document.body.append(fab);
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(([entry]) => fab.classList.toggle('show', !entry.isIntersecting))
+      .observe(nav);
+  }
 
   const footer = document.getElementById('site-footer');
   footer.className = 'site-footer';
@@ -50,14 +76,15 @@ export function renderShell(page, { showCurrency = true, onAdminRefreshed } = {}
     <div class="inner">
       <div class="footer-row">
         <a class="brand" href="${siteUrl('')}"><span class="brand-mark">R</span>Rupevo</a>
-        <span class="muted small">Market rankings, explained.</span>
+        <span class="muted small">Market rankings and tax tools, explained.</span>
         <span class="spacer"></span>
         <button class="btn coffee-btn" id="coffee-btn" type="button">☕ Buy me a coffee</button>
       </div>
       <p class="disclaimer">${DISCLAIMER}</p>
       <div class="footer-links">
         <span>Prices &amp; fundamentals: Yahoo Finance (end-of-day). Index lists: NSE India, Nasdaq.
-          Not affiliated with any exchange, data provider or broker.</span>
+          Not affiliated with any exchange, data provider, broker or employer.</span>
+        <a data-contact data-contact-subject="Rupevo" data-contact-label="Contact"></a>
         <a href="https://github.com/${esc(SITE.repo.owner)}/${esc(SITE.repo.name)}" target="_blank" rel="noopener">Source on GitHub</a>
         <button class="linkish" id="admin-link" type="button">Admin</button>
         <span>© ${SITE.year} Rupevo</span>
@@ -66,6 +93,15 @@ export function renderShell(page, { showCurrency = true, onAdminRefreshed } = {}
   footer.querySelector('#coffee-btn').addEventListener('click', openCoffee);
   footer.querySelector('#admin-link').addEventListener('click',
     () => openAdminPanel({ onRefreshed: onAdminRefreshed }));
+  fillContactLinks();
+}
+
+/** Turn every `<a data-contact>` into a mailto link to the maintainer. */
+export function fillContactLinks(root = document) {
+  root.querySelectorAll('a[data-contact]').forEach((a) => {
+    a.href = mailtoHref(a.dataset.contactSubject || 'Rupevo');
+    a.textContent = a.dataset.contactLabel || contactAddress();
+  });
 }
 
 export function syncCurrencyToggle() {
@@ -90,7 +126,7 @@ export function showFx(fx) {
     + (fx.stale ? ' (last known rate)' : '');
 }
 
-function openCoffee() {
+export function openCoffee() {
   const { id, payee } = SITE.upi;
   if (!id) {
     openModal({
@@ -101,13 +137,50 @@ function openCoffee() {
     });
     return;
   }
-  const link = `upi://pay?pa=${encodeURIComponent(id)}&pn=${encodeURIComponent(payee)}`
-    + `&cu=INR&tn=${encodeURIComponent('Buy me a coffee - Rupevo')}`;
-  openModal({
+  // Same payload as the QR image (scripts/make_upi_qr.py) — no amount, so the
+  // payer chooses it in their app.
+  const link = `upi://pay?pa=${id}&pn=${encodeURIComponent(payee)}&cu=INR`;
+  const touch = window.matchMedia?.('(pointer: coarse)').matches;
+  const ui = openModal({
     title: 'Buy me a coffee ☕',
-    body: `<p>Rupevo is free and ad-free. If it helped you, you can chip in with any amount via UPI.</p>
-      <p><a class="btn" href="${esc(link)}">Pay with a UPI app</a></p>
-      <p class="small muted">On a computer? Pay from any UPI app to <strong>${esc(id)}</strong>.</p>`,
+    body: `
+      <p>Rupevo is free and ad-free. If it helped you, chip in any amount you like — a coffee is
+        about ₹100. Thank you!</p>
+      <div class="coffee-grid">
+        <figure class="qr-card">
+          <img src="${siteUrl('assets/img/upi-qr.svg')}" alt="UPI QR code to pay ${esc(id)}" width="196" height="196">
+          <figcaption>Scan with any UPI app</figcaption>
+        </figure>
+        <div class="coffee-side">
+          <div class="small muted">UPI ID</div>
+          <div class="upi-id"><code id="upi-id-text">${esc(id)}</code>
+            <button class="btn alt small" type="button" id="copy-upi">Copy</button></div>
+          <div class="small muted">Paid to ${esc(payee)}</div>
+          <div class="coffee-actions">
+            ${touch ? `<a class="btn" href="${esc(link)}">Open UPI app</a>` : ''}
+            <a class="btn alt" href="${siteUrl('assets/img/upi-qr.png')}" download="rupevo-upi-qr.png">Save QR image</a>
+          </div>
+        </div>
+      </div>
+      <p class="small muted">${touch
+        ? 'Some UPI apps block payment links to personal UPI IDs. If yours does, copy the UPI ID and pay it from the app, or save the QR image and scan it from your gallery.'
+        : 'Scan the code with your phone, or pay the UPI ID from any UPI app.'}
+        Payments go straight to the maintainer's bank account; Rupevo never sees your payment details.</p>`,
     actions: [{ label: 'Close', kind: 'alt' }],
+  });
+  ui.body.querySelector('#copy-upi').addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
+    try {
+      await navigator.clipboard.writeText(id);
+      btn.textContent = 'Copied ✓';
+    } catch {
+      const range = document.createRange();
+      range.selectNodeContents(ui.body.querySelector('#upi-id-text'));
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+      btn.textContent = 'Press Ctrl+C';
+    }
+    setTimeout(() => { btn.textContent = 'Copy'; }, 2500);
   });
 }

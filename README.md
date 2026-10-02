@@ -1,20 +1,23 @@
 # Rupevo
 
-**Market rankings, explained.** Rupevo publishes rules-based rankings of the
-**Indian Nifty 100** and the **US NASDAQ-100**, refreshed from end-of-day
-prices, with every score broken down so readers can see *why* a stock ranks
-where it does.
+**Market rankings and tax tools, explained.** Rupevo publishes rules-based
+rankings of the **Indian Nifty 100** and the **US NASDAQ-100**, refreshed from
+end-of-day prices, with every score broken down so readers can see *why* a
+stock ranks where it does — plus step-by-step **tax tools** for Indian
+investors, starting with foreign RSUs.
 
-Live site (after the one-time setup below): **https://yash040599.github.io/Rupevo/**
+Live site: **https://yash040599.github.io/Rupevo/**
 
 | Page | What it shows | Model |
 |---|---|---|
 | [Nifty 100 Ranking](site/india/index.html) | Technical setups, technical score (A–D), risk grade, 52-week dips, sector strength | Migrated from the ai-portfolio-manager swing scanner |
 | [NASDAQ-100 Ranking](site/us/index.html) | Six-pillar long-term scorecard: quality, valuation vs sector, growth, momentum, balance sheet, risk | Migrated from the ai-portfolio-manager US long-term scorer |
+| [Tax tools](site/tax/index.html) | RSU taxation → broker (Fidelity) → company (Microsoft, Oracle — in progress); request another company | Static guides (the per-company tools are being built) |
 
-Every page has a USD/INR display toggle, light/dark theme, a "last synced"
-indicator, a **Request refresh** button for visitors, a **Buy me a coffee**
-button (UPI, coming next) and a finance disclaimer. No login is needed.
+Every page has light/dark theme, a **Buy me a coffee** button (in the top
+bar, a floating ☕ on phones once the bar scrolls away, and the footer) and a
+disclaimer. Ranking pages add a USD/INR toggle, a "last synced" indicator, a
+**Request refresh** button and collapsible sections. No login is needed.
 
 ---
 
@@ -91,16 +94,35 @@ than 20% of its stocks failed to download.
    * Choose an expiry (for example 90 days) and paste it into the site's
      **Admin** panel. It is kept only in that browser and sent only to
      `api.github.com`; *Forget token* removes it.
-4. **Refresh-request emails**: go to [web3forms.com](https://web3forms.com),
-   enter `yash040599@gmail.com`, and paste the access key from the email into
-   `web3formsKey` in [site/assets/js/config.js](site/assets/js/config.js).
-   Until then, *Request refresh* opens the visitor's email app pre-addressed
-   to you. (Web3Forms keys are public by design; a key can only email its
-   owner. Free tier: 250 submissions/month.)
+4. **Emails from the site (Web3Forms)** — *recommended*. The site is static,
+   so it cannot send email by itself; [Web3Forms](https://web3forms.com) is a
+   free relay that forwards the site's *Request refresh* and *Request a
+   company* forms to your inbox. Without it those buttons still work, but
+   they open the **visitor's** email app with a pre-filled message, and many
+   visitors will not finish sending it.
+   1. Open <https://web3forms.com>, choose **Create your Access Key**, enter
+      `yash040599@gmail.com` and submit.
+   2. Copy the access key (a long ID like `xxxxxxxx-xxxx-…`) from the email
+      Web3Forms sends you (check spam if it doesn't arrive).
+   3. Paste it into `web3formsKey: '…'` in
+      [site/assets/js/config.js](site/assets/js/config.js), commit and push —
+      the site redeploys by itself.
+   4. Test it: on the live site click *Request refresh* (or *Request a
+      company* on the Fidelity page) and send; the email arrives within a
+      minute.
+
+   The key is public by design (it can only email you). Free plan: 250
+   emails/month, spam filtering included. Domain locking is a paid feature
+   and not needed.
 5. **Run one cloud refresh** (*Actions → Refresh market data → Run
    workflow*) to confirm Yahoo works from GitHub's runners.
-6. *(Next step)* **UPI for "Buy me a coffee"**: set `upi.id` in
-   `site/assets/js/config.js`. Until then the button shows "coming soon".
+6. **UPI for "Buy me a coffee"** — done (`yash040599@okhdfcbank`). To change
+   it, edit `upi` in `site/assets/js/config.js` and regenerate the QR image:
+   `python scripts/make_upi_qr.py <upi-id> --payee "<name>"` (a test fails
+   while the QR and config disagree). The dialog shows the QR, the UPI ID
+   with a copy button, a "Save QR image" download, and an "Open UPI app"
+   link on phones. Some UPI apps block web links to personal UPI IDs, which
+   is why the QR and UPI ID come first.
 
 No secrets are stored in the repository or in GitHub Actions: the pipeline
 uses only public data, and the admin token lives in your browser.
@@ -138,14 +160,29 @@ pipeline/
   providers/       Yahoo Finance prices + US fundamentals (network I/O)
   universes/       Nifty 100 / NASDAQ-100 lists, sector buckets, refresher
   india.py, us.py  snapshot builders;  publish.py, cli.py  the command line
+scripts/
+  make_upi_qr.py   regenerates the "Buy me a coffee" UPI QR image
 site/
   index.html, india/, us/, 404.html
+  tax/             Tax tools → rsu/ → fidelity/ → msft/, orcl/
   assets/css/rupevo.css   design tokens ported from the local dashboard
-  assets/js/              core, shell, ranking, admin, request, config
+  assets/js/              core, shell (nav/footer/coffee), ranking, admin,
+                          mail (forms → Web3Forms/mailto), request, tax, config
+  assets/img/             favicon, UPI QR (svg + png)
   data/                   published snapshots (written by the pipeline)
-tests/             engine, snapshot, universe, parser and publication-safety tests
+tests/             engine, snapshot, universe, parser, publication-safety and
+                   site-structure (links, assets, QR) tests
 .github/workflows/ ci.yml · pages.yml (deploy) · refresh-data.yml (refresh + deploy)
 ```
+
+### Adding a tax guide page
+
+Tax pages are plain HTML loading `assets/js/tax.js` (nav, footer, contact
+links and the request-a-company form). Copy a page from `site/tax/`, fix the
+relative `../` depth of its asset links and breadcrumbs, and run the tests —
+`tests/test_site.py` fails on any link or asset that does not resolve. Mark
+email links with `<a data-contact data-contact-subject="…">` and the address
+is filled in from `config.js`.
 
 ---
 
@@ -171,8 +208,10 @@ tests/             engine, snapshot, universe, parser and publication-safety tes
 
 ## Roadmap
 
-* UPI "Buy me a coffee" (UPI deep link + QR).
-* Tax tools: RSU / foreign assets (Schedule FA) ITR filing helper.
+* Tax tools: Microsoft RSUs at Fidelity (next), then Oracle — vesting,
+  dividends with foreign tax credit, capital gains and Schedule FA, worked
+  out from the Fidelity reports in the browser.
+* More brokers and companies as people request them.
 * Personal features (watchlists, portfolio analysis) — need sign-in and a
   backend; portfolio import is best done from broker CSV exports or the
   NSDL/CDSL CAS statement, parsed in the browser.
