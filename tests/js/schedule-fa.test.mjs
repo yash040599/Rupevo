@@ -150,6 +150,22 @@ test('account totals and Schedule AL add up the whole-rupee lot values shown in 
   assert.equal(r.al.inr, r.totals.initial);
 });
 
+test('Table A2: a peak on the closing day equals the closing balance to the rupee', () => {
+  // Prices rise every day, so the account peaks on 31 December at an unchanged rate. Each
+  // half-share lot is worth ₹14,992.20 then: 4 × ₹14,992 = ₹59,968, while rounding the
+  // exact total would give ₹59,969.
+  let k = 0;
+  const prices = series(weekdays('2025-01-01', '2025-12-31', () => 100 + k++));
+  const rates = series(weekdays('2025-01-01', '2025-12-31', () => 83.29));
+  const lots = ['L1', 'L2', 'L3', 'L4'].map((id) => lot(id, '2025-01-06', 0.5, 101));
+  const r = computeScheduleFA({ lots, prices, rates, dividends: [], cy: 2025, today: '2026-01-10' });
+  const last = prices.values[prices.values.length - 1];
+  assert.notEqual(Math.round(2 * last * 83.29), 4 * Math.round(0.5 * last * 83.29), 'fixture check');
+  assert.equal(r.account.peak.date, '2025-12-31');
+  assert.equal(r.account.closing.inr, 4 * Math.round(0.5 * last * 83.29));
+  assert.equal(r.account.peak.inr, r.account.closing.inr);
+});
+
 test('the peak is the highest rupee value, which can be the 31 December value', () => {
   // Dollar peak in March, but by 31 December the rupee has fallen so far that the year-end
   // value is higher in rupees. 31 December has no price (a holiday) but has an SBI rate.

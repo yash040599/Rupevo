@@ -223,23 +223,29 @@ export function computeScheduleFA({
     });
   }
 
-  // Table A2: the whole account (shares only), valued in rupees every trading day.
+  // Table A2: the whole account (shares only), valued in rupees every trading day. Each day adds up
+  // whole-rupee lot values, like the closing balance, so the same day gives the same figure.
   let peakAcct = null;
   for (let i = yStartIdx; i <= closeIdx; i += 1) {
     if (!dayRate[i]) continue;
     const day = prices.dates[i];
     let shares = 0;
-    for (const r of rows) if (r.lot.acquired <= day) shares += r.lot.quantity;
-    const usd = shares * prices.values[i];
-    const exact = inr(usd, dayRate[i]);
-    if (shares > 0 && (!peakAcct || exact > peakAcct.exact)) peakAcct = { date: day, usd, rate: dayRate[i], exact };
+    let value = 0;
+    for (const r of rows) {
+      if (r.lot.acquired > day) continue;
+      shares += r.lot.quantity;
+      value += Math.round(inr(r.lot.quantity * prices.values[i], dayRate[i]));
+    }
+    if (shares > 0 && (!peakAcct || value > peakAcct.inr)) {
+      peakAcct = { date: day, usd: shares * prices.values[i], rate: dayRate[i], inr: value };
+    }
   }
   const account = { firstLot: lots.length ? lots[0].acquired : null };
   // Account totals add up the whole-rupee lot values so they match the Table A3 rows exactly.
   const sum = (pick) => rows.reduce((a, r) => a + (pick(r) ?? 0), 0);
   account.closing = { date: closeDate, usd: sum((r) => r.closing.usd), rate: closingRate,
     inr: sum((r) => r.closing.inr) };
-  if (peakAcct) account.peak = { ...peakAcct, inr: Math.round(peakAcct.exact) };
+  if (peakAcct) account.peak = peakAcct;
   if (rows.length && (!account.peak || account.peak.inr < account.closing.inr)) {
     account.peak = { date: closeDate, usd: account.closing.usd, rate: closingRate, inr: account.closing.inr };
   }
