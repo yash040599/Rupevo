@@ -12,7 +12,7 @@ Live site: **https://yash040599.github.io/Rupevo/**
 |---|---|---|
 | [Nifty 100 Ranking](site/india/index.html) | Technical setups, technical score (A–D), risk grade, 52-week dips, sector strength | Migrated from the ai-portfolio-manager swing scanner |
 | [NASDAQ-100 Ranking](site/us/index.html) | Six-pillar long-term scorecard: quality, valuation vs sector, growth, momentum, balance sheet, risk | Migrated from the ai-portfolio-manager US long-term scorer |
-| [Tax tools](site/tax/index.html) | RSU taxation → broker (Fidelity) → company (Microsoft, Oracle — in progress); request another company. Every tax page has an interactive "how far through the financial year are we" slider (advance-tax and ITR dates marked) and rotating tax trivia | Static guides (the per-company tools are being built) |
+| [Tax tools](site/tax/index.html) | RSU taxation → broker (Fidelity) → company. **Microsoft: Schedule FA calculator.** Load Fidelity's *View open lots* CSV and get Table A3 (one row per RSU vest and ESPP purchase), Table A2 (the Fidelity account) and the Schedule AL cost, for the previous or current return (and the next one from January). Oracle is in progress; visitors can request another company. Every tax page has an interactive "how far through the financial year are we" slider (advance-tax and ITR dates marked) and rotating tax trivia | Runs in the browser: the user's file is never uploaded. Uses published SBI TT buying rates, Microsoft closes and dividends (`site/data/tax/`, refreshed weekly) |
 
 Every page has light/dark theme, a **Buy me a coffee** button (in the top
 bar, a floating ☕ on phones once the bar scrolls away, and the footer) and a
@@ -46,6 +46,15 @@ disclaimer. Ranking pages add a USD/INR toggle, a "last synced" indicator, a
   indicators only. Entry/stop/target levels and buy/sell wording are never
   published, and `tests/test_published_data.py` blocks any snapshot that
   contains them (see *Compliance notes*).
+* **Tax reference data**: `python -m pipeline tax-data` writes
+  `site/data/tax/sbi-tt-buy-usd.json` (SBI telegraphic-transfer buying rates
+  for USD since January 2020, from the MIT-licensed
+  [sbi-fx-ratekeeper](https://github.com/sahilgupta/sbi-fx-ratekeeper) archive) and
+  `site/data/tax/msft.json` (10 years of Yahoo Finance daily closes plus
+  dividend ex/pay dates from Nasdaq, with Yahoo as the fallback). The tax
+  calculators fetch these files and read the user's broker export in the
+  browser (`assets/js/fidelity.js` parses it, `assets/js/schedule-fa.js`
+  does the maths). Nothing personal is uploaded or stored.
 
 ---
 
@@ -62,22 +71,30 @@ There are three ways to run one:
    has *Refresh both* and recent-run history. Visitors never see the button,
    and GitHub rejects dispatches from anyone without write access.
 2. **GitHub Actions tab / GitHub mobile app**: *Actions → Refresh market
-   data → Run workflow*, pick `both`, `india` or `us`.
+   data → Run workflow*, pick `both`, `india`, `us` or `tax`.
 3. **From your PC**:
    ```powershell
    cd C:\Users\yashagrawal\AiPortfolioManager\Rupevo
    .\.venv\Scripts\python.exe -m pipeline refresh --market both
+   .\.venv\Scripts\python.exe -m pipeline tax-data
    git add site/data; git commit -m "data: refresh"; git push
    ```
    Pushing `site/` triggers the deploy automatically.
 
-To refresh automatically every weekday, uncomment the `schedule:` block in
-[.github/workflows/refresh-data.yml](.github/workflows/refresh-data.yml).
+**Tax data** (SBI rates, Microsoft prices and dividends) is refreshed on
+every run, and on its own every Monday at 08:00 IST by the workflow's
+schedule; choose `tax` to refresh only that. To refresh the rankings
+automatically too, add another `cron:` line to the `schedule:` block in
+[.github/workflows/refresh-data.yml](.github/workflows/refresh-data.yml)
+(there is a commented example); any schedule other than the Monday one
+refreshes both markets.
 
 If a market fails (for example Yahoo throttling), its previous snapshot
 stays live, the other market still publishes, and the run is marked failed
 with the reason in the job summary. A market is never published when more
-than 20% of its stocks failed to download.
+than 20% of its stocks failed to download. The tax data works the same way:
+a file that fails its checks (too few rows, or older than the published one)
+is not replaced.
 
 ---
 
@@ -142,9 +159,19 @@ node --test "tests/js/*.test.mjs"                               # JS unit tests
 # Quick partial run into a scratch folder (never overwrites site/data)
 .\.venv\Scripts\python.exe -m pipeline refresh --limit 10 --out .cache\scratch
 
+# Tax reference data (SBI rates, Microsoft prices and dividends)
+.\.venv\Scripts\python.exe -m pipeline tax-data --out .cache\scratch\tax
+
+# Rebuild the synthetic sample behind "Try with sample data" (made-up
+# quantities, real Microsoft prices from site/data/tax/msft.json)
+.\.venv\Scripts\python.exe scripts\make_sample_export.py
+
 # Preview the site at http://127.0.0.1:8765/
 .\.venv\Scripts\python.exe -m http.server 8765 --directory site
 ```
+
+Never commit a real broker export, or a test or sample built from one: tests and
+samples use synthetic lots only.
 
 Index constituents live in `pipeline/universes/*.json`. They refresh
 automatically in the cloud workflow, or locally with
@@ -158,23 +185,30 @@ until every constituent has a sector bucket).
 ```
 pipeline/
   engine/          pure scoring code migrated from ai-portfolio-manager
-  providers/       Yahoo Finance prices + US fundamentals (network I/O)
+  providers/       Yahoo Finance prices, dividends + US fundamentals (network I/O)
   universes/       Nifty 100 / NASDAQ-100 lists, sector buckets, refresher
   india.py, us.py  snapshot builders;  publish.py, cli.py  the command line
+  taxdata.py       tax reference data: SBI TT buying rates, closes, dividends
 scripts/
   make_upi_qr.py   regenerates the "Buy me a coffee" UPI QR image
+  make_sample_export.py  writes the synthetic Fidelity sample export
 site/
   index.html, india/, us/, 404.html
-  tax/             Tax tools → rsu/ → fidelity/ → msft/, orcl/
+  tax/             Tax tools → rsu/ → fidelity/ → msft/ (Schedule FA calculator), orcl/
   assets/css/rupevo.css   design tokens ported from the local dashboard
   assets/js/              core, shell (nav/footer/coffee), ranking, admin,
                           mail (forms → Web3Forms/mailto), request, tax,
-                          fy (financial-year slider + trivia), config
+                          fy (financial-year slider + trivia), config,
+                          fidelity (export parser), schedule-fa (the maths),
+                          rsu-tool (calculator page)
   assets/img/             favicon, UPI QR (svg + png)
-  data/                   published snapshots (written by the pipeline)
-tests/             engine, snapshot, universe, parser, publication-safety and
-                   site-structure (links, assets, QR) tests; tests/js/ holds
-                   Node tests for the financial-year maths
+  assets/samples/         synthetic broker export for "Try with sample data"
+  data/                   published snapshots (written by the pipeline);
+                          data/tax/ holds the calculators' reference data
+tests/             engine, snapshot, universe, parser, publication-safety,
+                   tax-data and site-structure (links, assets, QR) tests;
+                   tests/js/ holds Node tests for the financial-year maths,
+                   the Fidelity parser and the Schedule FA engine
 .github/workflows/ ci.yml · pages.yml (deploy) · refresh-data.yml (refresh + deploy)
 ```
 
@@ -189,6 +223,22 @@ link or asset that does not resolve. Mark email links with
 from `config.js`. Add `data-fy-progress` / `data-trivia` placeholders (see
 any tax page's `fun-grid`) to show the slider and trivia; facts and tax
 dates live in `assets/js/fy.js`.
+
+### The Schedule FA calculator
+
+[site/tax/rsu/fidelity/msft/](site/tax/rsu/fidelity/msft/index.html) loads
+`assets/js/rsu-tool.js` (which also runs `tax.js`). The page's
+`data-company` / `data-broker` attributes pick the entity details, data file
+and sample from the `COMPANIES` / `BROKERS` tables at the top of that file.
+For each lot held during the calendar year it works out: the initial value
+(value at vesting for RSUs; the purchase-day close for ESPP, or the price
+paid); the peak (the highest rupee value on any trading day, so never below
+the closing value); the 31 December value; and dividends paid. Each uses the
+SBI TT buying rate for its date, or the last rate before it. It also
+gives Table A2 for the Fidelity account and the Schedule AL cost. To add a
+company: add its ticker to `TAX_STOCKS` in `pipeline/taxdata.py` and run
+`tax-data`, add an entry to `COMPANIES`, and copy the Microsoft page. Its
+ESPP rules (discount, lookback) may need changes to `classifyLot`.
 
 ---
 
@@ -214,9 +264,9 @@ dates live in `assets/js/fy.js`.
 
 ## Roadmap
 
-* Tax tools: Microsoft RSUs at Fidelity (next), then Oracle — vesting,
-  dividends with foreign tax credit, capital gains and Schedule FA, worked
-  out from the Fidelity reports in the browser.
+* Tax tools for Microsoft at Fidelity: dividends (Schedule OS, FSI and TR
+  with Form 67), then sold shares from "Previously held shares" (capital
+  gains, plus sale proceeds in Schedule FA). Then the same for Oracle.
 * More brokers and companies as people request them.
 * Personal features (watchlists, portfolio analysis) — need sign-in and a
   backend; portfolio import is best done from broker CSV exports or the

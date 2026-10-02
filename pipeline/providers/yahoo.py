@@ -53,9 +53,9 @@ class YahooChart:
         self.http.headers.update({"User-Agent": USER_AGENT,
                                   "Accept": "application/json,text/plain,*/*"})
 
-    def _chart(self, symbol: str, range_: str) -> dict:
+    def _chart(self, symbol: str, range_: str, events: str = "history") -> dict:
         path = "/v8/finance/chart/" + quote(symbol, safe="")
-        params = {"range": range_, "interval": "1d", "events": "history",
+        params = {"range": range_, "interval": "1d", "events": events,
                   "includePrePost": "false"}
         last_err = "no attempt made"
         for attempt in range(self.retries):
@@ -125,13 +125,38 @@ class YahooChart:
                             "volume": v if math.isfinite(v) and v > 0 else 0.0}
 
         candles = [by_date[d] for d in sorted(by_date)]
-        if session and candles:
+        return self._settled(candles, session) if session else candles
+
+    @staticmethod
+    def _settled(candles: list[dict], session: Session) -> list[dict]:
+        if candles:
             local_now = datetime.datetime.now(session.tz)
             settled = (datetime.datetime.combine(local_now.date(), session.close)
                        + datetime.timedelta(minutes=session.settle_minutes)).time()
             if candles[-1]["date"] >= local_now.date() and local_now.time() < settled:
                 candles = candles[:-1]
         return candles
+
+    def dividends(self, symbol: str, range_: str = "10y") -> list[dict]:
+        """Cash dividends as [{"ex": ISO date, "amount": per-share USD}], oldest first.
+
+        Yahoo reports the ex-dividend date (as a US-market timestamp) but not
+        the payment date.
+        """
+        result = self._chart(symbol, range_, events="div")
+        offset = int((result.get("meta") or {}).get("gmtoffset") or 0)
+        out = []
+        for event in ((result.get("events") or {}).get("dividends") or {}).values():
+            try:
+                amount = float(event["amount"])
+                ts = int(event["date"])
+            except (KeyError, TypeError, ValueError):
+                continue
+            if not _finite_positive(amount):
+                continue
+            day = datetime.datetime.fromtimestamp(ts + offset, tz=datetime.timezone.utc).date()
+            out.append({"ex": day.isoformat(), "amount": round(amount, 6)})
+        return sorted(out, key=lambda d: d["ex"])
 
     def usd_inr(self) -> dict:
         """Latest USD->INR rate, or a zero rate when Yahoo is unavailable."""

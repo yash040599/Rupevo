@@ -1,23 +1,26 @@
-# Rebuilds the ranking snapshots, commits them and redeploys the site.
+# Rebuilds the ranking snapshots and the tax tools' reference data, commits
+# them and redeploys the site.
 #
 # Triggered by the admin "Analyse now" button on the website (workflow
-# dispatch through the GitHub API), by "Run workflow" on the Actions tab, or
-# on a schedule if you uncomment it below.
+# dispatch through the GitHub API), by "Run workflow" on the Actions tab, and
+# weekly on a schedule. The weekly run refreshes only the tax data (SBI
+# exchange rates, prices, dividends); rankings stay admin-triggered unless
+# another schedule is added below.
 name: Refresh market data
-run-name: Refresh market data (${{ inputs.market || 'both' }})
+run-name: Refresh market data (${{ github.event_name == 'schedule' && (github.event.schedule == '30 2 * * 1' && 'tax' || 'both') || inputs.market || 'both' }})
 
 on:
   workflow_dispatch:
     inputs:
       market:
-        description: Ranking to refresh
+        description: What to refresh (the tax data is refreshed on every run)
         type: choice
-        options: [both, india, us]
+        options: [both, india, us, tax]
         default: both
-  # Automatic refresh (times are UTC). Uncomment to enable.
-  # schedule:
+  schedule:
+    - cron: "30 2 * * 1"   # Mondays 08:00 IST: tax data only
+  # Any other schedule refreshes both rankings too, for example (UTC):
   #   - cron: "15 11 * * 1-5"   # 16:45 IST, after the NSE close
-  #   - cron: "45 21 * * 1-5"   # after the US close
 
 concurrency:
   group: refresh-data
@@ -35,7 +38,7 @@ jobs:
     outputs:
       changed: ${{ steps.commit.outputs.changed }}
     env:
-      MARKET: ${{ inputs.market || 'both' }}
+      MARKET: ${{ github.event_name == 'schedule' && (github.event.schedule == '30 2 * * 1' && 'tax' || 'both') || inputs.market || 'both' }}
     steps:
       - uses: actions/checkout@v7
 
@@ -49,6 +52,7 @@ jobs:
 
       # US fundamentals are cached for 14 days between runs.
       - name: Restore pipeline cache
+        if: env.MARKET != 'tax'
         uses: actions/cache/restore@v6
         with:
           path: .cache/us_fundamentals.json
@@ -57,25 +61,33 @@ jobs:
 
       # NSE / Nasdaq sometimes block cloud IPs; the checked-in lists are kept then.
       - name: Update index constituents
+        if: env.MARKET != 'tax'
         continue-on-error: true
         run: python -m pipeline universe
 
       - name: Build rankings
         id: refresh
+        if: env.MARKET != 'tax'
         continue-on-error: true
         run: python -m pipeline refresh --market "$MARKET"
 
       - name: Save pipeline cache
-        if: always() && hashFiles('.cache/us_fundamentals.json') != ''
+        if: always() && env.MARKET != 'tax' && hashFiles('.cache/us_fundamentals.json') != ''
         uses: actions/cache/save@v6
         with:
           path: .cache/us_fundamentals.json
           key: pipeline-cache-${{ github.run_id }}
 
-      - name: Check the snapshots are safe to publish
-        run: python -m unittest tests.test_published_data -v
+      # Exchange rates, prices and dividends used by the RSU tax tools.
+      - name: Update tax data
+        id: taxdata
+        continue-on-error: true
+        run: python -m pipeline tax-data
 
-      - name: Commit snapshot
+      - name: Check the data is safe to publish
+        run: python -m unittest tests.test_published_data tests.test_tax_data -v
+
+      - name: Commit data
         id: commit
         run: |
           git config user.name "github-actions[bot]"
@@ -91,10 +103,10 @@ jobs:
           git push origin "HEAD:${GITHUB_REF_NAME}"
           echo "changed=true" >> "$GITHUB_OUTPUT"
 
-      - name: Report a market that could not be refreshed
-        if: steps.refresh.outcome == 'failure'
+      - name: Report data that could not be refreshed
+        if: steps.refresh.outcome == 'failure' || steps.taxdata.outcome == 'failure'
         run: |
-          echo "::error::A market failed to refresh and kept its previous snapshot. See the 'Build rankings' step."
+          echo "::error::Some data failed to refresh and kept its previous version. See the 'Build rankings' and 'Update tax data' steps."
           exit 1
 
   deploy:

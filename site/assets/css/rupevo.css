@@ -551,6 +551,84 @@ html[data-theme="dark"] .coffee-btn { color: #1f1300; }
 .trivia-card .trivia-text { flex: 1; margin: 0; font-size: 14.5px; line-height: 1.6; color: var(--fg); }
 .trivia-card .btn { align-self: flex-start; }
 
+/* ── RSU tools (rsu-tool.js) ───────────────────────────────── */
+.step-card .card-head h2 { display: flex; gap: 10px; align-items: center; }
+.step-num { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%;
+            background: var(--accent); color: var(--accent-fg); font-size: 12.5px; letter-spacing: 0; }
+.step-grid { display: grid; gap: 18px; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); align-items: start; }
+.how-list { margin: 0; padding-left: 20px; display: grid; gap: 8px; color: var(--fg-2); font-size: 14px; }
+.how-list strong { color: var(--fg); }
+
+.mock-window { border: 1px solid var(--line-strong); border-radius: 12px; background: var(--card-2);
+               box-shadow: var(--shadow-md); padding: 12px 14px 10px; font-size: 12px; color: var(--fg-2);
+               overflow: hidden; }
+.mock-title { display: flex; justify-content: space-between; font-weight: 800; color: var(--fg); margin-bottom: 8px; }
+.mock-bar { display: flex; gap: 14px; align-items: center; border-bottom: 1px solid var(--line); padding-bottom: 6px; }
+.mock-bar .on { font-weight: 700; color: var(--fg); border-bottom: 3px solid #368727; padding-bottom: 4px; margin-bottom: -7px; }
+.mock-bar .end { margin-left: auto; }
+.mock-cur { display: flex; gap: 12px; margin: 8px 0; }
+.mock-hl { position: relative; padding: 1px 6px; border-radius: 6px; outline: 2px solid var(--warn-fg);
+           outline-offset: 1px; font-weight: 700; color: var(--fg); }
+.mock-hl[data-n]::after { content: attr(data-n); position: absolute; top: -10px; right: -12px; width: 17px; height: 17px;
+                          border-radius: 50%; background: var(--warn-fg); color: #fff; font-size: 10.5px;
+                          display: grid; place-items: center; font-weight: 800; }
+.mock-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.mock-table th, .mock-table td { text-align: left; padding: 4px 6px; border-bottom: 1px solid var(--line); }
+.mock-table th { color: var(--muted); font-weight: 600; }
+.mock-caption { margin-top: 6px; font-size: 11px; color: var(--faint); text-align: right; }
+
+.dropzone { position: relative; cursor: pointer; display: grid; place-items: center; gap: 8px; text-align: center;
+            padding: 26px 16px; border: 2px dashed var(--line-strong); border-radius: var(--radius);
+            background: var(--card-2); color: var(--fg-2); transition: border-color .12s ease, background .12s ease; }
+.dropzone.drag, .dropzone:focus-within { border-color: var(--accent); background: var(--accent-soft); }
+.dropzone .big { font-size: 15px; font-weight: 700; color: var(--fg); }
+.dropzone input[type="file"] { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.load-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.privacy-note { display: flex; gap: 8px; align-items: flex-start; margin: 12px 0 0; font-size: 12.5px; color: var(--fg-2); }
+
+.controls-row { display: flex; gap: 16px 24px; flex-wrap: wrap; align-items: flex-end; }
+.controls-row .field { min-width: min(100%, 360px); max-width: 100%; grid-template-columns: minmax(0, 1fr); }
+.controls-row .field select { width: 100%; text-overflow: ellipsis; }
+.radio-row { display: flex; gap: 6px 16px; flex-wrap: wrap; font-size: 13px; color: var(--fg-2); }
+.radio-row label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+
+.fixed-fields { display: grid; gap: 8px 18px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+                margin: 6px 0 14px; }
+.fixed-fields > div { display: grid; gap: 2px; padding: 8px 10px; border: 1px solid var(--line);
+                      border-radius: var(--radius-sm); background: var(--card-2); }
+.fixed-fields dt { font-size: 11.5px; font-weight: 700; color: var(--muted); }
+.fixed-fields dd { margin: 0; font-size: 13.5px; color: var(--fg); display: flex; gap: 8px;
+                   align-items: center; justify-content: space-between; }
+.fixed-fields .hint { font-size: 12px; color: var(--muted); font-weight: 400; }
+
+button.copy-val { font: inherit; font-variant-numeric: tabular-nums; cursor: copy; color: inherit;
+                  background: none; border: 1px dashed transparent; border-radius: 6px; padding: 1px 5px;
+                  margin: -2px -5px; text-align: inherit; }
+button.copy-val:hover, button.copy-val:focus-visible { border-color: var(--accent-line); background: var(--accent-soft); }
+button.copy-val.copied { border-color: var(--pos-line); background: var(--pos-bg); color: var(--pos); }
+.copy-mini { font-size: 11px; padding: 2px 8px; }
+
+table.fa { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+table.fa th, table.fa td { padding: 8px; border-bottom: 1px solid var(--line); text-align: right; vertical-align: top; }
+table.fa th { font-size: 11.5px; color: var(--muted); background: var(--card-2); font-weight: 700; line-height: 1.3; }
+table.fa th:first-child, table.fa td:first-child, table.fa th.left, table.fa td.left { text-align: left; }
+table.fa td.lotcell { white-space: nowrap; }
+table.fa .sub { display: block; font-size: 11.5px; color: var(--muted); font-weight: 400; }
+table.fa tfoot td { font-weight: 800; background: var(--card-2); }
+table.fa tr.working > td { text-align: left; background: var(--card-2); }
+.table-scroll > table.fa { min-width: 860px; }
+.type-badge { display: inline-block; padding: 0 6px; margin-right: 4px; border-radius: 5px; font-size: 10.5px;
+              font-weight: 800; letter-spacing: .03em; background: var(--accent-soft); color: var(--accent); }
+.type-badge.espp { background: var(--pos-bg); color: var(--pos); }
+.working-list { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 12.5px; color: var(--fg-2); }
+.rate-input { width: 120px; padding: 4px 6px !important; font-size: 12px !important; }
+
+.result-head { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+.amount-rows { display: grid; gap: 6px; margin-top: 6px; }
+.amount-rows > div { display: flex; gap: 10px; justify-content: space-between; padding: 8px 10px;
+                     border: 1px solid var(--line); border-radius: var(--radius-sm); font-size: 13.5px; }
+.check-list { margin: 0; padding-left: 20px; display: grid; gap: 8px; color: var(--fg-2); font-size: 13.5px; }
+
 /* ── Dialogs and toasts ─────────────────────────────────── */
 dialog.modal {
   width: min(520px, calc(100vw - 32px)); padding: 0; border: 1px solid var(--line);
@@ -609,6 +687,7 @@ dialog.modal::backdrop { background: rgba(8, 12, 24, .6); }
   .fun-grid { grid-template-columns: 1fr; }
   .fy-big { font-size: 20px; }
   .fy-big .fy-pct { font-size: 28px; }
+  .step-grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 560px) {

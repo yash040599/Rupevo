@@ -3,19 +3,19 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Microsoft RSUs at Fidelity — Indian tax guide — Rupevo</title>
-  <meta name="description" content="How to report Microsoft (MSFT) RSUs held at Fidelity in an Indian income-tax return: vesting, dividends, sales and Schedule FA. Guide in progress.">
+  <title>Microsoft RSUs at Fidelity: Schedule FA calculator — Rupevo</title>
+  <meta name="description" content="Fill Schedule FA for Microsoft RSU and ESPP shares held at Fidelity: one row per lot with initial, peak and closing values and dividends, converted at SBI TT buying rates. Runs in your browser.">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://api.github.com https://api.web3forms.com; base-uri 'self'; form-action 'self'; object-src 'none'">
-  <meta property="og:title" content="Microsoft RSUs at Fidelity — Indian tax guide — Rupevo">
-  <meta property="og:description" content="Report Microsoft RSUs held at Fidelity in your Indian ITR.">
+  <meta property="og:title" content="Microsoft RSUs at Fidelity: Schedule FA calculator — Rupevo">
+  <meta property="og:description" content="Turn your Fidelity export into Schedule FA rows for your Indian ITR.">
   <link rel="icon" href="../../../../assets/img/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="../../../../assets/css/rupevo.css">
   <script src="../../../../assets/js/boot.js"></script>
-  <script type="module" src="../../../../assets/js/tax.js"></script>
+  <script type="module" src="../../../../assets/js/rsu-tool.js"></script>
 </head>
 <body>
   <header id="site-nav"></header>
-  <main id="app" class="wrap">
+  <main id="app" class="wrap" data-company="MSFT" data-broker="fidelity">
     <nav class="crumbs" aria-label="Breadcrumb">
       <a href="../../../">Tax tools</a><span class="sep" aria-hidden="true">›</span>
       <a href="../../">RSU taxation</a><span class="sep" aria-hidden="true">›</span>
@@ -25,25 +25,120 @@
     <section class="hero">
       <div class="eyebrow">Fidelity · NASDAQ: MSFT</div>
       <h1>Microsoft RSUs at Fidelity</h1>
-      <p class="lede">A step-by-step guide to reporting Microsoft RSUs held at Fidelity in your
-        Indian income-tax return.</p>
+      <p class="lede">Declare your Microsoft shares in your Indian income-tax return. Load your
+        Fidelity export and get the Schedule FA rows to type in, one per lot: RSU vests and ESPP
+        purchases, with every value converted at SBI's TT buying rate.</p>
+      <div class="result-head">
+        <span class="chip pos"><span class="dot"></span>Now: foreign assets (Schedule FA)</span>
+        <span class="chip">Next: dividends · shares you sold</span>
+      </div>
     </section>
 
-    <div class="banner warn"><strong>In progress.</strong> This guide is being built and will be
-      published here soon.</div>
+    <section class="card step-card" aria-labelledby="step1">
+      <div class="card-head"><h2 id="step1"><span class="step-num">1</span>Export your shares from Fidelity</h2></div>
+      <div class="step-grid">
+        <ol class="how-list">
+          <li>Sign in to <strong>NetBenefits</strong> and open your <strong>Stock Plan Account</strong>.</li>
+          <li>Under <strong>Owned assets</strong>, find <strong>MICROSOFT CORP</strong> and click
+            <strong>View share details</strong>, just below the quantity.</li>
+          <li>In the window that opens, stay on <strong>Current shares</strong> and choose
+            <strong>Asset currency</strong>, so values are in US dollars rather than converted to rupees.</li>
+          <li>Click <strong>Export</strong> at the top right. Your browser saves
+            <strong>View open lots.csv</strong>.</li>
+        </ol>
+        <figure class="mock-window" aria-label="Illustration of Fidelity's share details window with sample numbers">
+          <div class="mock-title"><span>MICROSOFT CORP (MSFT)</span><span aria-hidden="true">✕</span></div>
+          <div class="mock-bar"><span class="on">Current shares</span><span>Previously held shares</span>
+            <span class="end mock-hl" data-n="4">⤓ Export</span></div>
+          <div class="mock-cur"><span>Display currency</span><span class="mock-hl" data-n="3">Asset currency</span></div>
+          <table class="mock-table">
+            <tr><th>Date acquired</th><th>Quantity</th><th>Cost basis</th><th>Grant date</th><th>Share source</th></tr>
+            <tr><td>Sep-30-2026</td><td>0.5000</td><td>$230.81</td><td>Jul-01-2026</td><td>SP</td></tr>
+            <tr><td>Aug-17-2026</td><td>5.0000</td><td>$2,401.75</td><td>n/a</td><td>DO</td></tr>
+          </table>
+          <figcaption class="mock-caption">Illustration · sample numbers</figcaption>
+        </figure>
+      </div>
+      <p class="small muted" style="margin:12px 0 0">This file lists the shares you still hold. Shares you
+        sold are under <strong>Previously held shares</strong>; support for them, and for the capital gains,
+        is coming next.</p>
+    </section>
+
+    <section class="card step-card" aria-labelledby="step2">
+      <div class="card-head"><h2 id="step2"><span class="step-num">2</span>Load the file</h2></div>
+      <label class="dropzone" id="dropzone">
+        <span class="big">Drop <em>View open lots.csv</em> here</span>
+        <span class="load-actions">
+          <span class="btn">Choose file…</span>
+          <button class="btn alt" type="button" id="sample-btn">Try with sample data</button>
+        </span>
+        <input type="file" id="file-input" accept=".csv,text/csv">
+      </label>
+      <p class="privacy-note"><span aria-hidden="true">🔒</span><span>Your file is read on your own device.
+        It is not uploaded, sent anywhere or saved; closing the page clears it.</span></p>
+      <div id="load-status" role="status" aria-live="polite"></div>
+    </section>
+
+    <section class="card step-card" aria-labelledby="step3" id="step3-card" hidden>
+      <div class="card-head"><h2 id="step3"><span class="step-num">3</span>Choose the return</h2></div>
+      <div class="controls-row">
+        <label class="field">Return you are filing
+          <select id="year-select"></select>
+        </label>
+        <fieldset class="radio-row" style="border:0;padding:0;margin:0">
+          <legend class="small muted" style="padding:0;margin-bottom:4px">ESPP shares: initial value at</legend>
+          <label><input type="radio" name="espp-basis" value="fmv" checked> market price on the purchase day
+            (recommended)</label>
+          <label><input type="radio" name="espp-basis" value="paid"> the price you paid</label>
+        </fieldset>
+      </div>
+      <p class="small muted" id="year-note" style="margin:10px 0 0"></p>
+    </section>
+
+    <div id="results" hidden></div>
 
     <section class="card">
-      <div class="card-head"><h2>What it will cover</h2></div>
-      <ol class="status-steps">
-        <li>Which Fidelity reports to download — vesting, dividend and sale history — and what each is for.</li>
-        <li>Vesting: matching each vest to the salary perquisite in your Form 16.</li>
-        <li>Dividends: the income to report, the US tax withheld, and the foreign tax credit (Form 67, Schedules FSI and TR).</li>
-        <li>Sales: short- and long-term capital gains, converted to rupees.</li>
-        <li>Schedule FA: the values to report for the calendar year.</li>
-      </ol>
+      <details class="fold">
+        <summary><h2>How the numbers are worked out</h2></summary>
+        <div class="prose">
+          <p><strong>Which year.</strong> Schedule FA lists foreign assets held at any time in the
+            <em>calendar</em> year that starts in the return's financial year: the return for FY 2025-26
+            covers 1 January – 31 December 2025. Shares acquired from January to March appear in the
+            following year's Schedule FA.</p>
+          <p><strong>Exchange rate.</strong> Every rupee value uses the State Bank of India telegraphic
+            transfer (TT) buying rate for the relevant date, as the ITR instructions require. On weekends and
+            bank holidays the last rate SBI published before that date is used, and if SBI revised a rate
+            during the day, its first rate of the day. The rates come from SBI's daily forex card rates,
+            archived since January 2020 by the open-source
+            <a href="https://github.com/sahilgupta/sbi-fx-ratekeeper" target="_blank" rel="noopener">sbi-fx-ratekeeper</a>.</p>
+          <p><strong>Initial value.</strong> Shares × value per share on the acquisition date × the rate that
+            day. For RSUs the value per share is the cost basis in your export: the market value at vesting,
+            taxed as salary through your payslip. For ESPP purchases it is that day's closing price, because the
+            10% discount is also taxed as salary; you can switch to the price you paid.</p>
+          <p><strong>Peak value.</strong> For each lot, the highest value in rupees on any trading day from
+            1 January (or its acquisition date, if later) to 31 December: shares × that day's closing price ×
+            that day's rate. The rupee moves too, so this can be a different day from the highest dollar price.
+            It is never below the closing value, nor, for shares acquired during the year, below the initial
+            value. Table A2's peak balance is worked out the same way for all the lots together.</p>
+          <p><strong>Closing value.</strong> The closing price on 31 December (or the last trading day before
+            it) × shares, at the rate on 31 December. While the year is still running, the latest closing price
+            and rate are used and the values are marked provisional.</p>
+          <p><strong>Amount paid or credited.</strong> Microsoft's cash dividends paid during the year on the
+            lot's shares, if the lot was acquired before the ex-dividend date. The amounts are gross, before the
+            US tax withheld, and converted at the rate on the payment date.</p>
+          <p><strong>Sale proceeds.</strong> Zero here, because this export holds only shares you still own.</p>
+          <p><strong>One row per lot.</strong> Some guides combine all lots of a company into one row. A row
+            per vest or purchase gives the date of acquisition the form asks for, and is the more detailed
+            choice.</p>
+          <p><strong>Data.</strong> Prices are Yahoo Finance daily closes, and dividend dates and amounts come
+            from Nasdaq. Both are refreshed weekly. Values are rounded to whole rupees, as the e-filing portal
+            requires.</p>
+        </div>
+      </details>
     </section>
+
     <div class="callout">
-      <p>Questions, or want to help test the guide? Contact me at
+      <p>Spotted a problem, or want to help test the guide? Contact me at
         <a data-contact data-contact-subject="Rupevo RSU tax: Microsoft at Fidelity"></a>.</p>
     </div>
 
@@ -56,9 +151,9 @@
       </aside>
     </div>
 
-    <div class="banner">General information for Indian residents, for returns for FY 2025-26 under the
-      Income-tax Act, 1961. Not tax advice — verify with a chartered accountant before filing.</div>
-    <noscript><div class="banner warn">Some parts of this site need JavaScript.</div></noscript>
+    <div class="banner">General information for Indian residents, not tax advice. Check the figures against
+      your own records and with a chartered accountant before filing.</div>
+    <noscript><div class="banner warn">This calculator needs JavaScript.</div></noscript>
   </main>
   <footer id="site-footer"></footer>
 </body>
