@@ -1562,3 +1562,8 @@ loadData().then((data) => {
   els.tool.querySelector('#div-history').innerHTML = `<div class="banner warn" style="margin:0">Could not load
     ${esc(company.short)}'s dividend history (${esc(err.message)}).</div>`;
 });
+// Files picked before this script ran (on a slow connection) are still in the input: use them.
+if (els.file.files?.length) {
+  useFiles(els.file.files);
+  els.file.value = '';
+}
