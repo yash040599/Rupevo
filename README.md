@@ -113,22 +113,24 @@ is not replaced.
    * Choose an expiry (for example 90 days) and paste it into the site's
      **Admin** panel. It is kept only in that browser and sent only to
      `api.github.com`; *Forget token* removes it.
-4. **Emails from the site (Web3Forms)** — *recommended*. The site is static,
-   so it cannot send email by itself; [Web3Forms](https://web3forms.com) is a
-   free relay that forwards the site's *Request refresh* and *Request a
-   company* forms to your inbox. Without it those buttons still work, but
-   they open the **visitor's** email app with a pre-filled message, and many
-   visitors will not finish sending it.
-   1. Open <https://web3forms.com>, choose **Create your Access Key**, enter
-      `yash040599@gmail.com` and submit.
-   2. Copy the access key (a long ID like `xxxxxxxx-xxxx-…`) from the email
-      Web3Forms sends you (check spam if it doesn't arrive).
+4. **Emails from the site (Web3Forms)** — done. The site is static, so it
+   cannot send email by itself; [Web3Forms](https://web3forms.com) is a free
+   relay that forwards the site's *Request refresh* and *Request a company*
+   forms to your inbox (without a key, those buttons fall back to opening the
+   **visitor's** email app with a pre-filled message, which many visitors do
+   not finish sending). To set it up again or change the key:
+   1. On <https://web3forms.com> choose **Create your Form — Free**, sign up
+      with `yash040599@gmail.com` and verify the email.
+   2. Create the form: name `Rupevo website`, website URL
+      `yash040599.github.io/Rupevo`. The next screen shows the access key
+      (a long ID like `xxxxxxxx-xxxx-…`).
    3. Paste it into `web3formsKey: '…'` in
       [site/assets/js/config.js](site/assets/js/config.js), commit and push —
       the site redeploys by itself.
    4. Test it: on the live site click *Request refresh* (or *Request a
       company* on the Fidelity page) and send; the email arrives within a
-      minute.
+      minute (the first time, check Gmail's Promotions or Spam folder and
+      mark it "Not spam").
 
    The key is public by design (it can only email you). Free plan: 250
    emails/month, spam filtering included. Domain locking is a paid feature

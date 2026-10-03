@@ -12,11 +12,11 @@ export const SITE = {
     workflow: 'refresh-data.yml',
   },
 
-  // Refresh requests are delivered by Web3Forms (https://web3forms.com).
-  // Paste the access key emailed to the maintainer to enable in-page sending.
-  // Web3Forms keys are designed to be public: a key can only email its owner.
-  // While empty, the request forms fall back to a pre-filled mailto: link.
-  web3formsKey: '',
+  // Request forms (refresh, new company) are delivered by Web3Forms
+  // (https://web3forms.com) to the maintainer's inbox. Web3Forms keys are
+  // designed to be public: a key can only email its owner. Without a key, the
+  // forms fall back to a pre-filled mailto: link.
+  web3formsKey: 'f026d978-2db9-43c5-a3f9-3905e89f53f4',
 
   // Assembled at runtime so the address is not sitting in the HTML for scrapers.
   contact: { user: 'yash040599', domain: 'gmail.com' },
