@@ -1,9 +1,11 @@
-// Landing page: links to the rankings with their latest sync status.
+// Landing page: links to the rankings with their latest sync status, and a story from market history.
 import { ago, dataUrl, esc, istDateTime, loadJSON } from './core.js';
 import { renderShell } from './shell.js';
+import { pageSeed, renderTrivia } from './trivia.js';
 import { composeView, US_LISTS } from './us-lists.js';
 
 renderShell('home', { showCurrency: false });
+document.querySelectorAll('[data-trivia]').forEach((el) => renderTrivia(el, { seed: pageSeed(), pool: el.dataset.trivia || 'market' }));
 
 function showMeta(market, snap, extra = '') {
   const meta = document.querySelector(`[data-meta="${market}"]`);

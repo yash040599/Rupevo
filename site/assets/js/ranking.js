@@ -8,6 +8,7 @@ import {
 import { renderShell, showFx, syncCurrencyToggle } from './shell.js';
 import { isAdmin, startRefresh } from './admin.js';
 import { openRequestModal } from './request.js';
+import { pageSeed, renderTrivia } from './trivia.js';
 import {
   composeView, findElsewhere, matchesQuery, quoteLinks, US_LISTS, US_VIEWS, viewFromHash, viewOf,
 } from './us-lists.js';
@@ -524,6 +525,7 @@ export async function start(marketKey) {
   renderShell(marketKey, { onAdminRefreshed: () => reload(true) });
   currency.configure(M.native, 0);
   syncCurrencyToggle();
+  document.querySelectorAll('[data-trivia]').forEach((el) => renderTrivia(el, { seed: pageSeed(), pool: el.dataset.trivia || 'market' }));
 
   const els = {
     views: app.querySelector('#views'),

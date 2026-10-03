@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-  dateOfIndex, dayIndexOf, financialYear, fmtDay, fyEvents, istWallClock, percentDone, quip, triviaFacts,
+  dateOfIndex, dayIndexOf, financialYear, fmtDay, fyEvents, istWallClock, percentDone, quip,
 } from '../../site/assets/js/fy.js';
 
 const at = (iso) => new Date(iso);
@@ -78,11 +78,4 @@ test('quips: deadline reminders win, then progress milestones', () => {
   assert.match(quip(52, dec15, 74), /halfway/);
   assert.match(quip(3, null, Infinity), /brand-new/);
   assert.match(quip(99, null, Infinity), /31 March/);
-});
-
-test('trivia mentions the current financial year where it is year-specific', () => {
-  const fy = financialYear(istWallClock(at('2026-10-02T06:00:00Z')));
-  const facts = triviaFacts(fy);
-  assert.ok(facts.length >= 8);
-  assert.ok(facts.some((f) => f.includes('FY 2026-27') && f.includes('February 2027')));
 });

@@ -1,17 +1,17 @@
 // Tax section pages: shared chrome, the financial-year slider and trivia, and
 // the "request a company" form.
 import { esc } from './core.js';
-import { renderFyProgress, renderTrivia } from './fy.js';
+import { renderFyProgress } from './fy.js';
 import { openContactModal } from './mail.js';
 import { renderShell } from './shell.js';
+import { pageSeed, renderTrivia } from './trivia.js';
 
 renderShell('tax', { showCurrency: false });
 
-// Different pages start on different facts, so moving between steps of the
-// flow shows something new.
-const pageSeed = [...window.location.pathname].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 9973, 7);
+// Different pages start on different items, so moving between steps of the
+// flow shows something new. Tax pages mix tax facts with market stories.
 document.querySelectorAll('[data-fy-progress]').forEach((el) => renderFyProgress(el));
-document.querySelectorAll('[data-trivia]').forEach((el) => renderTrivia(el, { seed: pageSeed }));
+document.querySelectorAll('[data-trivia]').forEach((el) => renderTrivia(el, { seed: pageSeed(), pool: el.dataset.trivia || 'all' }));
 
 function openCompanyRequest(broker) {
   openContactModal({

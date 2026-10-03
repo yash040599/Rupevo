@@ -1,5 +1,5 @@
-// Fun widgets for the tax pages: an interactive "how far through India's
-// financial year are we" slider, and a rotating "Did you know?" card.
+// Fun widget for the tax pages: an interactive "how far through India's
+// financial year are we" slider. (The "Did you know?" card is in trivia.js.)
 // The date maths is exported (and unit-tested in tests/js/fy.test.mjs).
 import { esc } from './core.js';
 
@@ -188,44 +188,4 @@ export function renderFyProgress(host) {
       view.refresh();
     }
   }, 60000);
-}
-
-/** Short facts for the "Did you know?" card. */
-export function triviaFacts(fy) {
-  return [
-    'India\'s financial year has run from April to March since 1867, when it was aligned with the British government\'s financial year. Before that it ran from May to April.',
-    'Income tax first came to India in 1860, introduced by James Wilson to repair the government\'s finances after the 1857 uprising. 24 July is celebrated as Income Tax Day.',
-    'From 1 April 2026 the Income-tax Act, 2025 replaced the Income-tax Act, 1961 after more than six decades. Its single "tax year" replaces the old pair of "previous year" and "assessment year".',
-    `The US tax year is the calendar year, while India's runs April to March. A dividend paid in February ${fy.endYear} falls in US tax year ${fy.endYear} but in India's ${fy.label}.`,
-    'In the return for FY 2025-26, foreign assets go into Schedule FA for the calendar year (January–December 2025), not for April–March.',
-    'An RSU is taxed in two stages in India: its value when it vests counts as salary, and any rise after vesting is a capital gain when you sell.',
-    'Shares listed in India become long-term after 12 months, but foreign shares such as US RSUs need to be held for more than 24 months.',
-    'The fourth character of a PAN shows who holds it: "P" for an individual, "C" for a company and "H" for a Hindu undivided family.',
-    'If your tax for the year after TDS is ₹10,000 or more, you pay advance tax in instalments: 15% by 15 June, 45% by 15 September, 75% by 15 December and all of it by 15 March.',
-    'Under the India–US tax treaty, US tax withheld on dividends is usually 25% for Indian residents with a W-8BEN on file, instead of the default 30%.',
-  ];
-}
-
-/** Render a rotating "Did you know?" card. `seed` varies the starting fact per page. */
-export function renderTrivia(host, { seed = 0 } = {}) {
-  const ist = istWallClock();
-  const fy = financialYear(ist);
-  const facts = triviaFacts(fy);
-  let i = (((dayIndexOf(fy, ist.getTime()) + seed) % facts.length) + facts.length) % facts.length;
-  host.innerHTML = `
-    <div class="card-head"><h2><span aria-hidden="true">💡</span> Did you know?</h2>
-      <span class="spacer"></span><span class="hint trivia-count"></span></div>
-    <p class="trivia-text" aria-live="polite"></p>
-    <button class="btn alt small" type="button">Another fact →</button>`;
-  const text = host.querySelector('.trivia-text');
-  const count = host.querySelector('.trivia-count');
-  const showFact = () => {
-    text.textContent = facts[i];
-    count.textContent = `${i + 1} / ${facts.length}`;
-  };
-  host.querySelector('button').addEventListener('click', () => {
-    i = (i + 1) % facts.length;
-    showFact();
-  });
-  showFact();
 }

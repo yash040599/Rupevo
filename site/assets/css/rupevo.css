@@ -511,8 +511,9 @@ html[data-theme="dark"] .coffee-btn { color: #1f1300; }
 .contact-form { display: grid; gap: 12px; }
 .status-steps { margin: 0; padding-left: 20px; display: grid; gap: 6px; color: var(--fg-2); }
 
-/* ── Tax pages: financial-year slider + trivia (fy.js) ─────── */
-.fun-grid { display: grid; gap: 16px; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); margin: 18px 0; }
+/* ── Tax pages: financial-year slider (fy.js) ──────────────── */
+/* The slider with the "Did you know?" card below it. */
+.fun-grid { display: grid; gap: 16px; margin: 18px 0; }
 .fun-grid > .card { margin: 0; }
 
 .fy-card { --thumb: 24px; --rail-top: 32px; display: grid; gap: 12px; align-content: start; }
@@ -580,11 +581,27 @@ html[data-theme="dark"] .coffee-btn { color: #1f1300; }
 .fy-readout .sep { color: var(--faint); }
 .fy-quip { margin: 0; font-size: 14px; font-weight: 600; color: var(--fg); }
 
+/* "Did you know?" card (trivia.js): tax pages, home and ranking pages. Full width; on wide
+   screens the story and its takeaway sit side by side. */
 .trivia-card { display: flex; flex-direction: column; gap: 10px;
                background: linear-gradient(160deg, var(--accent-soft), var(--card) 70%); }
 .trivia-card .card-head { margin-bottom: 0; }
-.trivia-card .trivia-text { flex: 1; margin: 0; font-size: 14.5px; line-height: 1.6; color: var(--fg); }
-.trivia-card .btn { align-self: flex-start; }
+.trivia-card .trivia-count { font-variant-numeric: tabular-nums; }
+.trivia-body { flex: 1; display: grid; gap: 10px; align-items: start; }
+.trivia-main { display: grid; gap: 6px; }
+.trivia-tag { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.trivia-card .trivia-title { margin: 0; font-size: 16.5px; font-weight: 800; letter-spacing: -.01em; line-height: 1.3; color: var(--fg); }
+.trivia-card .trivia-text { margin: 0; font-size: 14.5px; line-height: 1.6; color: var(--fg); }
+.trivia-takeaway { margin: 0; padding: 8px 12px; border-left: 3px solid var(--pos);
+                   border-radius: 0 8px 8px 0; background: var(--pos-bg);
+                   font-size: 13.5px; line-height: 1.55; color: var(--fg); }
+.trivia-takeaway strong { display: block; margin-bottom: 2px; font-size: 11px; font-weight: 800;
+                          letter-spacing: .07em; text-transform: uppercase; color: var(--pos); }
+.trivia-nav { display: flex; gap: 8px; flex-wrap: wrap; }
+@media (min-width: 861px) {
+  .trivia-body { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); column-gap: 28px; }
+  .trivia-takeaway { margin-top: 21px; }
+}
 
 /* ── RSU tools (rsu-tool.js) ───────────────────────────────── */
 .step-card .card-head h2 { display: flex; gap: 10px; align-items: center; }
@@ -789,7 +806,6 @@ dialog.modal::backdrop { background: rgba(8, 12, 24, .6); }
 }
 
 @media (max-width: 860px) {
-  .fun-grid { grid-template-columns: 1fr; }
   .fy-big { font-size: 20px; }
   .fy-big .fy-pct { font-size: 28px; }
   .step-grid { grid-template-columns: 1fr; }

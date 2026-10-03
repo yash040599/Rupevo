@@ -13,12 +13,18 @@ Live site: **https://yash040599.github.io/Rupevo/**
 |---|---|---|
 | [Nifty 100 Ranking](site/india/index.html) | Technical setups, technical score (A–D), risk grade, 52-week dips, sector strength | Migrated from the ai-portfolio-manager swing scanner |
 | [US Stock Ranking](site/us/index.html) | Six-pillar long-term scorecard (quality, valuation vs sector, growth, momentum, balance sheet, risk) for two lists: the **NASDAQ-100** and the **NYSE top 100** (the 100 largest US companies listed on the NYSE, e.g. Oracle, Uber, JPMorgan). A switch shows **All US** (both lists ranked together), **NASDAQ-100** or **NYSE top 100**; search covers the lists in view, and searching one exchange for a company on the other says where it is | Migrated from the ai-portfolio-manager US long-term scorer |
-| [Tax tools](site/tax/index.html) | RSU taxation → broker (Fidelity) → company (**Microsoft, Oracle**). Load Fidelity's *View open lots* CSV (shares held) and, if you sold any, *View closed lots* (Previously held shares); the company page has three tabs: **Foreign assets** (Schedule FA Table A2 for the Fidelity account and A3 with one row per RSU vest and ESPP purchase, including lots sold during the year with their proceeds, plus the Schedule AL cost), **Selling shares** (capital gains under India's 24-month rule: Schedule CG A5/B8, gains by date of sale, and the Schedule FSI row) and **Dividends** (the payments the shares received in the financial year, Schedule OS with its quarterly breakup, Schedule FSI, Schedule TR and the Form 67 fields with its deadline, plus the company's dividend history). Sold shares change Schedule FA and the dividends too, so those tabs ask for both exports unless nothing was ever sold. Visitors can request another company. Every tax page has an interactive "how far through the financial year are we" slider (advance-tax and ITR dates marked) and rotating tax trivia | Runs in the browser: the user's files are never uploaded. Uses published SBI TT buying rates, closes and dividends (`site/data/tax/`, refreshed weekly) |
+| [Tax tools](site/tax/index.html) | RSU taxation → broker (Fidelity) → company (**Microsoft, Oracle**). Load Fidelity's *View open lots* CSV (shares held) and, if you sold any, *View closed lots* (Previously held shares); the company page has three tabs: **Foreign assets** (Schedule FA Table A2 for the Fidelity account and A3 with one row per RSU vest and ESPP purchase, including lots sold during the year with their proceeds, plus the Schedule AL cost), **Selling shares** (capital gains under India's 24-month rule: Schedule CG A5/B8, gains by date of sale, and the Schedule FSI row) and **Dividends** (the payments the shares received in the financial year, Schedule OS with its quarterly breakup, Schedule FSI, Schedule TR and the Form 67 fields with its deadline, plus the company's dividend history). Sold shares change Schedule FA and the dividends too, so those tabs ask for both exports unless nothing was ever sold. Visitors can request another company. Every tax page has an interactive "how far through the financial year are we" slider (advance-tax and ITR dates marked) and a "Did you know?" card mixing tax facts with stories from market history | Runs in the browser: the user's files are never uploaded. Uses published SBI TT buying rates, closes and dividends (`site/data/tax/`, refreshed weekly) |
 
 Every page has light/dark theme, a **Buy me a coffee** button (in the top
 bar, a floating ☕ on phones once the bar scrolls away, and the footer) and a
 disclaimer. Ranking pages add a USD/INR toggle, a "last synced" indicator, a
 **Request refresh** button and collapsible sections. No login is needed.
+
+The home, ranking and tax pages end with a **Did you know?** card: true stories
+from market history (Indian and world: crashes, scams, bubbles, famous bets,
+quick maths) with a takeaway for ordinary investors, mixed with tax facts on the
+tax pages. Each page starts on a different story, the start moves on every day,
+and ← / → step through the rest.
 
 ---
 
@@ -219,7 +225,8 @@ site/
                           device, ranking (+ us-lists: the US page's
                           NASDAQ/NYSE views), admin,
                           mail (forms → Web3Forms/mailto), request, tax,
-                          fy (financial-year slider + trivia), config,
+                          fy (financial-year slider), trivia (the
+                          "Did you know?" stories and facts), config,
                           fidelity (export parser), schedule-fa,
                           dividends and capital-gains (the maths),
                           rsu-tool (company pages)
@@ -229,7 +236,7 @@ site/
 tests/             engine, snapshot, universe, parser, publication-safety,
                    tax-data and site-structure (links, assets, QR) tests;
                    tests/js/ holds Node tests for the financial-year maths,
-                   the Fidelity parser, the Schedule FA, dividend and capital
+                   the trivia content, the Fidelity parser, the Schedule FA, dividend and capital
                    gains engines, the US list views and phone detection;
                    tests/fixtures/ the synthetic exports
 .github/workflows/ ci.yml · pages.yml (deploy) · refresh-data.yml (refresh + deploy)
@@ -244,8 +251,20 @@ links and breadcrumbs, and run the tests — `tests/test_site.py` fails on any
 link or asset that does not resolve. Mark email links with
 `<a data-contact data-contact-subject="…">` and the address is filled in
 from `config.js`. Add `data-fy-progress` / `data-trivia` placeholders (see
-any tax page's `fun-grid`) to show the slider and trivia; facts and tax
-dates live in `assets/js/fy.js`.
+any tax page's `fun-grid`) to show the slider and trivia; tax dates live in
+`assets/js/fy.js`.
+
+### Adding a "Did you know?" story
+
+Stories and tax facts live in [site/assets/js/trivia.js](site/assets/js/trivia.js)
+(`MARKET_STORIES` and `taxTrivia`). Each has an `id`, a `tag` (World, India,
+Quick maths or Tax), an optional `year`, a `title`, the `story` and a
+`takeaway`. Keep it true and checkable (dates, numbers, names), the story
+under about 450 characters, plain text (it is shown as text, not HTML), and
+the takeaway general — never a tip on a particular stock. Avoid putting two
+Indian stories next to each other. `data-trivia="market"` shows only the
+stories (home and ranking pages); `data-trivia` alone mixes in the tax facts.
+`tests/js/trivia.test.mjs` checks the format, lengths and ordering.
 
 ### The company tax pages
 
