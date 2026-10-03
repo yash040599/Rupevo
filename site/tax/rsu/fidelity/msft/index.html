@@ -26,12 +26,12 @@
       <div class="eyebrow">Fidelity · NASDAQ: MSFT</div>
       <h1>Microsoft shares at Fidelity</h1>
       <p class="lede">Your Indian income-tax return for Microsoft RSUs and ESPP shares held at Fidelity. Load your
-        Fidelity exports once and get, at SBI's TT buying rates, the Schedule FA rows to type in, your dividend
-        income with the US tax credit, and the capital gains on shares you sold.</p>
+        Fidelity exports once and get, at SBI's TT buying rates, the Schedule FA rows to type in, the capital gains
+        on shares you sold, and your dividend income with the US tax credit.</p>
       <div class="result-head">
         <span class="chip pos"><span class="dot"></span>Foreign assets: Schedule FA, AL</span>
-        <span class="chip pos"><span class="dot"></span>Dividends: OS, FSI, TR, Form 67</span>
         <span class="chip pos"><span class="dot"></span>Selling shares: CG, FSI</span>
+        <span class="chip pos"><span class="dot"></span>Dividends: OS, FSI, TR, Form 67</span>
       </div>
     </section>
 
@@ -63,9 +63,10 @@
         </figure>
       </div>
       <p class="small muted" style="margin:12px 0 0"><strong>View open lots.csv</strong> lists the shares you still
-        hold. <strong>View closed lots.csv</strong> lists the ones you sold: it gives the capital gains, and Schedule FA
-        needs it too, because shares sold during the year must still be reported. Keep <strong>Asset currency</strong>
-        for both.</p>
+        hold. <strong>View closed lots.csv</strong> lists the ones you sold or transferred: it gives the capital gains,
+        and Schedule FA and the dividends need it too, because those shares are still reported for the year you sold
+        them and were paid dividends until the sale. Never sold or transferred any shares? Then View open lots.csv
+        alone is enough. Keep <strong>Asset currency</strong> for both.</p>
     </section>
 
     <section class="card step-card" aria-labelledby="step2">
@@ -82,6 +83,9 @@
         <input type="file" id="file-input" multiple
           accept=".csv,text/csv,text/comma-separated-values,application/csv,application/vnd.ms-excel,text/plain">
       </label>
+      <p class="privacy-note"><span aria-hidden="true">📄</span><span><strong>Load both files for complete
+        results:</strong> shares you sold change Schedule FA and the dividends too, not only the capital gains. Never
+        sold or transferred any shares? View open lots.csv alone is enough.</span></p>
       <p class="privacy-note"><span aria-hidden="true">🔒</span><span>Your files are read on your own device.
         They are not uploaded, sent anywhere or saved; closing the page clears them.</span></p>
       <p class="privacy-note"><span aria-hidden="true">📱</span><span>Works on phones too: tap <strong>Choose

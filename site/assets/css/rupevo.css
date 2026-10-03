@@ -700,6 +700,9 @@ table.fa.history tr.in-fy > td { background: var(--accent-soft); }
 .alert-line { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: var(--radius-sm);
               border: 1px solid var(--warn-line); background: var(--warn-bg); color: var(--warn-fg); font-size: 13.5px; }
 .alert-line p { margin: 0; color: inherit; }
+.alert-line.ok { border-color: var(--pos-line); background: var(--pos-bg); color: var(--pos); }
+.alert-line.ok .bang { background: var(--pos); }
+.files-note { margin: 0 0 16px; }
 .bang { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%;
         background: var(--warn-fg); color: #fff; font-size: 14px; font-weight: 900; line-height: 1; }
 html[data-theme="dark"] .bang { color: #1a1205; }

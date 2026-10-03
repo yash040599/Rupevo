@@ -12,7 +12,7 @@ Live site: **https://yash040599.github.io/Rupevo/**
 |---|---|---|
 | [Nifty 100 Ranking](site/india/index.html) | Technical setups, technical score (A–D), risk grade, 52-week dips, sector strength | Migrated from the ai-portfolio-manager swing scanner |
 | [NASDAQ-100 Ranking](site/us/index.html) | Six-pillar long-term scorecard: quality, valuation vs sector, growth, momentum, balance sheet, risk | Migrated from the ai-portfolio-manager US long-term scorer |
-| [Tax tools](site/tax/index.html) | RSU taxation → broker (Fidelity) → company (**Microsoft, Oracle**). Load Fidelity's *View open lots* CSV (shares held) and, if you sold any, *View closed lots* (Previously held shares); the company page has three tabs: **Foreign assets** (Schedule FA Table A2 for the Fidelity account and A3 with one row per RSU vest and ESPP purchase, including lots sold during the year with their proceeds, plus the Schedule AL cost), **Dividends** (the payments the shares received in the financial year, Schedule OS with its quarterly breakup, Schedule FSI, Schedule TR and the Form 67 fields with its deadline, plus the company's dividend history) and **Selling shares** (capital gains under India's 24-month rule: Schedule CG A5/B8, gains by date of sale, and the Schedule FSI row). Visitors can request another company. Every tax page has an interactive "how far through the financial year are we" slider (advance-tax and ITR dates marked) and rotating tax trivia | Runs in the browser: the user's files are never uploaded. Uses published SBI TT buying rates, closes and dividends (`site/data/tax/`, refreshed weekly) |
+| [Tax tools](site/tax/index.html) | RSU taxation → broker (Fidelity) → company (**Microsoft, Oracle**). Load Fidelity's *View open lots* CSV (shares held) and, if you sold any, *View closed lots* (Previously held shares); the company page has three tabs: **Foreign assets** (Schedule FA Table A2 for the Fidelity account and A3 with one row per RSU vest and ESPP purchase, including lots sold during the year with their proceeds, plus the Schedule AL cost), **Selling shares** (capital gains under India's 24-month rule: Schedule CG A5/B8, gains by date of sale, and the Schedule FSI row) and **Dividends** (the payments the shares received in the financial year, Schedule OS with its quarterly breakup, Schedule FSI, Schedule TR and the Form 67 fields with its deadline, plus the company's dividend history). Sold shares change Schedule FA and the dividends too, so those tabs ask for both exports unless nothing was ever sold. Visitors can request another company. Every tax page has an interactive "how far through the financial year are we" slider (advance-tax and ITR dates marked) and rotating tax trivia | Runs in the browser: the user's files are never uploaded. Uses published SBI TT buying rates, closes and dividends (`site/data/tax/`, refreshed weekly) |
 
 Every page has light/dark theme, a **Buy me a coffee** button (in the top
 bar, a floating ☕ on phones once the bar scrolls away, and the footer) and a
@@ -202,7 +202,7 @@ scripts/
   make_sample_export.py  writes the synthetic Fidelity exports in tests/fixtures/
 site/
   index.html, india/, us/, 404.html
-  tax/             Tax tools → rsu/ → fidelity/ → msft/, orcl/ (tabs: foreign assets, dividends, selling)
+  tax/             Tax tools → rsu/ → fidelity/ → msft/, orcl/ (tabs: foreign assets, selling shares, dividends)
   assets/css/rupevo.css   design tokens ported from the local dashboard
   assets/js/              core, shell (nav/footer), coffee (UPI dialog),
                           device, ranking, admin,
@@ -245,7 +245,10 @@ the `COMPANIES` / `BROKERS` tables at the top of that file. The visitor loads
 the exports (step 2): *View open lots* for the shares held and, if any were
 sold, *View closed lots*, together or one at a time; each file's kind is
 detected from its columns. The tool renders the return selector and three tabs
-(`#fa`, `#dividends`, `#selling` in the URL):
+(`#fa`, `#selling`, `#dividends` in the URL). Shares sold or transferred count
+in Schedule FA and the dividends for the time they were held, so when only one
+export is loaded those two tabs say which file is missing (and that *View open
+lots* alone is complete if nothing was ever sold):
 
 * **Foreign assets** (`schedule-fa.js`): for each lot held during the calendar
   year, the initial value (value at vesting for RSUs; the purchase-day close
@@ -259,13 +262,6 @@ detected from its columns. The tool renders the return selector and three tabs
   codes, a grant date and a typical ESPP discount; the closed-lots export has
   no share source, so sold lots take it from a held lot of the same date or
   are judged by the discount alone).
-* **Dividends** (`dividends.js`): the payments in the financial year on lots
-  acquired before each ex-date (and not sold before it), converted under Rule
-  115 (SBI rate on the last day of the month before payment); the US tax at
-  25% (W-8BEN) or 30%; the credit as the lowest of the US tax, the 25% treaty
-  rate and the Indian tax at the visitor's rate; Schedule OS with the five 234C
-  periods, FSI, TR and the Form 67 fields with its deadline (Form 44 from tax
-  year 2026-27).
 * **Selling shares** (`capital-gains.js`): sales in the financial year,
   long-term when held more than 24 months (12.5% without indexation,
   section 112), otherwise short-term at the slab rate. The sale value is
@@ -276,6 +272,13 @@ detected from its columns. The tool renders the return selector and three tabs
   Schedule CG A5/B8 fields, set-off of losses, the gains by date of sale
   (rows 3 and 5 of the accrual table), the Schedule FSI row (Article 13, no
   foreign tax) and a CSV of the working. Transfers out are not sales.
+* **Dividends** (`dividends.js`): the payments in the financial year on lots
+  acquired before each ex-date (and not sold before it), converted under Rule
+  115 (SBI rate on the last day of the month before payment); the US tax at
+  25% (W-8BEN) or 30%; the credit as the lowest of the US tax, the 25% treaty
+  rate and the Indian tax at the visitor's rate; Schedule OS with the five 234C
+  periods, FSI, TR and the Form 67 fields with its deadline (Form 44 from tax
+  year 2026-27).
 
 To add a company: add its ticker to `TAX_STOCKS` in `pipeline/taxdata.py`
 (with a dividend source) and run `tax-data`, add an entry to `COMPANIES`,

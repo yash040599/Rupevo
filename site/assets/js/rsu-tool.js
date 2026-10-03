@@ -40,7 +40,7 @@ const TAX_RATES = [
   [0.104, '10.4%: 10% slab + cess'],
   [0.052, '5.2%: 5% slab + cess'],
 ];
-const TABS = ['fa', 'dividends', 'selling'];
+const TABS = ['fa', 'selling', 'dividends'];
 const MAX_FILE_BYTES = 2 * 1024 * 1024;
 const MAX_FILES = 4;
 const MIN_BUSY_MS = 600;
@@ -61,10 +61,10 @@ const els = {
 };
 // files.open / files.closed: { kind, name, lots, skipped } for each export loaded. lots: both
 // together (for Schedule FA and the dividends); closedLots: the sold lots, with the share source
-// filled in from the open lots where possible.
+// filled in from the open lots where possible. loadErrors: messages about files that could not be used.
 const state = {
   files: { open: null, closed: null }, lots: null, closedLots: [], esppBasis: 'fmv', rateOverrides: {},
-  data: null, fa: null, div: null, cg: null, costRate: 'acquired',
+  loadErrors: [], data: null, fa: null, div: null, cg: null, costRate: 'acquired',
   indiaRate: 0.312, customRate: false, usRate: DTAA.rate, historyAll: false,
 };
 const today = () => istWallClock().toISOString().slice(0, 10);
@@ -117,14 +117,15 @@ function skeleton() {
       <div class="tabs" role="tablist" aria-label="Parts of your return">
         <button class="tab" type="button" role="tab" id="tab-fa" aria-controls="panel-fa" data-tab="fa">
           <span class="tab-title">Foreign assets</span><span class="tab-sub">Schedule FA · AL</span></button>
-        <button class="tab" type="button" role="tab" id="tab-dividends" aria-controls="panel-dividends" data-tab="dividends">
-          <span class="tab-title">Dividends</span><span class="tab-sub">OS · FSI · TR · Form 67</span></button>
         <button class="tab" type="button" role="tab" id="tab-selling" aria-controls="panel-selling" data-tab="selling">
           <span class="tab-title">Selling shares</span><span class="tab-sub">Capital gains · CG · FSI</span></button>
+        <button class="tab" type="button" role="tab" id="tab-dividends" aria-controls="panel-dividends" data-tab="dividends">
+          <span class="tab-title">Dividends</span><span class="tab-sub">OS · FSI · TR · Form 67</span></button>
       </div>
     </section>
 
     <div class="tab-panel" role="tabpanel" id="panel-fa" aria-labelledby="tab-fa" tabindex="-1">
+      <div id="fa-files"></div>
       <section class="card" id="fa-head" hidden>
         <p class="small muted" id="fa-period" style="margin:0"></p>
         <fieldset class="radio-row" id="espp-basis" hidden style="border:0;padding:0;margin:10px 0 0">
@@ -136,27 +137,6 @@ function skeleton() {
       </section>
       <div id="fa-results"></div>
       ${faMethod()}
-    </div>
-
-    <div class="tab-panel" role="tabpanel" id="panel-dividends" aria-labelledby="tab-dividends" tabindex="-1" hidden>
-      <section class="card" id="div-controls" hidden>
-        <p class="small muted" id="div-period" style="margin:0 0 10px"></p>
-        <div class="controls-row">
-          ${rateField('Your Indian tax rate on this income')}
-          <label class="field">US tax withheld
-            <select id="us-rate">
-              <option value="0.25" selected>25%: W-8BEN on file (India–US treaty rate)</option>
-              <option value="0.3">30%: no W-8BEN on file</option>
-            </select>
-          </label>
-        </div>
-        <p class="small muted" style="margin:10px 0 0">The rate only changes the foreign tax credit, which is capped
-          at the Indian tax on the dividends. Most people with RSUs are in the 30% slab; if your CA uses your average
-          rate instead, choose “Another rate”.</p>
-      </section>
-      <div id="div-results"></div>
-      <section class="card" id="div-history"><span class="skel" style="width:40%"></span><span class="skel"></span></section>
-      ${divMethod()}
     </div>
 
     <div class="tab-panel" role="tabpanel" id="panel-selling" aria-labelledby="tab-selling" tabindex="-1" hidden>
@@ -181,6 +161,28 @@ function skeleton() {
       </section>
       <div id="cg-results"></div>
       ${cgMethod()}
+    </div>
+
+    <div class="tab-panel" role="tabpanel" id="panel-dividends" aria-labelledby="tab-dividends" tabindex="-1" hidden>
+      <div id="div-files"></div>
+      <section class="card" id="div-controls" hidden>
+        <p class="small muted" id="div-period" style="margin:0 0 10px"></p>
+        <div class="controls-row">
+          ${rateField('Your Indian tax rate on this income')}
+          <label class="field">US tax withheld
+            <select id="us-rate">
+              <option value="0.25" selected>25%: W-8BEN on file (India–US treaty rate)</option>
+              <option value="0.3">30%: no W-8BEN on file</option>
+            </select>
+          </label>
+        </div>
+        <p class="small muted" style="margin:10px 0 0">The rate only changes the foreign tax credit, which is capped
+          at the Indian tax on the dividends. Most people with RSUs are in the 30% slab; if your CA uses your average
+          rate instead, choose “Another rate”.</p>
+      </section>
+      <div id="div-results"></div>
+      <section class="card" id="div-history"><span class="skel" style="width:40%"></span><span class="skel"></span></section>
+      ${divMethod()}
     </div>
 
     ${itrChecklistHtml()}`;
@@ -311,9 +313,9 @@ function itrChecklistHtml() {
   const rows = [
     ['Schedule FA', 'The shares (Table A3), including any sold during the year, and the Fidelity account (Table A2)', [fa]],
     ['Schedule AL', 'Only if your total income is above ₹1 crore: the cost of the shares', [fa]],
-    ['Schedule OS', 'Dividend income, gross, with its quarterly breakup', [div]],
     ['Schedule CG', 'Gains on shares you sold: A5 short-term, B8 long-term, and when they arose', [sell]],
-    ['Schedule FSI', 'The dividends and the US tax paid on them, and the capital gains', [div, sell]],
+    ['Schedule OS', 'Dividend income, gross, with its quarterly breakup', [div]],
+    ['Schedule FSI', 'The capital gains, and the dividends with the US tax paid on them', [sell, div]],
     ['Schedule TR', 'The foreign tax credit claimed under section 90', [div]],
     ['Form 67', 'Filed separately on the e-filing portal, before the ITR', [div]],
   ];
@@ -446,7 +448,7 @@ function describe(f) {
     ${esc(longDate(f.lots[0].acquired))} – ${esc(longDate(f.lots[f.lots.length - 1].acquired))}.${skipped}`;
 }
 
-function renderStatus(errors = []) {
+function renderStatus() {
   const lines = [];
   for (const kind of Object.keys(KINDS)) {
     const f = state.files[kind];
@@ -455,12 +457,13 @@ function renderStatus(errors = []) {
         type="button" data-remove="${kind}" aria-label="Remove ${esc(f.name)}">Remove</button></div>`);
     }
   }
-  for (const html of errors) lines.push(`<div class="status-line bad">${html}</div>`);
+  for (const html of state.loadErrors) lines.push(`<div class="status-line bad">${html}</div>`);
   if (state.files.open && !state.files.closed) {
     lines.push(`<p class="small muted load-hint">Sold or transferred any ${esc(company.short)} shares? Load
-      <strong>View closed lots.csv</strong> too (step 1, Previously held shares): Schedule FA includes shares sold
-      during the year, and the <a href="#selling" data-goto="selling">Selling shares</a> tab works out the capital
-      gains.</p>`);
+      <strong>View closed lots.csv</strong> too (step 1, Previously held shares): the <a href="#selling"
+      data-goto="selling">Selling shares</a> tab works out the capital gains, and Schedule FA and the dividends include
+      those shares for the time you held them. Never sold or transferred any? Then View open lots.csv alone is
+      complete.</p>`);
   } else if (state.files.closed && !state.files.open) {
     lines.push(`<p class="small muted load-hint">Still hold ${esc(company.short)} shares? Load <strong>View open
       lots.csv</strong> too (step 1, Current shares): Schedule FA and the dividends need them as well.</p>`);
@@ -468,51 +471,67 @@ function renderStatus(errors = []) {
   els.status.innerHTML = lines.length ? `<div class="load-lines">${lines.join('')}</div>` : '';
 }
 
-// Only the latest files picked may update the page.
+// Files are read one pick at a time, and a pick can finish after a later one (the first waits for the
+// rates and prices). Each kind keeps the file of the latest pick that included that kind, so a slow
+// earlier pick cannot overwrite a newer file of its kind, while picks of the two kinds add up.
 let loadSeq = 0;
+let inFlight = 0;
+const kindSeq = { open: 0, closed: 0 };
 
 async function useFiles(list) {
   const files = [...(list || [])].filter(Boolean);
   if (!files.length) return;
   const seq = ++loadSeq;
+  inFlight += 1;
   setDrop('busy', files.map((f) => f.name).join(' + '));
   const started = Date.now();
   const loaded = [];
   const errors = [];
-  for (const file of files.slice(0, MAX_FILES)) {
-    if (file.size > MAX_FILE_BYTES) {
-      errors.push(new LoadError(`<strong>${esc(file.name)}</strong> is too large to be a Fidelity export.`));
-      continue;
+  try {
+    for (const file of files.slice(0, MAX_FILES)) {
+      if (file.size > MAX_FILE_BYTES) {
+        errors.push(new LoadError(`<strong>${esc(file.name)}</strong> is too large to be a Fidelity export.`));
+        continue;
+      }
+      try {
+        loaded.push(await readExport(await file.text(), file.name));
+      } catch (err) {
+        errors.push(err instanceof LoadError ? err
+          : new LoadError(`Could not read <strong>${esc(file.name)}</strong> (${esc(err.message)}).`));
+      }
     }
-    try {
-      loaded.push(await readExport(await file.text(), file.name));
-    } catch (err) {
-      errors.push(err instanceof LoadError ? err
-        : new LoadError(`Could not read <strong>${esc(file.name)}</strong> (${esc(err.message)}).`));
-    }
+    if (files.length > MAX_FILES) errors.push(new LoadError(`Only the first ${MAX_FILES} files were read.`));
+    // Keep the spinner up long enough to be seen: the files are read in milliseconds.
+    const wait = MIN_BUSY_MS - (Date.now() - started);
+    if (wait > 0) await new Promise((resolve) => { setTimeout(resolve, wait); });
+  } finally {
+    inFlight -= 1;
   }
-  if (files.length > MAX_FILES) errors.push(new LoadError(`Only the first ${MAX_FILES} files were read.`));
-  // Keep the spinner up long enough to be seen: the files are read in milliseconds.
-  const wait = MIN_BUSY_MS - (Date.now() - started);
-  if (wait > 0) await new Promise((resolve) => { setTimeout(resolve, wait); });
-  if (seq !== loadSeq) return;
+  const fresh = { open: seq > kindSeq.open, closed: seq > kindSeq.closed };
   // A file that cannot be used also clears the earlier file of its kind, so its results are not
   // mistaken for the new file's.
-  for (const err of errors) if (err.kind) setFile(err.kind, null);
-  for (const f of loaded) setFile(f.kind, f);
-  renderStatus(errors.map((err) => err.html));
+  for (const err of errors) if (err.kind && fresh[err.kind]) setFile(err.kind, null);
+  for (const f of loaded) if (fresh[f.kind]) setFile(f.kind, f);
+  for (const kind of [...errors.map((e) => e.kind), ...loaded.map((f) => f.kind)]) {
+    if (kind && fresh[kind]) kindSeq[kind] = seq;
+  }
+  const latest = seq === loadSeq;
+  const messages = errors.map((err) => err.html);
+  state.loadErrors = latest ? messages : [...state.loadErrors, ...messages];
+  renderStatus();
   renderAll();
-  refreshDrop();
-  if (!loaded.length) return;
+  if (!inFlight) refreshDrop();
+  if (!loaded.length || !latest) return;
   if (!loaded.some((f) => f.kind === 'open')) selectTab('selling');
   document.getElementById('tool-top').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function removeFile(kind) {
   setFile(kind, null);
+  state.loadErrors = [];
   renderStatus();
   renderAll();
-  refreshDrop();
+  if (!inFlight) refreshDrop();
 }
 
 // ── Rendering ──
@@ -548,10 +567,37 @@ function renderAll() {
 
 function placeholder(what) {
   return `<section class="card empty-state">
-    <p style="margin:0"><strong>Load your Fidelity export in step 2</strong> to see ${what}. The file is read on your
+    <p style="margin:0"><strong>Load your Fidelity exports in step 2</strong> to see ${what}. They are read on your
       device and never uploaded.</p>
+    <p class="small muted" style="margin:8px 0 0">For complete results load both <strong>View open lots.csv</strong>
+      and <strong>View closed lots.csv</strong>. If you have never sold or transferred any shares, View open lots.csv
+      alone is enough.</p>
     <p style="margin:8px 0 0"><a href="#step2" data-scroll="step2">Go to step 2 ↑</a></p>
   </section>`;
+}
+
+// Schedule FA and the dividends count sold shares for the time they were held, so they need both
+// exports unless nothing was ever sold or transferred. Shown at the top of those two tabs.
+function filesNoticeHtml(tab) {
+  const { open, closed } = state.files;
+  if (!open && !closed) return '';
+  const fa = tab === 'fa';
+  if (open && closed) {
+    return `<div class="alert-line ok files-note"><span class="bang" aria-hidden="true">✓</span><p>Both exports are
+      loaded, so ${fa ? 'Schedule FA includes the shares you hold and those you sold or transferred during the year'
+        : 'the dividends include the shares you hold and those you sold, up to the sale'}.</p></div>`;
+  }
+  if (open) {
+    return `<div class="alert-line files-note"><span class="bang" aria-hidden="true">!</span><p><strong>Sold or
+      transferred any ${esc(company.short)} shares?</strong> Load <strong>View closed lots.csv</strong> too (step 1,
+      Previously held shares) for the full, correct ${fa ? 'Schedule FA: it must list every share held at any time in'
+        + ' the year, including those sold or transferred during it' : 'dividend income: shares you sold were paid'
+        + ' every dividend whose ex-dividend date was on or before the sale date'}. <strong>Never sold or transferred
+      any?</strong> Then View open lots.csv alone is complete.</p></div>`;
+  }
+  return `<div class="alert-line files-note"><span class="bang" aria-hidden="true">!</span><p><strong>Still hold
+    ${esc(company.short)} shares?</strong> Load <strong>View open lots.csv</strong> too (step 1, Current shares): so
+    far only the shares you sold are counted here.</p></div>`;
 }
 
 function newActNote(option) {
@@ -561,6 +607,7 @@ function newActNote(option) {
 function renderFa(cy, option) {
   const head = els.tool.querySelector('#fa-head');
   const out = els.tool.querySelector('#fa-results');
+  els.tool.querySelector('#fa-files').innerHTML = filesNoticeHtml('fa');
   if (!state.lots || !state.data) {
     head.hidden = true;
     out.innerHTML = placeholder('your Schedule FA rows');
@@ -789,6 +836,7 @@ function faChecklistHtml(res) {
 function renderDividends(fy, option) {
   const controls = els.tool.querySelector('#div-controls');
   const out = els.tool.querySelector('#div-results');
+  els.tool.querySelector('#div-files').innerHTML = filesNoticeHtml('dividends');
   if (!state.lots || !state.data) {
     controls.hidden = true;
     out.innerHTML = placeholder(`the dividends your shares received and the values for Schedule OS, FSI, TR and
@@ -804,8 +852,7 @@ function renderDividends(fy, option) {
   state.div = res;
   els.tool.querySelector('#div-period').innerHTML = `Dividends paid ${esc(longDate(res.start))} – ${esc(longDate(res.end))}
     (${fyLabel(fy)}).${res.final ? '' : ` The year is still running, so only payments made so far are counted:
-    the values are <strong>provisional</strong>.`}${state.files.closed ? '' : ` Shares you sold count only if you also
-    load <strong>View closed lots.csv</strong>.`}${newActNote(option)}`;
+    the values are <strong>provisional</strong>.`}${newActNote(option)}`;
 
   const upcoming = res.upcoming.length ? `<p class="small muted" style="margin:10px 0 0">Declared but not paid yet in
     ${fyLabel(fy)}: ${res.upcoming.map((d) => `${money(d.amount, 4)} a share on ${esc(longDate(d.pay))} (ex-dividend
