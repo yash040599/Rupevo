@@ -10,7 +10,7 @@ const API = 'https://api.github.com';
 const { owner, name: repo, branch, workflow } = SITE.repo;
 const REPO_PATH = `/repos/${owner}/${repo}`;
 const WORKFLOW_URL = `https://github.com/${owner}/${repo}/actions/workflows/${workflow}`;
-const MARKET_TITLES = { india: 'Nifty 100', us: 'NASDAQ-100', both: 'both rankings' };
+const MARKET_TITLES = { india: 'Nifty 100', us: 'US stocks (NASDAQ-100 and NYSE top 100)', both: 'all rankings' };
 
 export const getToken = () => store.get(TOKEN_KEY, 'session') || store.get(TOKEN_KEY) || '';
 export const isAdmin = () => Boolean(getToken());
@@ -213,8 +213,8 @@ export function openAdminPanel({ onRefreshed } = {}) {
       the new snapshot and redeploys the site.</p>
       <div class="footer-row">
         <button class="btn" type="button" data-market="india">Refresh Nifty 100</button>
-        <button class="btn" type="button" data-market="us">Refresh NASDAQ-100</button>
-        <button class="btn alt" type="button" data-market="both">Refresh both</button>
+        <button class="btn" type="button" data-market="us">Refresh US (NASDAQ + NYSE)</button>
+        <button class="btn alt" type="button" data-market="both">Refresh all</button>
       </div>
       <div><h3 class="small muted" style="margin:0 0 6px">Recent refresh runs</h3>
         <ul class="tile-list" id="admin-runs"><li class="muted">Loading…</li></ul></div>`,

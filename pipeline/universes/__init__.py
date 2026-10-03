@@ -1,7 +1,8 @@
 """Index universes (constituent lists) checked into the repo as JSON.
 
-Refreshed with `python -m pipeline universe`, which re-downloads the
-official lists (NSE CSV, Nasdaq API) and rewrites a file only when the
+Refreshed with `python -m pipeline universe`, which re-downloads the lists
+(NSE CSV for the Nifty 100, the Nasdaq API for the NASDAQ-100, and Nasdaq's
+stock screener for the NYSE top 100) and rewrites a file only when the
 membership actually changed.
 """
 
@@ -12,7 +13,7 @@ import os
 from dataclasses import dataclass, field
 
 UNIVERSE_DIR = os.path.dirname(os.path.abspath(__file__))
-UNIVERSES = ("nifty100", "nasdaq100")
+UNIVERSES = ("nifty100", "nasdaq100", "nyse100")
 
 
 @dataclass

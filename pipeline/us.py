@@ -1,4 +1,9 @@
-"""US NASDAQ-100 ranking — the public version of the local US long-term scan.
+"""US rankings — the public version of the local US long-term scan.
+
+Two lists are ranked the same way, each into its own snapshot: the
+NASDAQ-100 (site/data/us.json) and the NYSE top 100, the 100 largest US
+companies listed on the NYSE (site/data/us-nyse.json); the US page shows
+them together or one exchange at a time.
 
 Every constituent is scored by the six-pillar long-term scorecard
 (`engine/us_longterm.py`: quality, valuation vs sector, growth, 12-1
@@ -6,8 +11,8 @@ momentum, financial strength, risk) and ranked in the local tool's order:
 rating tier first (after the thin-coverage cap), then composite score.
 
 Deliberate differences from the local tool, all for a public screener:
-  * The universe is the actual NASDAQ-100, not the local "US100" list of
-    the largest US companies across exchanges.
+  * The universes are the actual NASDAQ-100 and a rule-based NYSE list,
+    not the local "US100" list of the largest US companies across exchanges.
   * Every constituent is ranked; the local tool hid the AVOID tail.
   * Rating bands are published under neutral labels (Excellent … Poor)
     and no accumulate/avoid action, ticket size or price level is emitted.
@@ -65,15 +70,16 @@ FUNDAMENTAL_FIELDS = (
     "revenue_growth_pct", "earnings_growth_pct", "beta", "fetched_at",
 )
 
-MODEL = {
-    "name": "NASDAQ-100 long-term scorecard",
-    "horizon": "Years (buy-and-hold)",
-    "summary": ("Each NASDAQ-100 company is scored 0-100 on six pillars: quality "
-                "and profitability (24), valuation against its sector (18), "
-                "growth (17), 12-1 month momentum (16), financial strength (13) "
-                "and risk and drawdown (12). Pillars without data are dropped "
-                "and the rest re-weighted; low coverage caps the band."),
-}
+def model_for(list_name: str) -> dict:
+    return {
+        "name": f"{list_name} long-term scorecard",
+        "horizon": "Years (buy-and-hold)",
+        "summary": (f"Each {list_name} company is scored 0-100 on six pillars: quality "
+                    "and profitability (24), valuation against its sector (18), "
+                    "growth (17), 12-1 month momentum (16), financial strength (13) "
+                    "and risk and drawdown (12). Pillars without data are dropped "
+                    "and the rest re-weighted; low coverage caps the band."),
+    }
 
 
 def yahoo_symbol(symbol: str) -> str:
@@ -166,8 +172,12 @@ def evaluate(con: Constituent, candles: list[dict], bench: list[dict],
 
 
 def build(universe: Universe, chart: YahooChart, cache_dir: str,
-          log: Logger | None = None, *, limit: int | None = None) -> dict:
-    log = log or Logger("us")
+          log: Logger | None = None, *, limit: int | None = None,
+          market: str = "us", exchange: str = "NASDAQ",
+          constituents_source: str = "Nasdaq") -> dict:
+    """Rank one list. `market` names the snapshot (us, us-nyse) and `exchange` is
+    stamped on it and on every row, so the site can show both lists together."""
+    log = log or Logger(market)
     started = now_ist()
     bench = chart.daily_candles(BENCHMARK_SYMBOL, HISTORY_RANGE, SESSION)
     if len(bench) < 260:
@@ -188,7 +198,9 @@ def build(universe: Universe, chart: YahooChart, cache_dir: str,
             log.warning(f"{con.symbol}: {exc}")
             continue
         candles = [c for c in candles if c["date"] <= data_through]
-        rows.append(evaluate(con, candles, bench, store.get(yahoo_symbol(con.symbol))))
+        row = evaluate(con, candles, bench, store.get(yahoo_symbol(con.symbol)))
+        row["exchange"] = exchange
+        rows.append(row)
         if i % 25 == 0:
             log.info(f"scanned {i}/{len(constituents)}")
 
@@ -214,20 +226,21 @@ def build(universe: Universe, chart: YahooChart, cache_dir: str,
              f"({len(errors)} download errors, {no_fundamentals} without fundamentals)")
     return {
         "schema": SCHEMA_VERSION,
-        "market": "us",
-        "title": "NASDAQ-100 Ranking",
+        "market": market,
+        "exchange": exchange,
+        "title": f"{universe.name} Ranking",
         "currency": "USD",
         "generated_at": iso(now_ist()),
         "started_at": iso(started),
         "data_through": data_through.isoformat(),
         "universe": {"name": universe.name, "as_of": universe.as_of,
-                     "source": "Nasdaq", "count": len(universe.constituents)},
+                     "source": constituents_source, "count": len(universe.constituents)},
         "data_source": {"prices": "Yahoo Finance (end-of-day)",
                         "fundamentals": "Yahoo Finance",
-                        "constituents": "Nasdaq"},
+                        "constituents": constituents_source},
         "benchmark": benchmark_context(BENCHMARK_SYMBOL, BENCHMARK_NAME, bench,
                                        RISK_FREE_PCT),
-        "model": MODEL,
+        "model": model_for(universe.name),
         "partial": bool(limit),
         "stats": {"scanned": len(constituents), "evaluated": len(rows),
                   "ranked": len(ranked), "not_ranked": len(others),

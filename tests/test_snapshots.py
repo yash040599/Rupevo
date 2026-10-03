@@ -2,10 +2,11 @@
 
 import datetime
 import unittest
+from unittest import mock
 
 from pipeline import india, us
 from pipeline.snapshot import compute_changes, public_notes, rnd
-from pipeline.universes import Constituent
+from pipeline.universes import Constituent, Universe
 from tests.fixtures import make_candles, path, uptrend_with_pullback
 
 # Trade-construction fields must never appear in a published row.
@@ -73,6 +74,48 @@ class UsRowTest(unittest.TestCase):
                           make_candles(path(10.0, 40, 0.0)),
                           make_candles(path(100.0, 600, 0.0005)), {})
         self.assertEqual(row["status"], "insufficient_data")
+
+
+class FakeChart:
+    """Synthetic daily candles by Yahoo symbol, instead of the network."""
+
+    def __init__(self, series: dict[str, list[dict]]):
+        self.series = series
+
+    def daily_candles(self, symbol, _range, _session):
+        return self.series[symbol]
+
+
+class StubFundamentals:
+    def __init__(self, *_args, **_kwargs):
+        pass
+
+    def ensure(self, _symbols):
+        pass
+
+    def get(self, _symbol):
+        return {"sector": "Technology", "trailing_pe": 25.0, "roe_pct": 30.0,
+                "gross_margin_pct": 60.0, "revenue_growth_pct": 12.0}
+
+
+class UsBuildTest(unittest.TestCase):
+    def test_a_list_and_its_rows_are_stamped_with_the_exchange(self):
+        chart = FakeChart({"SPY": make_candles(path(100.0, 600, 0.0005)),
+                           "ORCL": make_candles(path(100.0, 600, 0.001)),
+                           "BRK-B": make_candles(path(300.0, 600, 0.0008))})
+        universe = Universe(key="nyse100", name="NYSE top 100", source="test", as_of="2026-10-03",
+                            constituents=[Constituent("ORCL", "Oracle Corporation", "Technology"),
+                                          Constituent("BRK.B", "Berkshire Hathaway Inc.", "")])
+        with mock.patch.object(us, "FundamentalsStore", StubFundamentals):
+            snap = us.build(universe, chart, "unused-cache", market="us-nyse", exchange="NYSE",
+                            constituents_source="test")
+        self.assertEqual((snap["market"], snap["exchange"], snap["title"]),
+                         ("us-nyse", "NYSE", "NYSE top 100 Ranking"))
+        self.assertEqual(snap["model"]["name"], "NYSE top 100 long-term scorecard")
+        self.assertEqual(sorted(r["symbol"] for r in snap["ranked"]), ["BRK.B", "ORCL"])
+        self.assertEqual([r["rank"] for r in snap["ranked"]], [1, 2])
+        self.assertTrue(all(r["exchange"] == "NYSE" for r in snap["ranked"]))
+        self.assertFalse(FORBIDDEN_KEYS & set(all_keys(snap)))
 
 
 def snap(day: str, ranks: dict[str, int], generated: str = "t") -> dict:

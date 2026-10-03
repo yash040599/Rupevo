@@ -1,0 +1,507 @@
+{
+ "name": "NYSE top 100",
+ "source": "https://api.nasdaq.com/api/screener/stocks?tableonly=true&download=true&exchange=nyse",
+ "as_of": "2026-10-03",
+ "constituents": [
+  {
+   "symbol": "ABBV",
+   "name": "AbbVie Inc.",
+   "industry": "Health Care"
+  },
+  {
+   "symbol": "ABT",
+   "name": "Abbott Laboratories",
+   "industry": "Health Care"
+  },
+  {
+   "symbol": "AMT",
+   "name": "American Tower Corporation (REIT)",
+   "industry": "Real Estate"
+  },
+  {
+   "symbol": "ANET",
+   "name": "Arista Networks Inc.",
+   "industry": "Telecommunications"
+  },
+  {
+   "symbol": "APH",
+   "name": "Amphenol Corporation",
+   "industry": "Technology"
+  },
+  {
+   "symbol": "AXP",
+   "name": "American Express Company",
+   "industry": "Finance"
+  },
+  {
+   "symbol": "BA",
+   "name": "Boeing Company (The)",
+   "industry": "Industrials"
+  },
+  {
+   "symbol": "BAC",
+   "name": "Bank of America Corporation",
+   "industry": "Finance"
+  },
+  {
+   "symbol": "BE",
+   "name": "Bloom Energy Corporation",
+   "industry": "Energy"
+  },
+  {
+   "symbol": "BLK",
+   "name": "BlackRock Inc.",
+   "industry": "Finance"
+  },
+  {
+   "symbol": "BMY",
+   "name": "Bristol-Myers Squibb Company",
+   "industry": "Health Care"
+  },
+  {
+   "symbol": "BNY",
+   "name": "The Bank of New York Mellon Corporation",
+   "industry": "Finance"
+  },
+  {
+   "symbol": "BRK.B",
+   "name": "Berkshire Hathaway Inc.",
+   "industry": ""
+  },
+  {
+   "symbol": "BX",
+   "name": "Blackstone Inc.",
+   "industry": "Finance"
+  },
+  {
+   "symbol": "C",
+   "name": "Citigroup Inc.",
+   "industry": "Finance"
+  },
+  {
+   "symbol": "CAT",
+   "name": "Caterpillar Inc.",
+   "industry": "Industrials"
+  },
+  {
+   "symbol": "COF",
+   "name": "Capital One Financial Corporation",
+   "industry": "Finance"
+  },
+  {
+   "symbol": "COP",
+   "name": "ConocoPhillips",
+   "industry": "Energy"
+  },
+  {
+   "symbol": "CRM",
+   "name": "Salesforce Inc.",
+   "industry": "Technology"
+  },
+  {
+   "symbol": "CVS",
+   "name": "CVS Health Corporation",
+   "industry": "Consumer Staples"
+  },
+  {
+   "symbol": "CVX",
+   "name": "Chevron Corporation",
+   "industry": "Energy"
+  },
+  {
+   "symbol": "DE",
+   "name": "Deere & Company",
+   "industry": "Industrials"
+  },
+  {
+   "symbol": "DELL",
+   "name": "Dell Technologies Inc.",
+   "industry": "Technology"
+  },
+  {
+   "symbol": "DHR",
+   "name": "Danaher Corporation",
+   "industry": "Industrials"
+  },
+  {
+   "symbol": "DIS",
+   "name": "Walt Disney Company (The)",
+   "industry": "Consumer Discretionary"
+  },
+  {
+   "symbol": "DUK",
+   "name": "Duke Energy Corporation (Holding Company)",
+   "industry": "Utilities"
+  },
+  {
+   "symbol": "ECL",
+   "name": "Ecolab Inc.",
+   "industry": "Consumer Discretionary"
+  },
+  {
+   "symbol": "ELV",
+   "name": "Elevance Health Inc.",
+   "industry": "Health Care"
+  },
+  {
+   "symbol": "EMR",
+   "name": "Emerson Electric Company",
+   "industry": "Technology"
+  },
+  {
+   "symbol": "EPD",
+   "name": "Enterprise Products Partners L.P.",
+   "industry": "Utilities"
+  },
+  {
+   "symbol": "FCX",
+   "name": "Freeport-McMoRan Inc.",
+   "industry": "Basic Materials"
+  },
+  {
+   "symbol": "GD",
+   "name": "General Dynamics Corporation",
+   "industry": "Industrials"
+  },
+  {
+   "symbol": "GE",
+   "name": "GE Aerospace",
+   "industry": "Technology"
+  },
+  {
+   "symbol": "GEV",
+   "name": "GE Vernova Inc.",
+   "industry": "Technology"
+  },
+  {
+   "symbol": "GLW",
+   "name": "Corning Incorporated",
+   "industry": "Industrials"
+  },
+  {
+   "symbol": "GS",
+   "name": "Goldman Sachs Group Inc. (The)",
+   "industry": "Finance"
+  },
+  {
+   "symbol": "HCA",
+   "name": "HCA Healthcare Inc.",
+   "industry": "Health Care"
+  },
+  {
+   "symbol": "HD",
+   "name": "Home Depot Inc. (The)",
+   "industry": "Consumer Discretionary"
+  },
+  {
+   "symbol": "HPE",
+   "name": "Hewlett Packard Enterprise Company",
+   "industry": "Technology"
+  },
+  {
+   "symbol": "HWM",
+   "name": "Howmet Aerospace Inc.",
+   "industry": "Industrials"
+  },
+  {
+   "symbol": "IBM",
+   "name": "International Business Machines Corporation",
+   "industry": "Technology"
+  },
+  {
+   "symbol": "ICE",
+   "name": "Intercontinental Exchange Inc.",
+   "industry": "Finance"
+  },
+  {
+   "symbol": "JNJ",
+   "name": "Johnson & Johnson",
+   "industry": "Health Care"
+  },
+  {
+   "symbol": "JPM",
+   "name": "JP Morgan Chase & Co.",
+   "industry": "Finance"
+  },
+  {
+   "symbol": "KKR",
+   "name": "KKR & Co. Inc.",
+   "industry": "Finance"
+  },
+  {
+   "symbol": "KO",
+   "name": "Coca-Cola Company (The)",
+   "industry": "Consumer Staples"
+  },
+  {
+   "symbol": "LLY",
+   "name": "Eli Lilly and Company",
+   "industry": "Health Care"
+  },
+  {
+   "symbol": "LMT",
+   "name": "Lockheed Martin Corporation",
+   "industry": "Industrials"
+  },
+  {
+   "symbol": "LOW",
+   "name": "Lowe's Companies Inc.",
+   "industry": "Consumer Discretionary"
+  },
+  {
+   "symbol": "MA",
+   "name": "Mastercard Incorporated",
+   "industry": "Consumer Discretionary"
+  },
+  {
+   "symbol": "MCD",
+   "name": "McDonald's Corporation",
+   "industry": "Consumer Discretionary"
+  },
+  {
+   "symbol": "MCK",
+   "name": "McKesson Corporation",
+   "industry": "Health Care"
+  },
+  {
+   "symbol": "MCO",
+   "name": "Moody's Corporation",
+   "industry": "Finance"
+  },
+  {
+   "symbol": "MDT",
+   "name": "Medtronic plc.",
+   "industry": "Health Care"
+  },
+  {
+   "symbol": "MMM",
+   "name": "3M Company",
+   "industry": "Health Care"
+  },
+  {
+   "symbol": "MO",
+   "name": "Altria Group Inc.",
+   "industry": "Health Care"
+  },
+  {
+   "symbol": "MPC",
+   "name": "Marathon Petroleum Corporation",
+   "industry": "Energy"
+  },
+  {
+   "symbol": "MRK",
+   "name": "Merck & Company Inc.",
+   "industry": "Health Care"
+  },
+  {
+   "symbol": "MRSH",
+   "name": "Marsh",
+   "industry": "Finance"
+  },
+  {
+   "symbol": "MS",
+   "name": "Morgan Stanley",
+   "industry": "Finance"
+  },
+  {
+   "symbol": "NEE",
+   "name": "NextEra Energy Inc.",
+   "industry": "Utilities"
+  },
+  {
+   "symbol": "NEM",
+   "name": "Newmont Corporation",
+   "industry": "Basic Materials"
+  },
+  {
+   "symbol": "NET",
+   "name": "Cloudflare Inc.",
+   "industry": "Technology"
+  },
+  {
+   "symbol": "NOW",
+   "name": "ServiceNow Inc.",
+   "industry": "Technology"
+  },
+  {
+   "symbol": "ORCL",
+   "name": "Oracle Corporation",
+   "industry": "Technology"
+  },
+  {
+   "symbol": "PFE",
+   "name": "Pfizer Inc.",
+   "industry": "Health Care"
+  },
+  {
+   "symbol": "PG",
+   "name": "Procter & Gamble Company (The)",
+   "industry": "Consumer Discretionary"
+  },
+  {
+   "symbol": "PGR",
+   "name": "Progressive Corporation (The)",
+   "industry": "Finance"
+  },
+  {
+   "symbol": "PH",
+   "name": "Parker-Hannifin Corporation",
+   "industry": "Industrials"
+  },
+  {
+   "symbol": "PLD",
+   "name": "Prologis Inc.",
+   "industry": "Real Estate"
+  },
+  {
+   "symbol": "PM",
+   "name": "Philip Morris International Inc",
+   "industry": "Health Care"
+  },
+  {
+   "symbol": "PNC",
+   "name": "PNC Financial Services Group Inc. (The)",
+   "industry": "Finance"
+  },
+  {
+   "symbol": "PSX",
+   "name": "Phillips 66",
+   "industry": "Energy"
+  },
+  {
+   "symbol": "PWR",
+   "name": "Quanta Services Inc.",
+   "industry": "Industrials"
+  },
+  {
+   "symbol": "RTX",
+   "name": "RTX Corporation",
+   "industry": "Industrials"
+  },
+  {
+   "symbol": "SCCO",
+   "name": "Southern Copper Corporation",
+   "industry": "Basic Materials"
+  },
+  {
+   "symbol": "SCHW",
+   "name": "Charles Schwab Corporation (The)",
+   "industry": "Finance"
+  },
+  {
+   "symbol": "SHW",
+   "name": "Sherwin-Williams Company (The)",
+   "industry": "Consumer Discretionary"
+  },
+  {
+   "symbol": "SNOW",
+   "name": "Snowflake Inc.",
+   "industry": "Technology"
+  },
+  {
+   "symbol": "SO",
+   "name": "Southern Company (The)",
+   "industry": "Utilities"
+  },
+  {
+   "symbol": "SPGI",
+   "name": "S&P Global Inc.",
+   "industry": "Finance"
+  },
+  {
+   "symbol": "SYK",
+   "name": "Stryker Corporation",
+   "industry": "Health Care"
+  },
+  {
+   "symbol": "T",
+   "name": "AT&T Inc.",
+   "industry": "Telecommunications"
+  },
+  {
+   "symbol": "TJX",
+   "name": "TJX Companies Inc. (The)",
+   "industry": "Consumer Discretionary"
+  },
+  {
+   "symbol": "TMO",
+   "name": "Thermo Fisher Scientific Inc",
+   "industry": "Industrials"
+  },
+  {
+   "symbol": "TRV",
+   "name": "The Travelers Companies Inc.",
+   "industry": "Finance"
+  },
+  {
+   "symbol": "UBER",
+   "name": "Uber Technologies Inc.",
+   "industry": "Consumer Discretionary"
+  },
+  {
+   "symbol": "UNH",
+   "name": "UnitedHealth Group Incorporated",
+   "industry": "Health Care"
+  },
+  {
+   "symbol": "UNP",
+   "name": "Union Pacific Corporation",
+   "industry": "Industrials"
+  },
+  {
+   "symbol": "UPS",
+   "name": "United Parcel Service Inc.",
+   "industry": "Industrials"
+  },
+  {
+   "symbol": "USB",
+   "name": "U.S. Bancorp",
+   "industry": "Finance"
+  },
+  {
+   "symbol": "V",
+   "name": "Visa Inc.",
+   "industry": "Consumer Discretionary"
+  },
+  {
+   "symbol": "VLO",
+   "name": "Valero Energy Corporation",
+   "industry": "Energy"
+  },
+  {
+   "symbol": "VRT",
+   "name": "Vertiv Holdings LLC",
+   "industry": "Technology"
+  },
+  {
+   "symbol": "VZ",
+   "name": "Verizon Communications Inc.",
+   "industry": "Telecommunications"
+  },
+  {
+   "symbol": "WELL",
+   "name": "Welltower Inc.",
+   "industry": "Real Estate"
+  },
+  {
+   "symbol": "WFC",
+   "name": "Wells Fargo & Company",
+   "industry": "Finance"
+  },
+  {
+   "symbol": "WM",
+   "name": "Waste Management Inc.",
+   "industry": "Utilities"
+  },
+  {
+   "symbol": "WMB",
+   "name": "Williams Companies Inc. (The)",
+   "industry": "Utilities"
+  },
+  {
+   "symbol": "XOM",
+   "name": "ExxonMobil Holdings Corporation",
+   "industry": "Energy"
+  }
+ ]
+}

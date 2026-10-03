@@ -1,7 +1,8 @@
 # Rupevo
 
 **Market rankings and tax tools, explained.** Rupevo publishes rules-based
-rankings of the **Indian Nifty 100** and the **US NASDAQ-100**, refreshed from
+rankings of the **Indian Nifty 100** and of **US stocks** (the NASDAQ-100 and
+the NYSE's 100 largest US companies), refreshed from
 end-of-day prices, with every score broken down so readers can see *why* a
 stock ranks where it does — plus step-by-step **tax tools** for Indian
 investors, starting with foreign RSUs.
@@ -11,7 +12,7 @@ Live site: **https://yash040599.github.io/Rupevo/**
 | Page | What it shows | Model |
 |---|---|---|
 | [Nifty 100 Ranking](site/india/index.html) | Technical setups, technical score (A–D), risk grade, 52-week dips, sector strength | Migrated from the ai-portfolio-manager swing scanner |
-| [NASDAQ-100 Ranking](site/us/index.html) | Six-pillar long-term scorecard: quality, valuation vs sector, growth, momentum, balance sheet, risk | Migrated from the ai-portfolio-manager US long-term scorer |
+| [US Stock Ranking](site/us/index.html) | Six-pillar long-term scorecard (quality, valuation vs sector, growth, momentum, balance sheet, risk) for two lists: the **NASDAQ-100** and the **NYSE top 100** (the 100 largest US companies listed on the NYSE, e.g. Oracle, Uber, JPMorgan). A switch shows **All US** (both lists ranked together), **NASDAQ-100** or **NYSE top 100**; search covers the lists in view, and searching one exchange for a company on the other says where it is | Migrated from the ai-portfolio-manager US long-term scorer |
 | [Tax tools](site/tax/index.html) | RSU taxation → broker (Fidelity) → company (**Microsoft, Oracle**). Load Fidelity's *View open lots* CSV (shares held) and, if you sold any, *View closed lots* (Previously held shares); the company page has three tabs: **Foreign assets** (Schedule FA Table A2 for the Fidelity account and A3 with one row per RSU vest and ESPP purchase, including lots sold during the year with their proceeds, plus the Schedule AL cost), **Selling shares** (capital gains under India's 24-month rule: Schedule CG A5/B8, gains by date of sale, and the Schedule FSI row) and **Dividends** (the payments the shares received in the financial year, Schedule OS with its quarterly breakup, Schedule FSI, Schedule TR and the Form 67 fields with its deadline, plus the company's dividend history). Sold shares change Schedule FA and the dividends too, so those tabs ask for both exports unless nothing was ever sold. Visitors can request another company. Every tax page has an interactive "how far through the financial year are we" slider (advance-tax and ITR dates marked) and rotating tax trivia | Runs in the browser: the user's files are never uploaded. Uses published SBI TT buying rates, closes and dividends (`site/data/tax/`, refreshed weekly) |
 
 Every page has light/dark theme, a **Buy me a coffee** button (in the top
@@ -25,9 +26,9 @@ disclaimer. Ranking pages add a USD/INR toggle, a "last synced" indicator, a
 
 ```
              ┌──────────────── GitHub Actions: "Refresh market data" ────────────────┐
- Admin ──────►  python -m pipeline refresh   →  site/data/{india,us}.json  → commit  │
+ Admin ──────►  python -m pipeline refresh → site/data/{india,us,us-nyse}.json → commit │
  (Analyse now│      │  Yahoo Finance EOD prices + fundamentals                          │
-  button,    │      │  NSE / Nasdaq constituent lists                                   │
+  button,    │      │  NSE / Nasdaq lists (NASDAQ-100; NYSE listings → NYSE top 100)    │
   Actions tab│      └─ scoring engine (pipeline/engine, migrated from the local tool)    │
   or local)  └──────────────────────────────┬───────────────────────────────────────────┘
                                              ▼
@@ -71,10 +72,11 @@ There are three ways to run one:
    setup step 3) and the page switches "Request refresh" for **Analyse now**.
    It dispatches the workflow, follows the run live and reloads the page
    when the new data is deployed (about 3–6 minutes). The admin panel also
-   has *Refresh both* and recent-run history. Visitors never see the button,
+   has *Refresh all* and recent-run history. Visitors never see the button,
    and GitHub rejects dispatches from anyone without write access.
 2. **GitHub Actions tab / GitHub mobile app**: *Actions → Refresh market
-   data → Run workflow*, pick `both`, `india`, `us` or `tax`.
+   data → Run workflow*, pick `both`, `india`, `us` or `tax` (`us` rebuilds
+   both US lists, `both` every ranking).
 3. **From your PC**:
    ```powershell
    cd C:\Users\yashagrawal\AiPortfolioManager\Rupevo
@@ -92,9 +94,9 @@ automatically too, add another `cron:` line to the `schedule:` block in
 (there is a commented example); any schedule other than the Monday one
 refreshes both markets.
 
-If a market fails (for example Yahoo throttling), its previous snapshot
-stays live, the other market still publishes, and the run is marked failed
-with the reason in the job summary. A market is never published when more
+If a list fails (for example Yahoo throttling), its previous snapshot
+stays live, the other lists still publish, and the run is marked failed
+with the reason in the job summary. A list is never published when more
 than 20% of its stocks failed to download. The tax data works the same way:
 a file that fails its checks (too few rows, or older than the published one)
 is not replaced.
@@ -183,10 +185,19 @@ use synthetic lots only.
 
 Index constituents live in `pipeline/universes/*.json`. They refresh
 automatically in the cloud workflow, or locally with
-`python -m pipeline universe`. After NSE's March/September rebalance, add
-new Nifty 100 symbols to
+`python -m pipeline universe` (`--only nifty100|nasdaq100|nyse100`). After
+NSE's March/September rebalance, add new Nifty 100 symbols to
 [pipeline/universes/sectors.py](pipeline/universes/sectors.py) (a test fails
 until every constituent has a sector bucket).
+
+The **NYSE top 100** has no official constituent file, so it is selected from
+every NYSE listing in Nasdaq's stock screener: US companies only, common stock
+only (preferreds, listed notes and bonds, warrants and ADRs are left out), one
+share class per company (the most traded, e.g. BRK.B), largest market value
+first. A member stays until it falls below #120 and a newcomer joins once it
+is in the top 80 (or a place frees up), so companies near #100 do not swap in
+and out on every refresh. `--market us` builds it into `site/data/us-nyse.json`
+next to the NASDAQ-100 in `site/data/us.json`; the US page combines the two.
 
 ## Project layout
 
@@ -194,7 +205,7 @@ until every constituent has a sector bucket).
 pipeline/
   engine/          pure scoring code migrated from ai-portfolio-manager
   providers/       Yahoo Finance prices, dividends + US fundamentals (network I/O)
-  universes/       Nifty 100 / NASDAQ-100 lists, sector buckets, refresher
+  universes/       Nifty 100 / NASDAQ-100 / NYSE top 100 lists, sector buckets, refresher
   india.py, us.py  snapshot builders;  publish.py, cli.py  the command line
   taxdata.py       tax reference data: SBI TT buying rates, closes, dividends
 scripts/
@@ -205,7 +216,8 @@ site/
   tax/             Tax tools → rsu/ → fidelity/ → msft/, orcl/ (tabs: foreign assets, selling shares, dividends)
   assets/css/rupevo.css   design tokens ported from the local dashboard
   assets/js/              core, shell (nav/footer), coffee (UPI dialog),
-                          device, ranking, admin,
+                          device, ranking (+ us-lists: the US page's
+                          NASDAQ/NYSE views), admin,
                           mail (forms → Web3Forms/mailto), request, tax,
                           fy (financial-year slider + trivia), config,
                           fidelity (export parser), schedule-fa,
@@ -218,8 +230,8 @@ tests/             engine, snapshot, universe, parser, publication-safety,
                    tax-data and site-structure (links, assets, QR) tests;
                    tests/js/ holds Node tests for the financial-year maths,
                    the Fidelity parser, the Schedule FA, dividend and capital
-                   gains engines and phone detection; tests/fixtures/ the
-                   synthetic exports
+                   gains engines, the US list views and phone detection;
+                   tests/fixtures/ the synthetic exports
 .github/workflows/ ci.yml · pages.yml (deploy) · refresh-data.yml (refresh + deploy)
 ```
 

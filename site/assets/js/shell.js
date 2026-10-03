@@ -9,7 +9,7 @@ import { contactAddress, mailtoHref } from './mail.js';
 
 const NAV = [
   { key: 'india', label: 'Nifty 100', href: 'india/', title: 'Indian Nifty 100 Ranking' },
-  { key: 'us', label: 'NASDAQ-100', href: 'us/', title: 'US NASDAQ-100 Ranking' },
+  { key: 'us', label: 'US stocks', href: 'us/', title: 'US Stock Ranking: NASDAQ-100 and NYSE top 100' },
   { key: 'tax', label: 'Tax', href: 'tax/', title: 'Tax tools: RSU taxation and more' },
 ];
 
@@ -83,7 +83,8 @@ export function renderShell(page, { showCurrency = true, onAdminRefreshed } = {}
       </div>
       <p class="disclaimer">${DISCLAIMER}</p>
       <div class="footer-links">
-        <span>Prices &amp; fundamentals: Yahoo Finance (end-of-day). Index lists: NSE India, Nasdaq.
+        <span>Prices &amp; fundamentals: Yahoo Finance (end-of-day). Index lists: NSE India, Nasdaq (NASDAQ-100;
+          NYSE listings for the NYSE top 100).
           Not affiliated with any exchange, data provider, broker or employer.</span>
         <a data-contact data-contact-subject="Rupevo" data-contact-label="Contact"></a>
         <a href="https://github.com/${esc(SITE.repo.owner)}/${esc(SITE.repo.name)}" target="_blank" rel="noopener">Source on GitHub</a>

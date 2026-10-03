@@ -1,8 +1,11 @@
 """Command line for the data pipeline.
 
     python -m pipeline refresh [--market both|india|us]
-    python -m pipeline universe [--only nifty100|nasdaq100]
+    python -m pipeline universe [--only nifty100|nasdaq100|nyse100]
     python -m pipeline tax-data
+
+`--market us` builds both US rankings: the NASDAQ-100 (site/data/us.json)
+and the NYSE top 100 (site/data/us-nyse.json).
 """
 
 from __future__ import annotations
@@ -32,14 +35,14 @@ def _cmd_refresh(args: argparse.Namespace) -> int:
     markets = MARKETS if args.market == "both" else (args.market,)
     chart = YahooChart(Logger("yahoo"))
     fx = chart.usd_inr()
-    results = [publish_market(m, out_dir=out_dir, cache_dir=os.path.abspath(args.cache),
-                              chart=chart, fx=fx, limit=args.limit)
-               for m in markets]
+    results = [r for m in markets
+               for r in publish_market(m, out_dir=out_dir, cache_dir=os.path.abspath(args.cache),
+                                       chart=chart, fx=fx, limit=args.limit)]
     write_job_summary(results)
     for r in results:
         status = (f"published ({r['ranked']} ranked, data through {r['data_through']})"
                   if r["ok"] else f"FAILED: {r['error']}")
-        print(f"{r['market']:>6}: {status}")
+        print(f"{r['market']:>7}: {status}")
     return 0 if all(r["ok"] for r in results) else 1
 
 
@@ -97,7 +100,7 @@ def main(argv: list[str] | None = None) -> int:
     p_refresh.set_defaults(func=_cmd_refresh)
 
     p_universe = sub.add_parser("universe", help="refresh index constituent lists")
-    p_universe.add_argument("--only", choices=("nifty100", "nasdaq100"))
+    p_universe.add_argument("--only", choices=("nifty100", "nasdaq100", "nyse100"))
     p_universe.set_defaults(func=_cmd_universe)
 
     p_tax = sub.add_parser("tax-data",

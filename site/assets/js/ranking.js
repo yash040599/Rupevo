@@ -1,5 +1,6 @@
-// Ranking page controller shared by the Nifty 100 and NASDAQ-100 pages.
-// Everything renders from the published snapshot JSON (site/data/*.json).
+// Ranking page controller shared by the Nifty 100 and US pages.
+// Everything renders from the published snapshot JSON (site/data/*.json). The US page combines
+// two snapshots (NASDAQ-100 and NYSE top 100) through us-lists.js.
 import {
   DASH, ago, currency, dataUrl, esc, isNum, istDateTime, loadJSON, money, moneyCompact,
   num, pct, sleep, toast, toned, tradingDay,
@@ -7,6 +8,9 @@ import {
 import { renderShell, showFx, syncCurrencyToggle } from './shell.js';
 import { isAdmin, startRefresh } from './admin.js';
 import { openRequestModal } from './request.js';
+import {
+  composeView, findElsewhere, matchesQuery, quoteLinks, US_LISTS, US_VIEWS, viewFromHash, viewOf,
+} from './us-lists.js';
 
 // ── Small HTML helpers ──
 const gradePill = (cls, label, score) => (label
@@ -29,6 +33,12 @@ const dipCell = (v) => {
 };
 const stockCell = (r, ctx) => `<div class="stock">
     <button class="sym" type="button" aria-expanded="${ctx.open ? 'true' : 'false'}">${esc(r.symbol)}</button>
+    <span class="nm" title="${esc(r.name)}">${esc(r.name)}</span></div>`;
+// US rows name their exchange when both lists are shown together.
+const usStockCell = (r, ctx) => `<div class="stock">
+    <span class="sym-line"><button class="sym" type="button" aria-expanded="${ctx.open ? 'true' : 'false'}">${
+      esc(r.symbol)}</button>${ctx.multi && r.exchange ? `<span class="ex-tag ex-${slug(r.exchange)}"
+      title="Listed on the ${esc(r.exchange)}">${esc(r.exchange)}</span>` : ''}</span>
     <span class="nm" title="${esc(r.name)}">${esc(r.name)}</span></div>`;
 // Current open state of a card's collapsible section, so re-rendering after a
 // data refresh does not reopen what the reader collapsed.
@@ -240,7 +250,7 @@ const INDIA = {
   },
 };
 
-// ── NASDAQ-100 ──
+// ── US: NASDAQ-100 and NYSE top 100 ──
 const PILLAR_SHORT = {
   'Quality & profitability': 'Quality', Valuation: 'Valuation', 'Growth durability': 'Growth',
   'Long-horizon momentum': 'Momentum', 'Financial strength': 'Strength', 'Risk & drawdown': 'Risk',
@@ -261,14 +271,21 @@ const pillarScore = (r, pillar) => (r.pillars || []).find((p) => p.name === pill
 const US = {
   key: 'us',
   native: 'USD',
+  lists: US_LISTS,
+  views: US_VIEWS,
   rankedTitle: 'Ranked companies',
+  rankedTitleFor: (s) => (s.multi ? 'Ranked companies · NASDAQ and NYSE' : `Ranked companies · ${s.lists?.[0]?.label || ''}`),
   rankedHint: 'Strong and Excellent bands first, then by score. Click a row for the full scorecard.',
   othersTitle: 'Not ranked today',
   searchPlaceholder: 'Search ticker or company',
+  searchPlaceholderFor: (s) => (s.multi ? 'Search NASDAQ and NYSE: ticker or company'
+    : `Search the ${s.lists?.[0]?.label || 'list'}: ticker or company`),
   filters: [{ key: 'band_label', all: 'All bands', order: BAND_ORDER }, { key: 'sector', all: 'All sectors' }],
   columns: [
-    { key: 'rank', label: '#', sort: (r) => r.rank, render: (r) => `<span class="rank-num">${r.rank}</span>` },
-    { key: 'symbol', label: 'Company', sort: (r) => r.symbol, render: stockCell },
+    { key: 'rank', label: '#', sort: (r) => r.rank,
+      render: (r, ctx) => `<span class="rank-num"${ctx.multi && r.list_rank
+        ? ` title="#${r.list_rank} in the ${esc(r.list)}"` : ''}>${r.rank}</span>` },
+    { key: 'symbol', label: 'Company', sort: (r) => r.symbol, render: usStockCell },
     { key: 'sector', label: 'Sector', opt: true, sort: (r) => r.sector, render: (r) => esc(r.sector || DASH) },
     { key: 'score', label: 'Score', title: 'Long-term composite 0-100 and its band', desc: true,
       sort: (r) => r.score, render: (r) => gradePill(`band-${slug(r.band_label)}`, r.band_label, r.score) },
@@ -291,7 +308,7 @@ const US = {
     { key: 'why', label: 'Pillars', cls: 'why', render: pillarExtremes },
   ],
   otherColumns: [
-    { key: 'symbol', label: 'Company', sort: (r) => r.symbol, render: stockCell },
+    { key: 'symbol', label: 'Company', sort: (r) => r.symbol, render: usStockCell },
     { key: 'status', label: 'Why not ranked', cls: 'why', sort: (r) => r.status_reason,
       render: (r) => esc(r.status_reason) },
     { key: 'close', label: 'Close', align: 'right', desc: true, sort: (r) => r.close, render: (r) => money(r.close) },
@@ -365,18 +382,32 @@ const US = {
         ['Sharpe (1y)', num(r.sharpe_1y, 2)], ['Avg daily traded value', moneyCompact(r.avg_turnover)],
         ['Last trading day', tradingDay(r.last_date)],
       ])),
-      `<div class="links">
-        <a href="https://www.nasdaq.com/market-activity/stocks/${encodeURIComponent(r.symbol.toLowerCase())}" target="_blank" rel="noopener">Nasdaq ↗</a>
-        <a href="https://finance.yahoo.com/quote/${encodeURIComponent(r.symbol)}" target="_blank" rel="noopener">Yahoo Finance ↗</a>
-      </div>`,
+      `<div class="links">${quoteLinks(r).map((l) =>
+        `<a href="${esc(l.href)}" target="_blank" rel="noopener">${esc(l.label)} ↗</a>`).join('')}</div>`,
     ];
     return `<div>${left.join('')}</div><div>${right.join('')}</div>`;
   },
 
   method(s) {
+    const asOf = (label) => {
+      const l = (s.lists || []).find((x) => x.label === label);
+      return l?.universe?.as_of ? ` (list as of ${esc(tradingDay(l.universe.as_of))})` : '';
+    };
     return `<div class="prose">
-      <p>Every ${esc(s.universe.name)} company (constituent list as of ${esc(tradingDay(s.universe.as_of))})
-      is scored for a long, buy-and-hold horizon from end-of-day prices and company fundamentals.</p>
+      <p>Two lists of large US companies are scored the same way, for a long, buy-and-hold horizon, from
+      end-of-day prices and company fundamentals:</p>
+      <ul>
+        <li><strong>NASDAQ-100</strong>: the 100 largest non-financial companies listed on the Nasdaq
+          exchange, as published by Nasdaq${asOf('NASDAQ-100')}.</li>
+        <li><strong>NYSE top 100</strong>: the 100 largest US companies listed on the New York Stock Exchange,
+          by market value, from Nasdaq's stock screener${asOf('NYSE top 100')}. Common stock only, one share
+          class per company. So that companies near #100 do not swap in and out on every refresh, a member
+          stays until it falls below #120, and a newcomer joins once it is in the top 80 or a place frees up.</li>
+      </ul>
+      <p>A company is listed on one exchange: Oracle, Uber and JPMorgan, for example, are on the NYSE, so
+      they are in the second list, not the NASDAQ-100. <strong>All US</strong> ranks both lists together in
+      the same order as each list; choose an exchange above to see one list with its own ranks. The search
+      looks through every company in the list you are viewing.</p>
       <table>
         <tr><th>Pillar</th><th>Weight</th><th>What it measures</th></tr>
         <tr><td>Quality &amp; profitability</td><td>24</td><td>Return on equity and assets, gross, operating and free-cash-flow margins</td></tr>
@@ -412,7 +443,7 @@ function compare(a, b) {
   return typeof a === 'string' ? a.localeCompare(b) : a - b;
 }
 
-function makeTable(host, { columns, rows, detail, empty, sort, filtersFn }) {
+function makeTable(host, { columns, rows, detail, empty, sort, filtersFn, context }) {
   const state = { sort: { ...sort }, open: new Set() };
   host.innerHTML = `<div class="table-scroll"><table class="rank">
       <thead><tr>${columns.map((c) => `<th class="${c.align === 'right' ? 'right' : ''}${c.opt ? ' opt' : ''}"
@@ -437,12 +468,13 @@ function makeTable(host, { columns, rows, detail, empty, sort, filtersFn }) {
     }
     headers.forEach((th) => th.setAttribute('aria-sort', th.dataset.key === state.sort.key
       ? (state.sort.dir > 0 ? 'ascending' : 'descending') : 'none'));
+    const ctx = context ? context() : {};
     tbody.innerHTML = list.length ? list.map((r) => {
       const open = state.open.has(r.symbol);
       return `<tr class="row${open ? ' open' : ''}" data-symbol="${esc(r.symbol)}">${columns.map((c) =>
         `<td class="${[c.cls, c.align === 'right' ? 'right' : '', c.opt ? 'opt' : ''].filter(Boolean).join(' ')}">${
-          c.render(r, { open })}</td>`).join('')}</tr>${open ? detailRow(r) : ''}`;
-    }).join('') : `<tr><td colspan="${columns.length}" class="empty">${empty}</td></tr>`;
+          c.render(r, { ...ctx, open })}</td>`).join('')}</tr>${open ? detailRow(r) : ''}`;
+    }).join('') : `<tr><td colspan="${columns.length}" class="empty">${typeof empty === 'function' ? empty() : empty}</td></tr>`;
     return list.length;
   };
   const detailRow = (r) => `<tr class="detail-row"><td colspan="${columns.length}"><div class="detail">${detail(r)}</div></td></tr>`;
@@ -478,7 +510,12 @@ function makeTable(host, { columns, rows, detail, empty, sort, filtersFn }) {
 // ── Page ──
 export async function start(marketKey) {
   const M = MARKETS[marketKey];
+  // One snapshot per list: the Nifty 100 page has one, the US page two (NASDAQ-100, NYSE top 100).
+  const lists = M.lists || [{ key: marketKey }];
   const app = document.getElementById('app');
+  let loaded = [];
+  let missing = [];
+  let view = M.views ? viewFromHash(window.location.hash) : null;
   let snap = null;
   const filters = { query: '' };
   let rankedTable = null;
@@ -489,6 +526,7 @@ export async function start(marketKey) {
   syncCurrencyToggle();
 
   const els = {
+    views: app.querySelector('#views'),
     sync: app.querySelector('#sync-bar'),
     notice: app.querySelector('#notice'),
     tiles: app.querySelector('#tiles'),
@@ -498,12 +536,60 @@ export async function start(marketKey) {
     method: app.querySelector('#method-body'),
   };
 
+  async function loadLists(bust) {
+    const results = await Promise.allSettled(lists.map((list) => loadJSON(dataUrl(list.key), { bust })));
+    const ok = [];
+    const failed = [];
+    results.forEach((res, i) => {
+      if (res.status === 'fulfilled') ok.push({ list: lists[i], snap: res.value });
+      else failed.push({ list: lists[i], error: res.reason });
+    });
+    return { ok, failed };
+  }
+
+  // The snapshot the page shows: the market's own, or on the US page the chosen view of both lists.
+  function compose() {
+    if (!M.views) return loaded[0]?.snap || null;
+    let out = composeView(loaded, view);
+    if (!out) {
+      view = 'all';
+      out = composeView(loaded, view);
+      if (window.location.hash) window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
+    }
+    return out;
+  }
+
+  function setView(key) {
+    if (!M.views) return;
+    view = viewOf(key).key;
+    const hash = view === 'all' ? '' : `#${view}`;
+    if (window.location.hash !== hash) {
+      window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}${hash}`);
+    }
+    snap = compose();
+    renderAll();
+  }
+
+  function renderViews() {
+    if (!M.views || !els.views) return;
+    els.views.innerHTML = M.views.map((v) => {
+      const s = composeView(loaded, v.key);
+      return `<button class="view-btn" type="button" data-view="${v.key}" aria-pressed="${v.key === snap.view}"${
+        s ? '' : ' disabled title="Not published yet"'}><span>${esc(v.label)}</span><span class="view-count">${
+        s ? s.ranked.length : DASH}</span></button>`;
+    }).join('');
+  }
+
   function renderSync() {
     if (!snap) return;
     const ageDays = (Date.now() - new Date(snap.generated_at).getTime()) / 86400000;
+    // Lists refreshed at different times (one failed to refresh) each say when.
+    const times = (snap.lists || []).map((l) => new Date(l.generated_at).getTime());
+    const apart = times.length > 1 && Math.max(...times) - Math.min(...times) > 3600000;
+    const perList = apart ? ` · ${snap.lists.map((l) => `${esc(l.label)} synced ${esc(ago(l.generated_at))}`).join(', ')}` : '';
     els.sync.innerHTML = `
       <span class="chip ${ageDays > 4 ? 'warn' : 'pos'}"><span class="dot"></span>Last synced ${esc(istDateTime(snap.generated_at))}</span>
-      <span class="sync-meta">${esc(ago(snap.generated_at))} · prices through ${esc(tradingDay(snap.data_through))} · ${esc(snap.data_source?.prices || '')}</span>
+      <span class="sync-meta">${esc(ago(snap.generated_at))} · prices through ${esc(tradingDay(snap.data_through))} · ${esc(snap.data_source?.prices || '')}${perList}</span>
       <span class="spacer"></span>
       <span class="sync-actions">${isAdmin()
         ? '<span class="chip info" title="Admin mode is on in this browser">Admin</span><button class="btn" id="analyse-btn" type="button">Analyse now</button>'
@@ -511,7 +597,8 @@ export async function start(marketKey) {
     els.sync.querySelector('#analyse-btn')?.addEventListener('click',
       () => startRefresh(marketKey, { onDone: () => reload(true) }));
     els.sync.querySelector('#request-btn')?.addEventListener('click', () => openRequestModal({
-      market: marketKey, title: snap.title.replace(/ Ranking$/, ''),
+      market: marketKey,
+      title: snap.multi ? 'US (NASDAQ-100 and NYSE top 100)' : snap.title.replace(/ Ranking$/, ''),
       generatedAt: snap.generated_at, dataThrough: snap.data_through,
     }));
   }
@@ -520,6 +607,12 @@ export async function start(marketKey) {
     const notes = [];
     if (snap.partial) notes.push('<div class="banner warn">This is a partial test snapshot, not the full ranking.</div>');
     if (!snap.fx?.usd_inr) notes.push('<div class="banner">Currency conversion is unavailable for this snapshot.</div>');
+    const shown = M.views ? viewOf(snap.view).exchanges : null;
+    for (const { label, exchange } of missing) {
+      if (shown && !shown.includes(exchange)) continue;
+      notes.push(`<div class="banner warn">The ${esc(label || 'ranking')} list could not be loaded right now, so it is
+        left out. Reload the page in a minute.</div>`);
+    }
     els.notice.innerHTML = notes.join('');
   }
 
@@ -527,20 +620,22 @@ export async function start(marketKey) {
     const c = snap.changes;
     if (!c) { els.changes.hidden = true; return; }
     els.changes.hidden = false;
+    // With both US lists shown, each rank is the company's rank in its own list.
+    const at = (d, n) => `${snap.multi && d.exchange ? `${esc(d.exchange)} ` : ''}#${n}`;
     const item = (d, right) => `<li><span class="sym">${esc(d.symbol)}</span><span class="muted small">${right}</span></li>`;
     const groups = [];
     if (c.new_entries?.length) {
       groups.push(`<div><h3>New in the ranking</h3><ul>${c.new_entries.slice(0, 12).map((d) =>
-        item(d, `#${d.rank}${d.label ? ` · ${esc(d.label)}` : ''}`)).join('')}</ul></div>`);
+        item(d, `${at(d, d.rank)}${d.label ? ` · ${esc(d.label)}` : ''}`)).join('')}</ul></div>`);
     }
     if (c.dropped?.length) {
       groups.push(`<div><h3>Left the ranking</h3><ul>${c.dropped.slice(0, 12).map((d) =>
-        item(d, `was #${d.previous_rank} · ${esc(d.now)}`)).join('')}</ul></div>`);
+        item(d, `was ${at(d, d.previous_rank)} · ${esc(d.now)}`)).join('')}</ul></div>`);
     }
     if (c.rank_movers?.length) {
       groups.push(`<div><h3>Biggest rank moves</h3><ul>${c.rank_movers.slice(0, 12).map((d) =>
         `<li><span class="sym">${esc(d.symbol)}</span><span class="${d.delta > 0 ? 'pos' : 'neg'}">${d.delta > 0 ? '▲' : '▼'} ${Math.abs(d.delta)}</span>
-         <span class="muted small">#${d.previous_rank} → #${d.rank}</span></li>`).join('')}</ul></div>`);
+         <span class="muted small">${at(d, d.previous_rank)} → #${d.rank}</span></li>`).join('')}</ul></div>`);
     }
     if (c.band_changes?.length) {
       groups.push(`<div><h3>Band changes</h3><ul>${c.band_changes.slice(0, 12).map((d) =>
@@ -555,30 +650,41 @@ export async function start(marketKey) {
       </details>`;
   }
 
+  // Searching one exchange for a company listed on the other says where it is.
+  function emptyRanked() {
+    const elsewhere = M.views ? findElsewhere(loaded, snap.view, filters.query) : [];
+    if (!elsewhere.length) return 'No matches — clear the search or filters.';
+    const names = elsewhere.slice(0, 3).map((h) => `<strong>${esc(h.symbol)}</strong> (${esc(h.name)})`).join(', ');
+    const where = [...new Set(elsewhere.map((h) => h.label))].join(' and ');
+    return `No matches in the ${esc(snap.lists?.[0]?.label || 'list')}. ${names}${elsewhere.length > 3 ? ' and more' : ''}
+      ${elsewhere.length === 1 ? 'is' : 'are'} in the ${esc(where)}.
+      <button class="btn alt small" type="button" data-view="all">Search all US</button>`;
+  }
+
   function buildRanked() {
     const filterOptions = M.filters.map((f) => {
       const values = [...new Set(snap.ranked.map((r) => r[f.key]).filter(Boolean))];
       values.sort(f.order ? (a, b) => f.order.indexOf(a) - f.order.indexOf(b) : undefined);
+      if (filters[f.key] && !values.includes(filters[f.key])) filters[f.key] = '';
       return `<select data-filter="${f.key}" aria-label="${esc(f.all)}"><option value="">${esc(f.all)}</option>${
         values.map((v) => `<option value="${esc(v)}"${filters[f.key] === v ? ' selected' : ''}>${esc(v)}</option>`).join('')}</select>`;
     }).join('');
+    const title = M.rankedTitleFor ? M.rankedTitleFor(snap) : M.rankedTitle;
+    const placeholder = M.searchPlaceholderFor ? M.searchPlaceholderFor(snap) : M.searchPlaceholder;
     els.rankedCard.innerHTML = `<details class="fold"${isOpen(els.rankedCard, true) ? ' open' : ''}>
-      <summary><h2>${esc(M.rankedTitle)} (${snap.ranked.length})</h2>
+      <summary><h2>${esc(title)} (${snap.ranked.length})</h2>
         <span class="hint">${esc(M.rankedHint)}</span></summary>
       <div class="toolbar">
-        <input type="search" id="q" placeholder="${esc(M.searchPlaceholder)}" aria-label="${esc(M.searchPlaceholder)}" value="${esc(filters.query)}">
+        <input type="search" id="q" placeholder="${esc(placeholder)}" aria-label="${esc(placeholder)}" value="${esc(filters.query)}">
         ${filterOptions}
         <span class="count" id="count"></span>
       </div>
       <div id="ranked-table"></div></details>`;
-    const match = (r) => {
-      const q = filters.query.trim().toLowerCase();
-      if (q && !r.symbol.toLowerCase().includes(q) && !String(r.name || '').toLowerCase().includes(q)) return false;
-      return M.filters.every((f) => !filters[f.key] || r[f.key] === filters[f.key]);
-    };
+    const match = (r) => matchesQuery(r, filters.query)
+      && M.filters.every((f) => !filters[f.key] || r[f.key] === filters[f.key]);
     rankedTable = makeTable(els.rankedCard.querySelector('#ranked-table'), {
       columns: M.columns, rows: () => snap.ranked, detail: M.detail, filtersFn: match,
-      sort: { key: 'rank', dir: 1 }, empty: 'No matches — clear the search or filters.',
+      sort: { key: 'rank', dir: 1 }, empty: emptyRanked, context: () => ({ multi: Boolean(snap.multi) }),
     });
     const count = els.rankedCard.querySelector('#count');
     const refresh = () => {
@@ -604,6 +710,7 @@ export async function start(marketKey) {
     othersTable = makeTable(els.othersCard.querySelector('#others-table'), {
       columns: M.otherColumns, rows: () => snap.others, detail: M.detail,
       sort: { key: 'symbol', dir: 1 }, empty: 'Every stock is ranked today.',
+      context: () => ({ multi: Boolean(snap.multi) }),
     });
     othersTable.render();
   }
@@ -618,6 +725,7 @@ export async function start(marketKey) {
     currency.configure(M.native, snap.fx?.usd_inr || 0);
     syncCurrencyToggle();
     showFx(snap.fx);
+    renderViews();
     renderSync();
     renderNotice();
     renderChanges();
@@ -629,12 +737,15 @@ export async function start(marketKey) {
   }
 
   async function reload(waitForNew) {
-    const previous = snap?.generated_at;
+    const before = new Map(loaded.map(({ list, snap: s }) => [list.key, s.generated_at]));
     for (let attempt = 0; attempt < 9; attempt += 1) {
       try {
-        const fresh = await loadJSON(dataUrl(marketKey), { bust: true });
-        if (!waitForNew || fresh.generated_at !== previous) {
-          snap = fresh;
+        const { ok, failed } = await loadLists(true);
+        const changed = ok.some(({ list, snap: s }) => before.get(list.key) !== s.generated_at);
+        if (ok.length && (!waitForNew || changed)) {
+          loaded = ok;
+          missing = failed.map((f) => f.list);
+          snap = compose();
           renderAll();
           return true;
         }
@@ -648,9 +759,27 @@ export async function start(marketKey) {
   currency.onChange(() => { syncCurrencyToggle(); if (snap) renderMoney(); });
   window.addEventListener('rupevo:admin-change', renderSync);
   setInterval(renderSync, 60000);
+  app.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-view]');
+    if (!btn || btn.disabled || !snap) return;
+    e.preventDefault();
+    // The view re-renders the switch and the table, replacing the clicked button: keep the
+    // keyboard focus on the search box (from "Search all US") or on the new switch button.
+    const fromTable = Boolean(btn.closest('#ranked-card'));
+    setView(btn.dataset.view);
+    const target = fromTable ? els.rankedCard.querySelector('#q') : els.views?.querySelector(`[data-view="${view}"]`);
+    target?.focus();
+  });
+  window.addEventListener('hashchange', () => {
+    if (M.views && snap && viewFromHash(window.location.hash) !== snap.view) setView(viewFromHash(window.location.hash));
+  });
 
   try {
-    snap = await loadJSON(dataUrl(marketKey));
+    const { ok, failed } = await loadLists(false);
+    if (!ok.length) throw failed[0]?.error || new Error('no data');
+    loaded = ok;
+    missing = failed.map((f) => f.list);
+    snap = compose();
     renderAll();
   } catch (err) {
     app.setAttribute('aria-busy', 'false');

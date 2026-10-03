@@ -44,7 +44,7 @@ def _texts(obj):
 class PublishedSnapshotTest(unittest.TestCase):
     def _snapshots(self):
         found = []
-        for market in ("india", "us"):
+        for market in ("india", "us", "us-nyse"):
             path = os.path.join(DATA_DIR, f"{market}.json")
             if os.path.exists(path):
                 with open(path, encoding="utf-8") as fh:
@@ -52,6 +52,16 @@ class PublishedSnapshotTest(unittest.TestCase):
         if not found:
             self.skipTest("no published snapshots yet")
         return found
+
+    def test_us_lists_name_their_exchange(self):
+        expected = {"us": "NASDAQ", "us-nyse": "NYSE"}
+        for market, snap in self._snapshots():
+            if market not in expected:
+                continue
+            with self.subTest(market=market):
+                self.assertEqual(snap["exchange"], expected[market])
+                rows = snap["ranked"] + snap["others"]
+                self.assertTrue(all(r["exchange"] == expected[market] for r in rows))
 
     def test_schema(self):
         for market, snap in self._snapshots():
