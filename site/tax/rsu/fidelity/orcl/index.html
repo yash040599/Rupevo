@@ -3,11 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Oracle shares at Fidelity: Schedule FA and dividend tax — Rupevo</title>
-  <meta name="description" content="Indian tax return help for Oracle RSU and ESPP shares held at Fidelity: Schedule FA rows per lot, dividend income with the US tax credit (Schedule OS, FSI, TR and Form 67), at SBI TT buying rates. Runs in your browser.">
+  <title>Oracle shares at Fidelity: Schedule FA, dividends and capital gains — Rupevo</title>
+  <meta name="description" content="Indian tax return help for Oracle RSU and ESPP shares held at Fidelity: Schedule FA rows per lot, dividend income with the US tax credit (Schedule OS, FSI, TR and Form 67) and capital gains on shares sold (Schedule CG), at SBI TT buying rates. Runs in your browser.">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://api.github.com https://api.web3forms.com; base-uri 'self'; form-action 'self'; object-src 'none'">
-  <meta property="og:title" content="Oracle shares at Fidelity: Schedule FA and dividend tax — Rupevo">
-  <meta property="og:description" content="Turn your Fidelity export into Schedule FA rows and dividend tax values for your Indian ITR.">
+  <meta property="og:title" content="Oracle shares at Fidelity: Schedule FA, dividends and capital gains — Rupevo">
+  <meta property="og:description" content="Turn your Fidelity exports into Schedule FA rows, dividend tax and capital gains values for your Indian ITR.">
   <link rel="icon" href="../../../../assets/img/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="../../../../assets/css/rupevo.css">
   <script src="../../../../assets/js/boot.js"></script>
@@ -26,12 +26,12 @@
       <div class="eyebrow">Fidelity · NYSE: ORCL</div>
       <h1>Oracle shares at Fidelity</h1>
       <p class="lede">Your Indian income-tax return for Oracle RSUs and ESPP shares held at Fidelity. Load your
-        Fidelity export once and get, at SBI's TT buying rates, the Schedule FA rows to type in and your dividend
-        income with the US tax credit.</p>
+        Fidelity exports once and get, at SBI's TT buying rates, the Schedule FA rows to type in, your dividend
+        income with the US tax credit, and the capital gains on shares you sold.</p>
       <div class="result-head">
         <span class="chip pos"><span class="dot"></span>Foreign assets: Schedule FA, AL</span>
         <span class="chip pos"><span class="dot"></span>Dividends: OS, FSI, TR, Form 67</span>
-        <span class="chip">Next: shares you sold</span>
+        <span class="chip pos"><span class="dot"></span>Selling shares: CG, FSI</span>
       </div>
     </section>
 
@@ -46,10 +46,12 @@
             <strong>Asset currency</strong>, so values are in US dollars rather than converted to rupees.</li>
           <li>Click <strong>Export</strong> at the top right. Your browser saves
             <strong>View open lots.csv</strong>.</li>
+          <li>Sold or transferred any shares? Click <strong>Previously held shares</strong> in the same window and
+            <strong>Export</strong> again: your browser saves <strong>View closed lots.csv</strong>.</li>
         </ol>
         <figure class="mock-window" aria-label="Illustration of Fidelity's share details window with sample numbers">
           <div class="mock-title"><span>ORACLE CORP (ORCL)</span><span aria-hidden="true">✕</span></div>
-          <div class="mock-bar"><span class="on">Current shares</span><span>Previously held shares</span>
+          <div class="mock-bar"><span class="on">Current shares</span><span class="mock-hl" data-n="5">Previously held shares</span>
             <span class="end mock-hl" data-n="4">⤓ Export</span></div>
           <div class="mock-cur"><span>Display currency</span><span class="mock-hl" data-n="3">Asset currency</span></div>
           <table class="mock-table">
@@ -60,28 +62,30 @@
           <figcaption class="mock-caption">Illustration · sample numbers</figcaption>
         </figure>
       </div>
-      <p class="small muted" style="margin:12px 0 0">This file lists the shares you still hold. Shares you
-        sold are under <strong>Previously held shares</strong>; support for them, and for the capital gains,
-        is coming next.</p>
+      <p class="small muted" style="margin:12px 0 0"><strong>View open lots.csv</strong> lists the shares you still
+        hold. <strong>View closed lots.csv</strong> lists the ones you sold: it gives the capital gains, and Schedule FA
+        needs it too, because shares sold during the year must still be reported. Keep <strong>Asset currency</strong>
+        for both.</p>
     </section>
 
     <section class="card step-card" aria-labelledby="step2">
-      <div class="card-head"><h2 id="step2"><span class="step-num">2</span>Load the file</h2></div>
+      <div class="card-head"><h2 id="step2"><span class="step-num">2</span>Load the files</h2></div>
       <label class="dropzone" id="dropzone" for="file-input" data-state="idle">
         <span class="dz-idle">
           <span class="big">Drop <em>View open lots.csv</em> here</span>
-          <span class="btn">Choose file…</span>
+          <span class="dz-also">and <em>View closed lots.csv</em> too, if you sold shares</span>
+          <span class="btn">Choose files…</span>
         </span>
-        <span class="dz-busy"><span class="spinner" aria-hidden="true"></span>Reading your file…</span>
+        <span class="dz-busy"><span class="spinner" aria-hidden="true"></span><span class="dz-busy-text">Reading your file…</span></span>
         <span class="dz-done"><span class="dz-check" aria-hidden="true">✓</span><span><strong id="dz-name"></strong>
-          loaded</span><span class="dz-again">Choose another file</span></span>
-        <input type="file" id="file-input"
+          loaded</span><span class="dz-again">Add or replace a file</span></span>
+        <input type="file" id="file-input" multiple
           accept=".csv,text/csv,text/comma-separated-values,application/csv,application/vnd.ms-excel,text/plain">
       </label>
-      <p class="privacy-note"><span aria-hidden="true">🔒</span><span>Your file is read on your own device.
-        It is not uploaded, sent anywhere or saved; closing the page clears it.</span></p>
+      <p class="privacy-note"><span aria-hidden="true">🔒</span><span>Your files are read on your own device.
+        They are not uploaded, sent anywhere or saved; closing the page clears them.</span></p>
       <p class="privacy-note"><span aria-hidden="true">📱</span><span>Works on phones too: tap <strong>Choose
-        file</strong> and pick the export from Files or Downloads. Exporting it from Fidelity is easiest on a laptop,
+        files</strong> and pick the exports from Files or Downloads, together or one at a time. Exporting it from Fidelity is easiest on a laptop,
         on the NetBenefits website.</span></p>
       <div id="load-status" role="status" aria-live="polite"></div>
     </section>

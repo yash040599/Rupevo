@@ -12,7 +12,7 @@ Live site: **https://yash040599.github.io/Rupevo/**
 |---|---|---|
 | [Nifty 100 Ranking](site/india/index.html) | Technical setups, technical score (A–D), risk grade, 52-week dips, sector strength | Migrated from the ai-portfolio-manager swing scanner |
 | [NASDAQ-100 Ranking](site/us/index.html) | Six-pillar long-term scorecard: quality, valuation vs sector, growth, momentum, balance sheet, risk | Migrated from the ai-portfolio-manager US long-term scorer |
-| [Tax tools](site/tax/index.html) | RSU taxation → broker (Fidelity) → company (**Microsoft, Oracle**). Load Fidelity's *View open lots* CSV once; the company page has three tabs: **Foreign assets** (Schedule FA Table A2 for the Fidelity account and A3 with one row per RSU vest and ESPP purchase, plus the Schedule AL cost), **Dividends** (the payments the shares received in the financial year, Schedule OS with its quarterly breakup, Schedule FSI, Schedule TR and the Form 67 fields with its deadline, plus the company's dividend history) and **Selling shares** (capital gains, coming next). Visitors can request another company. Every tax page has an interactive "how far through the financial year are we" slider (advance-tax and ITR dates marked) and rotating tax trivia | Runs in the browser: the user's file is never uploaded. Uses published SBI TT buying rates, closes and dividends (`site/data/tax/`, refreshed weekly) |
+| [Tax tools](site/tax/index.html) | RSU taxation → broker (Fidelity) → company (**Microsoft, Oracle**). Load Fidelity's *View open lots* CSV (shares held) and, if you sold any, *View closed lots* (Previously held shares); the company page has three tabs: **Foreign assets** (Schedule FA Table A2 for the Fidelity account and A3 with one row per RSU vest and ESPP purchase, including lots sold during the year with their proceeds, plus the Schedule AL cost), **Dividends** (the payments the shares received in the financial year, Schedule OS with its quarterly breakup, Schedule FSI, Schedule TR and the Form 67 fields with its deadline, plus the company's dividend history) and **Selling shares** (capital gains under India's 24-month rule: Schedule CG A5/B8, gains by date of sale, and the Schedule FSI row). Visitors can request another company. Every tax page has an interactive "how far through the financial year are we" slider (advance-tax and ITR dates marked) and rotating tax trivia | Runs in the browser: the user's files are never uploaded. Uses published SBI TT buying rates, closes and dividends (`site/data/tax/`, refreshed weekly) |
 
 Every page has light/dark theme, a **Buy me a coffee** button (in the top
 bar, a floating ☕ on phones once the bar scrolls away, and the footer) and a
@@ -54,9 +54,10 @@ disclaimer. Ranking pages add a USD/INR toggle, a "last synced" indicator, a
   closes plus dividends with declared/ex/record/pay dates: Nasdaq for
   Microsoft, and the feed behind Oracle's investor-relations dividend page for
   Oracle, since Nasdaq has no history for it; Yahoo ex-dates are the
-  fallback). The tax tools fetch these files and read the user's broker export
-  in the browser (`assets/js/fidelity.js` parses it, `schedule-fa.js` and
-  `dividends.js` do the maths). Nothing personal is uploaded or stored.
+  fallback). The tax tools fetch these files and read the user's broker exports
+  in the browser (`assets/js/fidelity.js` parses them, `schedule-fa.js`,
+  `dividends.js` and `capital-gains.js` do the maths). Nothing personal is
+  uploaded or stored.
 
 ---
 
@@ -169,8 +170,8 @@ node --test "tests/js/*.test.mjs"                               # JS unit tests
 # Tax reference data (SBI rates, Microsoft and Oracle prices and dividends)
 .\.venv\Scripts\python.exe -m pipeline tax-data --out .cache\scratch\tax
 
-# Rebuild the synthetic export the tests use (made-up quantities, real
-# Microsoft prices from site/data/tax/msft.json) in tests/fixtures/
+# Rebuild the synthetic exports the tests use (open and closed lots: made-up
+# quantities, real Microsoft prices from site/data/tax/msft.json) in tests/fixtures/
 .\.venv\Scripts\python.exe scripts\make_sample_export.py
 
 # Preview the site at http://127.0.0.1:8765/
@@ -198,7 +199,7 @@ pipeline/
   taxdata.py       tax reference data: SBI TT buying rates, closes, dividends
 scripts/
   make_upi_qr.py   regenerates the "Buy me a coffee" UPI QR image
-  make_sample_export.py  writes the synthetic Fidelity export in tests/fixtures/
+  make_sample_export.py  writes the synthetic Fidelity exports in tests/fixtures/
 site/
   index.html, india/, us/, 404.html
   tax/             Tax tools → rsu/ → fidelity/ → msft/, orcl/ (tabs: foreign assets, dividends, selling)
@@ -207,16 +208,18 @@ site/
                           device, ranking, admin,
                           mail (forms → Web3Forms/mailto), request, tax,
                           fy (financial-year slider + trivia), config,
-                          fidelity (export parser), schedule-fa and
-                          dividends (the maths), rsu-tool (company pages)
+                          fidelity (export parser), schedule-fa,
+                          dividends and capital-gains (the maths),
+                          rsu-tool (company pages)
   assets/img/             favicon, UPI QR (svg + png)
   data/                   published snapshots (written by the pipeline);
                           data/tax/ holds the tax tools' reference data
 tests/             engine, snapshot, universe, parser, publication-safety,
                    tax-data and site-structure (links, assets, QR) tests;
                    tests/js/ holds Node tests for the financial-year maths,
-                   the Fidelity parser, the Schedule FA and dividend engines
-                   and phone detection; tests/fixtures/ the synthetic export
+                   the Fidelity parser, the Schedule FA, dividend and capital
+                   gains engines and phone detection; tests/fixtures/ the
+                   synthetic exports
 .github/workflows/ ci.yml · pages.yml (deploy) · refresh-data.yml (refresh + deploy)
 ```
 
@@ -239,7 +242,9 @@ dates live in `assets/js/fy.js`.
 (which also runs `tax.js`). The page's `data-company` / `data-broker`
 attributes pick the entity details, data file and investor-relations link from
 the `COMPANIES` / `BROKERS` tables at the top of that file. The visitor loads
-the export once (step 2); the tool renders the return selector and three tabs
+the exports (step 2): *View open lots* for the shares held and, if any were
+sold, *View closed lots*, together or one at a time; each file's kind is
+detected from its columns. The tool renders the return selector and three tabs
 (`#fa`, `#dividends`, `#selling` in the URL):
 
 * **Foreign assets** (`schedule-fa.js`): for each lot held during the calendar
@@ -248,14 +253,29 @@ the export once (step 2); the tool renders the return selector and three tabs
   trading day, so never below the closing value), the 31 December value and the
   dividends paid, each at the SBI TT buying rate for its date (or the last
   rate before it); Table A2 for the Fidelity account; the Schedule AL cost.
+  Lots sold during the year have a nil closing value, their sale proceeds (at
+  the rate on the sale date) and a peak over the days they were held.
   ESPP lots are recognised by Fidelity's share source `SP` (or, for other
-  codes, a grant date and a typical ESPP discount).
+  codes, a grant date and a typical ESPP discount; the closed-lots export has
+  no share source, so sold lots take it from a held lot of the same date or
+  are judged by the discount alone).
 * **Dividends** (`dividends.js`): the payments in the financial year on lots
-  acquired before each ex-date, converted under Rule 115 (SBI rate on the last
-  day of the month before payment); the US tax at 25% (W-8BEN) or 30%; the
-  credit as the lowest of the US tax, the 25% treaty rate and the Indian tax at
-  the visitor's rate; Schedule OS with the five 234C periods, FSI, TR and the
-  Form 67 fields with its deadline (Form 44 from tax year 2026-27).
+  acquired before each ex-date (and not sold before it), converted under Rule
+  115 (SBI rate on the last day of the month before payment); the US tax at
+  25% (W-8BEN) or 30%; the credit as the lowest of the US tax, the 25% treaty
+  rate and the Indian tax at the visitor's rate; Schedule OS with the five 234C
+  periods, FSI, TR and the Form 67 fields with its deadline (Form 44 from tax
+  year 2026-27).
+* **Selling shares** (`capital-gains.js`): sales in the financial year,
+  long-term when held more than 24 months (12.5% without indexation,
+  section 112), otherwise short-term at the slab rate. The sale value is
+  Fidelity's proceeds at the Rule 115 rate (last day of the month before the
+  sale); the cost is the value taxed as salary (section 49(2AA)) at the rate on
+  the vesting or purchase day, so the rupee's fall since then is part of the
+  gain (an option converts the cost at the sale's rate instead). Output:
+  Schedule CG A5/B8 fields, set-off of losses, the gains by date of sale
+  (rows 3 and 5 of the accrual table), the Schedule FSI row (Article 13, no
+  foreign tax) and a CSV of the working. Transfers out are not sales.
 
 To add a company: add its ticker to `TAX_STOCKS` in `pipeline/taxdata.py`
 (with a dividend source) and run `tax-data`, add an entry to `COMPANIES`,
@@ -285,9 +305,6 @@ and copy a company page, changing the names in step 1.
 
 ## Roadmap
 
-* Tax tools for Microsoft and Oracle at Fidelity: sold shares from
-  "Previously held shares" (capital gains in Schedule CG, plus sale proceeds
-  in Schedule FA), in the Selling shares tab.
 * More brokers and companies as people request them.
 * Personal features (watchlists, portfolio analysis) — need sign-in and a
   backend; portfolio import is best done from broker CSV exports or the

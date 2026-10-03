@@ -1,11 +1,13 @@
-"""Write the synthetic Fidelity "View open lots" export used by the tests.
+"""Write the synthetic Fidelity "View open lots" and "View closed lots" exports
+used by the tests.
 
     python scripts/make_sample_export.py
 
 Quantities are made up (5 shares per RSU vest, 0.5 per ESPP purchase); the
 per-share values are Microsoft's public closing prices from
-site/data/tax/msft.json (ESPP at 90% of the close, as in Microsoft's plan).
-Never build this file from a real person's export.
+site/data/tax/msft.json (ESPP at 90% of the close, as in Microsoft's plan), and
+sales are at the close on the sale day. Never build these files from a real
+person's export.
 """
 
 from __future__ import annotations
@@ -17,6 +19,7 @@ import os
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PRICES = os.path.join(REPO_ROOT, "site", "data", "tax", "msft.json")
 OUT = os.path.join(REPO_ROOT, "tests", "fixtures", "fidelity-msft-open-lots-sample.csv")
+OUT_CLOSED = os.path.join(REPO_ROOT, "tests", "fixtures", "fidelity-msft-closed-lots-sample.csv")
 
 RSU_SHARES = 5.0
 ESPP_SHARES = 0.5
@@ -30,10 +33,25 @@ ESPP_QUARTERS = [("2024-10-01", "2024-12-31"), ("2025-01-02", "2025-03-31"),
                  ("2026-04-01", "2026-06-30"), ("2026-07-01", "2026-09-30")]
 HEADER = ("Date acquired,Quantity,Cost basis,Cost basis/share,Value,Gain/loss,Sale availability date,"
           "Transfer availability date,Grant date,Share source,Holding period")
+# Sold lots: (acquired target, shares, ESPP?, sale or transfer target, sold?). Fidelity's export wraps the
+# third header cell in HTML, whose quoted style holds commas; dates look like AUG/15/2022.
+CLOSED = [
+    ("2022-08-15", 5.0, False, "2025-06-10", True),   # long-term
+    ("2023-11-15", 5.0, False, "2025-10-15", True),   # short-term in India (Fidelity: Long)
+    ("2023-02-15", 1.0, False, "2025-12-01", False),  # transferred out
+    ("2024-06-28", 0.5, True, "2026-02-10", True),    # ESPP, short-term
+    ("2024-11-15", 2.0, False, "2026-05-20", True),   # part of a lot still held, next FY
+]
+CLOSED_HEADER = ('Date acquired,Quantity,<span style="color: rgb(0, 0, 0); background-color: rgb(255, 255, 255);">'
+                 'Date sold or transferred</span>,Proceeds,Cost basis,Gain/loss,Term')
 
 
 def fidelity_date(iso: str) -> str:
     return datetime.date.fromisoformat(iso).strftime("%b-%d-%Y")
+
+
+def closed_date(iso: str) -> str:
+    return datetime.date.fromisoformat(iso).strftime("%b/%d/%Y").upper()
 
 
 def main() -> int:
@@ -69,6 +87,22 @@ def main() -> int:
     with open(OUT, "w", encoding="utf-8-sig", newline="\n") as fh:
         fh.write("\n".join(lines) + "\n")
     print(f"wrote {OUT} ({len(lots)} lots)")
+
+    closed = [CLOSED_HEADER]
+    for acquired, qty, espp, sold, is_sale in CLOSED:
+        day = on_or_before(acquired) if espp else on_or_after(acquired)
+        out_day = on_or_after(sold)
+        per_share = round(closes[day] * 0.9, 2) if espp else closes[day]
+        cost = round(qty * per_share, 2)
+        proceeds = round(qty * closes[out_day], 2) if is_sale else None
+        term = "LONG" if (datetime.date.fromisoformat(out_day) - datetime.date.fromisoformat(day)).days > 365 else "SHORT"
+        closed.append(f"{closed_date(day)},{qty:.4f},{closed_date(out_day)},"
+                      f"{'-' if proceeds is None else f'{proceeds:.2f}'},{cost:.2f},"
+                      f"{'-' if proceeds is None else f'{proceeds - cost:.2f}'},{term}")
+    closed += [",", "The values are displayed in USD"]
+    with open(OUT_CLOSED, "w", encoding="utf-8-sig", newline="\n") as fh:
+        fh.write("\n".join(closed) + "\n")
+    print(f"wrote {OUT_CLOSED} ({len(CLOSED)} lots)")
     return 0
 
 

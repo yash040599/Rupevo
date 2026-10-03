@@ -202,6 +202,66 @@ test('a lot acquired during the year peaks at no less than its initial value', (
   assert.ok(v.peak.inr > v.closing.inr);
 });
 
+test('lots from the closed-lots export (no share source) are classified by their discount', () => {
+  const sold = lot('C1', '2025-03-31', 1, 90, { source: null });
+  assert.equal(classifyLot(sold, PRICES).type, 'ESPP');
+  assert.equal(classifyLot({ ...sold, costPerShare: 100 }, PRICES).type, 'RSU');
+});
+
+test('sold lots: held part of the year, closing nil, proceeds at the sale-date rate', () => {
+  const lots = [
+    lot('S1', '2024-08-15', 10, 95, { sold: '2025-06-02', proceeds: 1000 }), // sold mid-year
+    lot('S2', '2024-08-15', 5, 95, { sold: '2024-12-10', proceeds: 500 }), // sold before the year
+    lot('S3', '2025-02-14', 2, 100, { sold: '2026-02-02', proceeds: 250 }), // sold after 31 Dec
+    lot('H1', '2024-08-15', 1, 95), // still held
+  ];
+  const r = computeScheduleFA({ lots, prices: PRICES, rates: RATES, dividends: DIVIDENDS, cy: 2025, today: '2026-10-02' });
+  assert.deepEqual(r.rows.map((x) => x.lot.id), ['S1', 'H1', 'S3']);
+  assert.deepEqual(r.excluded, []);
+  const [s1, h1, s3] = r.rows;
+
+  assert.equal(s1.sold, '2025-06-02');
+  assert.equal(s1.initial.inr, 10 * 95 * 80);
+  assert.equal(s1.closing.inr, 0);
+  assert.equal(s1.closing.sold, true);
+  assert.equal(s1.proceeds.inr, 1000 * 85);
+  assert.equal(s1.proceeds.rate.date, '2025-06-02');
+  // Peak: the June spike came after the sale; the sale itself (at the stronger rate) beats Jan-May.
+  assert.equal(s1.peak.kind, 'sold');
+  assert.equal(s1.peak.inr, 1000 * 85);
+  // Only the May ex-date fell while S1 was held.
+  assert.deepEqual(s1.dividends.items.map((x) => x.ex), ['2025-05-15']);
+
+  assert.equal(s3.sold, null, 'sold in 2026, so held on 31 Dec 2025');
+  assert.equal(s3.closing.inr, 2 * 120 * 90);
+  assert.equal(s3.proceeds.inr, 0);
+  assert.equal(h1.closing.inr, 120 * 90);
+
+  assert.equal(r.account.proceeds, 1000 * 85);
+  assert.equal(r.totals.proceeds, 1000 * 85);
+  assert.equal(r.account.closing.inr, 3 * 120 * 90);
+  // A2 peak: 13 shares from 14 Feb until the June sale, at $100 and ₹80.
+  assert.equal(r.account.peak.date, '2025-02-14');
+  assert.equal(r.account.peak.inr, 13 * 100 * 80);
+  // Schedule AL on 31 March 2026: S3 was sold in February, so only H1 remains.
+  assert.equal(r.al.lots, 1);
+  assert.equal(r.al.inr, 95 * 80);
+
+  const next = computeScheduleFA({ lots, prices: PRICES, rates: RATES, dividends: DIVIDENDS, cy: 2026, today: '2026-10-02' });
+  assert.deepEqual(next.rows.map((x) => x.lot.id), ['H1', 'S3']);
+  assert.equal(next.rows[1].proceeds.inr, 250 * 90);
+  assert.equal(next.rows[1].closing.inr, 0);
+  assert.deepEqual(next.rows[1].dividends.items.map((x) => x.ex), [], 'sold before the February ex-date');
+});
+
+test('a lot transferred out (no proceeds) is flagged', () => {
+  const lots = [lot('T1', '2024-08-15', 3, 95, { sold: '2025-03-03', proceeds: null })];
+  const r = computeScheduleFA({ lots, prices: PRICES, rates: RATES, dividends: [], cy: 2025, today: '2026-10-02' });
+  assert.equal(r.rows[0].transferred, true);
+  assert.equal(r.rows[0].proceeds.inr, 0);
+  assert.match(r.warnings.join(' '), /transferred out of Fidelity/);
+});
+
 test('price check: an export in rupees or for another company is caught', () => {
   const usdLots = [lot('R', '2025-03-31', 1, 100), lot('E', '2025-06-30', 1, 90, { grantDate: '2025-04-01' })];
   assert.deepEqual(priceCheck(usdLots, PRICES), { checked: 2, off: 0, ok: true });

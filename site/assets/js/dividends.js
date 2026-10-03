@@ -9,7 +9,8 @@
 //   of the month before the month it is paid. Rule 128: the US tax withheld
 //   on it is converted at the same rate.
 // * A lot receives a dividend only if it was acquired before the ex-dividend
-//   date.
+//   date and not sold before it (shares sold on or after the ex-date still
+//   receive it).
 // * Foreign tax credit (section 90, India–US DTAA) is the lowest of the US tax
 //   paid, the tax at the treaty rate (Article 10: 25% for individuals) and the
 //   Indian tax on the same income.
@@ -37,7 +38,8 @@ export function quarterOf(iso, fy) {
 }
 
 /**
- * lots: from fidelity.parseOpenLots; dividends: [{ ex, record, pay, declared, amount }];
+ * lots: from fidelity.parseOpenLots, plus sold lots (with `sold`) from
+ * parseClosedLots; dividends: [{ ex, record, pay, declared, amount }];
  * rates: series() of SBI TT buying rates; fy: first calendar year of the
  * financial year; today: IST date; usRate: US tax withheld (0.25 with a W-8BEN
  * on file, else 0.30); indiaRate: Indian tax rate on this income, as a fraction.
@@ -47,10 +49,11 @@ export function computeDividends({ lots, dividends, rates, fy, today, usRate = D
   const end = `${fy + 1}-03-31`;
   const rows = [];
   const upcoming = [];
+  const entitled = (l, ex) => l.acquired < ex && !(l.sold && l.sold < ex);
   for (const d of dividends) {
     const pay = d.pay || d.ex;
     if (pay < start || pay > end) continue;
-    const shares = lots.reduce((a, l) => a + (l.acquired < d.ex ? l.quantity : 0), 0);
+    const shares = lots.reduce((a, l) => a + (entitled(l, d.ex) ? l.quantity : 0), 0);
     if (pay > today) {
       upcoming.push({ ...d, pay, shares });
       continue;

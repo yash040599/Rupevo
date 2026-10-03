@@ -88,7 +88,9 @@ export function classifyLot(lot, prices, { esppBasis = 'fmv', esppDiscount = 0.1
   const ratio = close ? lot.costPerShare / close : null;
   // A lookback plan can price far below the close, so the code alone decides.
   const coded = /^(SP|ES|ESPP)$/.test(lot.source || '');
-  const espp = coded || (Boolean(lot.grantDate) && ratio !== null
+  // Exports without a share source column (closed lots, source null): the discount alone decides.
+  const unknownSource = lot.source === null || lot.source === undefined;
+  const espp = coded || ((Boolean(lot.grantDate) || unknownSource) && ratio !== null
     && ratio >= ESPP_COST_RATIO[0] && ratio <= ESPP_COST_RATIO[1]);
   if (!espp) return { type: 'RSU', fmvPerShare: lot.costPerShare, basis: 'cost' };
   if (esppBasis === 'paid') return { type: 'ESPP', fmvPerShare: lot.costPerShare, basis: 'paid' };
@@ -127,7 +129,7 @@ function initialValue(lot, cls, rates, rateOverrides) {
   return { usd, rate: usable, exact: inr(usd, usable), needsRate: !usable };
 }
 
-function addDays(iso, n) {
+export function addDays(iso, n) {
   const d = new Date(`${iso}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() + n);
   return d.toISOString().slice(0, 10);
@@ -138,8 +140,10 @@ function addDays(iso, n) {
  * the Schedule AL cost total for the return whose Schedule FA covers
  * calendar year `cy`.
  *
- * lots: from fidelity.parseOpenLots; prices / rates: series(); dividends:
- * [{ ex, pay, amount }]; today: IST date "YYYY-MM-DD".
+ * lots: from fidelity.parseOpenLots, plus sold lots from parseClosedLots
+ * (with `sold` and `proceeds`); prices / rates: series(); dividends:
+ * [{ ex, pay, amount }]; today: IST date "YYYY-MM-DD". A lot counts if it was
+ * held at any time during the year.
  */
 export function computeScheduleFA({
   lots, prices, rates, dividends, cy, today,
@@ -174,55 +178,74 @@ export function computeScheduleFA({
       excluded.push({ lot, reason: `acquired after 31 Dec ${cy}` });
       continue;
     }
+    if (lot.sold && lot.sold < yearStart) continue; // sold before the year: not held during it
+    const soldInYear = Boolean(lot.sold) && lot.sold <= yearEnd;
+    const saleRate = soldInYear ? rateOn(rates, lot.sold) : null;
     const cls = classifyLot(lot, prices, opts);
     const initial = initialValue(lot, cls, rates, rateOverrides);
     const atAcquisition = { date: lot.acquired, price: cls.fmvPerShare, usd: initial.usd, rate: initial.rate,
       exact: initial.exact };
 
     const closingUsd = lot.quantity * closePrice;
-    const closing = lot.acquired > closeDate
-      ? { ...atAcquisition, fallback: true }
-      : { date: closeDate, price: closePrice, usd: closingUsd, rate: closingRate, exact: inr(closingUsd, closingRate) };
+    let closing;
+    if (soldInYear) closing = { date: lot.sold, price: 0, usd: 0, rate: null, exact: 0, sold: true };
+    else if (lot.acquired > closeDate) closing = { ...atAcquisition, fallback: true };
+    else closing = { date: closeDate, price: closePrice, usd: closingUsd, rate: closingRate, exact: inr(closingUsd, closingRate) };
 
     // Peak: the highest rupee value on any day of the period (shares × that day's close × that day's
     // rate; the rupee moves too, so it can fall on a different day from the highest dollar price). The
-    // closing value, and the value on the day a lot was acquired during the year, count as days too.
+    // closing value, the sale value, and the value on the day a lot was acquired during the year,
+    // count as days too. A sold lot only counts the days before its sale.
     let peak = null;
     const consider = (c) => {
       if (c.exact !== null && (!peak || c.exact > peak.exact)) peak = c;
     };
     const from = lot.acquired > yearStart ? lot.acquired : yearStart;
     for (let i = firstOnOrAfter(prices, from); i <= closeIdx; i += 1) {
+      if (soldInYear && prices.dates[i] >= lot.sold) break;
       if (!dayRate[i]) continue;
       const usd = lot.quantity * prices.values[i];
       consider({ kind: 'day', date: prices.dates[i], price: prices.values[i], usd, rate: dayRate[i],
         exact: inr(usd, dayRate[i]) });
     }
-    if (!closing.fallback) consider({ ...closing, kind: 'closing' });
+    if (!closing.fallback && !closing.sold) consider({ ...closing, kind: 'closing' });
+    if (soldInYear && lot.proceeds > 0) {
+      consider({ kind: 'sold', date: lot.sold, price: lot.proceeds / lot.quantity, usd: lot.proceeds,
+        rate: saleRate, exact: inr(lot.proceeds, saleRate) });
+    }
     if (lot.acquired >= yearStart) consider({ ...atAcquisition, kind: 'acquired' });
     if (!peak) peak = { ...atAcquisition, kind: 'acquired', fallback: true };
-    else if (peak.kind === 'acquired' && lot.acquired > closeDate) peak = { ...peak, fallback: true };
+    else if (peak.kind === 'acquired' && lot.acquired > closeDate && !soldInYear) peak = { ...peak, fallback: true };
 
     const items = [];
     for (const d of dividends) {
       const pay = d.pay || d.ex;
       if (pay < yearStart || pay > yearEnd || pay > today) continue;
       if (!(lot.acquired < d.ex)) continue; // bought on or after the ex-date: not entitled
+      if (lot.sold && lot.sold < d.ex) continue; // sold before the ex-date: not entitled
       const usd = lot.quantity * d.amount;
       const rate = rateOn(rates, pay);
       items.push({ ex: d.ex, pay, payKnown: Boolean(d.pay), perShare: d.amount, usd, rate, exact: inr(usd, rate) });
     }
     const divExact = items.reduce((a, x) => a + (x.exact ?? 0), 0);
 
+    const proceeds = soldInYear && lot.proceeds > 0
+      ? { date: lot.sold, usd: lot.proceeds, rate: saleRate, exact: inr(lot.proceeds, saleRate) }
+      : { usd: 0, exact: 0 };
+
     rows.push({
       lot, type: cls.type, fmvPerShare: cls.fmvPerShare, basis: cls.basis, basisDate: cls.basisDate,
+      sold: soldInYear ? lot.sold : null, transferred: soldInYear && !(lot.proceeds > 0),
       initial: { ...initial, inr: round(initial.exact) },
       peak: { ...peak, inr: round(peak.exact) },
       closing: { ...closing, inr: round(closing.exact) },
       dividends: { items, usd: items.reduce((a, x) => a + x.usd, 0), exact: divExact, inr: Math.round(divExact) },
-      proceeds: { inr: 0 },
+      proceeds: { ...proceeds, inr: round(proceeds.exact) },
     });
   }
+  const soldKey = (r) => r.lot.sold || '9';
+  rows.sort((a, b) => (a.lot.acquired < b.lot.acquired ? -1 : a.lot.acquired > b.lot.acquired ? 1
+    : soldKey(a) < soldKey(b) ? -1 : soldKey(a) > soldKey(b) ? 1 : 0));
 
   // Table A2: the whole account (shares only), valued in rupees every trading day. Each day adds up
   // whole-rupee lot values, like the closing balance, so the same day gives the same figure.
@@ -233,7 +256,7 @@ export function computeScheduleFA({
     let shares = 0;
     let value = 0;
     for (const r of rows) {
-      if (r.lot.acquired > day) continue;
+      if (r.lot.acquired > day || (r.lot.sold && r.lot.sold <= day)) continue;
       shares += r.lot.quantity;
       value += Math.round(inr(r.lot.quantity * prices.values[i], dayRate[i]));
     }
@@ -241,7 +264,8 @@ export function computeScheduleFA({
       peakAcct = { date: day, usd: shares * prices.values[i], rate: dayRate[i], inr: value };
     }
   }
-  const account = { firstLot: lots.length ? lots[0].acquired : null };
+  const firstLot = lots.reduce((a, l) => (!a || l.acquired < a ? l.acquired : a), null);
+  const account = { firstLot };
   // Account totals add up the whole-rupee lot values so they match the Table A3 rows exactly.
   const sum = (pick) => rows.reduce((a, r) => a + (pick(r) ?? 0), 0);
   account.closing = { date: closeDate, usd: sum((r) => r.closing.usd), rate: closingRate,
@@ -251,7 +275,7 @@ export function computeScheduleFA({
     account.peak = { date: closeDate, usd: account.closing.usd, rate: closingRate, inr: account.closing.inr };
   }
   account.dividends = sum((r) => r.dividends.inr);
-  account.proceeds = 0;
+  account.proceeds = sum((r) => r.proceeds.inr);
 
   // Schedule AL: cost of shares held on 31 March at the end of the FY.
   const alDate = `${cy + 1}-03-31`;
@@ -260,7 +284,7 @@ export function computeScheduleFA({
   let alLots = 0;
   let alMissing = 0;
   for (const lot of lots) {
-    if (lot.acquired > alCutoff) continue;
+    if (lot.acquired > alCutoff || (lot.sold && lot.sold <= alCutoff)) continue;
     const init = initialValue(lot, classifyLot(lot, prices, opts), rates, rateOverrides);
     alLots += 1;
     if (init.exact === null) alMissing += 1; else alInr += Math.round(init.exact);
@@ -270,13 +294,18 @@ export function computeScheduleFA({
 
   const totals = {
     initial: sum((r) => r.initial.inr), peak: sum((r) => r.peak.inr), closing: sum((r) => r.closing.inr),
-    dividends: sum((r) => r.dividends.inr), proceeds: 0,
+    dividends: sum((r) => r.dividends.inr), proceeds: sum((r) => r.proceeds.inr),
   };
 
   const missing = rows.filter((r) => r.initial.needsRate).length;
   if (missing) {
     warnings.push(`${missing} lot${missing === 1 ? ' was' : 's were'} acquired before the SBI rate history `
       + `starts (${rates.dates[0]}); enter the SBI TT buying rate for ${missing === 1 ? 'it' : 'them'} below.`);
+  }
+  const moved = rows.filter((r) => r.transferred).length;
+  if (moved) {
+    warnings.push(`${moved} lot${moved === 1 ? ' was' : 's were'} transferred out of Fidelity rather than sold: `
+      + 'report those shares with the account they moved to.');
   }
   if (rows.some((r) => r.dividends.items.some((x) => !x.payKnown))) {
     warnings.push('Some dividend payment dates were not available, so their ex-dividend date was used instead.');

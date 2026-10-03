@@ -604,6 +604,13 @@ html[data-theme="dark"] .coffee-btn { color: #1f1300; }
 .dropzone .dz-check { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%;
                       background: var(--pos); color: #fff; font-size: 15px; }
 .dropzone .dz-again { font-weight: 600; font-size: 13px; color: var(--accent); text-decoration: underline; }
+.dropzone .dz-also { font-size: 12.5px; color: var(--muted); margin-top: -4px; }
+.dropzone #dz-name { overflow-wrap: anywhere; }
+.load-lines { display: grid; gap: 8px; margin-top: 12px; }
+.load-lines .file-line { display: flex; gap: 10px; align-items: center; justify-content: space-between; }
+.load-lines .file-line .btn { flex: none; }
+.load-lines .load-hint { margin: 0; }
+.pending-list { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 4px; }
 .spinner { width: 22px; height: 22px; border-radius: 50%; border: 3px solid var(--accent-line);
            border-top-color: var(--accent); animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -665,6 +672,9 @@ table.fa tr.working > td { text-align: left; background: var(--card-2); }
 .table-scroll > table.fa.history { min-width: 520px; }
 .table-scroll > table.fa.quarters { min-width: 560px; }
 .table-scroll > table.fa.checklist-table { min-width: 560px; }
+.table-scroll > table.fa.cg-table { min-width: 760px; }
+.table-scroll > table.fa.cg-periods { min-width: 760px; }
+table.fa.cg-periods td.left { min-width: 210px; }
 table.fa.checklist-table td { font-size: 13.5px; }
 table.fa.history tr.in-fy > td { background: var(--accent-soft); }
 .tag { display: inline-block; margin-left: 4px; padding: 0 6px; border-radius: 5px; font-size: 10.5px; font-weight: 800;
@@ -676,6 +686,8 @@ table.fa.history tr.in-fy > td { background: var(--accent-soft); }
 .type-badge { display: inline-block; padding: 0 6px; margin-right: 4px; border-radius: 5px; font-size: 10.5px;
               font-weight: 800; letter-spacing: .03em; background: var(--accent-soft); color: var(--accent); }
 .type-badge.espp { background: var(--pos-bg); color: var(--pos); }
+.type-badge.term-long { background: var(--pos-bg); color: var(--pos); }
+.type-badge.term-short { background: var(--warn-bg); color: var(--warn-fg); }
 .working-list { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 12.5px; color: var(--fg-2); }
 .rate-input { width: 120px; padding: 4px 6px !important; font-size: 12px !important; }
 

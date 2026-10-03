@@ -92,3 +92,14 @@ test('a year in progress counts only payments already made', () => {
   assert.equal(computeDividends({ lots: LOTS, dividends: DIVIDENDS, rates: RATES, fy: 2025, today: '2026-06-01' }).relief,
     null, 'no credit without an Indian tax rate');
 });
+
+test('sold lots get dividends with an ex-date while they were held', () => {
+  const lots = [
+    ...LOTS,
+    { id: 'S1', acquired: '2024-01-10', quantity: 5, sold: '2025-11-20' }, // sold on the November ex-date
+    { id: 'S2', acquired: '2024-01-10', quantity: 4, sold: '2025-11-19' }, // sold the day before it
+  ];
+  const r = computeDividends({ lots, dividends: DIVIDENDS, rates: RATES, fy: 2025, today: '2026-06-01' });
+  // May and August: both sold lots; November: S1 only (sold on the ex-date); later: neither.
+  assert.deepEqual(r.rows.map((x) => x.shares), [19, 19, 17, 12, 12]);
+});

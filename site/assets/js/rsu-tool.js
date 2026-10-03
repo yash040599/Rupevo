@@ -1,14 +1,16 @@
 // RSU tool on the company pages (tax/rsu/fidelity/msft/, orcl/): reads the
-// broker export in the browser and shows, in tabs, the Schedule FA values and
-// the dividend income with its foreign tax credit. The file never leaves the
-// device: it is parsed here and kept in memory.
+// broker exports in the browser and shows, in tabs, the Schedule FA values,
+// the dividend income with its foreign tax credit, and the capital gains on
+// shares sold. The files never leave the device: they are parsed here and kept
+// in memory.
 import './tax.js';
 import { esc, loadJSON, siteUrl, toast } from './core.js';
 import { fillContactLinks } from './shell.js';
 import { fmtDay, istWallClock } from './fy.js';
-import { parseOpenLots } from './fidelity.js';
+import { detectExport, parseClosedLots, parseOpenLots } from './fidelity.js';
 import { classifyLot, computeScheduleFA, priceCheck, returnOptions, scheduleFaCsv, series } from './schedule-fa.js';
 import { computeDividends, DTAA, QUARTERS } from './dividends.js';
+import { capitalGainsCsv, computeCapitalGains, DTAA_GAINS } from './capital-gains.js';
 
 const COUNTRY = '2 - United States of America';
 const COMPANIES = {
@@ -26,7 +28,8 @@ const COMPANIES = {
 const BROKERS = {
   fidelity: { name: 'Fidelity Stock Plan Services, LLC', address: '245 Summer Street, Boston, Massachusetts', zip: '02210' },
 };
-// Surcharge on dividend income is capped at 15%, so 35.88% is the highest rate on it.
+// Surcharge on dividend income is capped at 15%, so 35.88% is the highest rate on it. Short-term
+// capital gains can carry a higher surcharge: “Another rate” covers those.
 const TAX_RATES = [
   [0.312, '31.2%: 30% slab + 4% cess (income up to ₹50 lakh)'],
   [0.3432, '34.32%: with 10% surcharge (₹50 lakh – ₹1 crore)'],
@@ -39,7 +42,12 @@ const TAX_RATES = [
 ];
 const TABS = ['fa', 'dividends', 'selling'];
 const MAX_FILE_BYTES = 2 * 1024 * 1024;
+const MAX_FILES = 4;
 const MIN_BUSY_MS = 600;
+const KINDS = {
+  open: { title: 'Shares you hold', file: 'View open lots.csv', idPrefix: 'L' },
+  closed: { title: 'Shares you sold', file: 'View closed lots.csv', idPrefix: 'C' },
+};
 
 const app = document.getElementById('app');
 const company = COMPANIES[app.dataset.company];
@@ -51,15 +59,19 @@ const els = {
   status: document.getElementById('load-status'),
   tool: document.getElementById('tool'),
 };
+// files.open / files.closed: { kind, name, lots, skipped } for each export loaded. lots: both
+// together (for Schedule FA and the dividends); closedLots: the sold lots, with the share source
+// filled in from the open lots where possible.
 const state = {
-  lots: null, label: '', esppBasis: 'fmv', rateOverrides: {}, data: null, fa: null, div: null,
+  files: { open: null, closed: null }, lots: null, closedLots: [], esppBasis: 'fmv', rateOverrides: {},
+  data: null, fa: null, div: null, cg: null, costRate: 'acquired',
   indiaRate: 0.312, customRate: false, usRate: DTAA.rate, historyAll: false,
 };
 const today = () => istWallClock().toISOString().slice(0, 10);
 
 // ── Formatting ──
 const inrFmt = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 });
-const rupees = (n) => (n === null || n === undefined ? '—' : `₹${inrFmt.format(n)}`);
+const rupees = (n) => (n === null || n === undefined ? '—' : `${n < 0 ? '−' : ''}₹${inrFmt.format(Math.abs(n))}`);
 const money = (n, max = 2) => `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: max })}`;
 const usd = (n) => money(n);
 const shares = (q) => q.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 });
@@ -72,6 +84,13 @@ const copyVal = (n) => (n === null || n === undefined ? '<span class="muted">—
 const copyText = (s) => `<button class="copy-val" type="button" data-copy="${esc(s)}" title="Copy">${esc(s)}</button>`;
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 const fyLabel = (fy) => `FY ${fy}-${String((fy + 1) % 100).padStart(2, '0')}`;
+// What a lot's value per share at acquisition is (classifyLot's `basis`).
+const BASIS_TEXT = {
+  cost: 'value at vesting, from your export',
+  close: 'closing price on the purchase day',
+  paid: 'price you paid',
+  estimated: 'estimated from the price paid',
+};
 
 // ── Data ──
 let dataPromise = null;
@@ -101,7 +120,7 @@ function skeleton() {
         <button class="tab" type="button" role="tab" id="tab-dividends" aria-controls="panel-dividends" data-tab="dividends">
           <span class="tab-title">Dividends</span><span class="tab-sub">OS · FSI · TR · Form 67</span></button>
         <button class="tab" type="button" role="tab" id="tab-selling" aria-controls="panel-selling" data-tab="selling">
-          <span class="tab-title">Selling shares</span><span class="tab-sub">Capital gains · next</span></button>
+          <span class="tab-title">Selling shares</span><span class="tab-sub">Capital gains · CG · FSI</span></button>
       </div>
     </section>
 
@@ -123,13 +142,7 @@ function skeleton() {
       <section class="card" id="div-controls" hidden>
         <p class="small muted" id="div-period" style="margin:0 0 10px"></p>
         <div class="controls-row">
-          <label class="field">Your Indian tax rate on this income
-            <select id="india-rate">${TAX_RATES.map(([v, label]) => `<option value="${v}"${v === state.indiaRate
-              ? ' selected' : ''}>${label}</option>`).join('')}<option value="custom">Another rate…</option></select>
-          </label>
-          <label class="field" id="custom-rate-wrap" hidden>Rate in %
-            <input type="number" id="custom-rate" min="0" max="50" step="0.01" inputmode="decimal" placeholder="e.g. 32">
-          </label>
+          ${rateField('Your Indian tax rate on this income')}
           <label class="field">US tax withheld
             <select id="us-rate">
               <option value="0.25" selected>25%: W-8BEN on file (India–US treaty rate)</option>
@@ -147,7 +160,27 @@ function skeleton() {
     </div>
 
     <div class="tab-panel" role="tabpanel" id="panel-selling" aria-labelledby="tab-selling" tabindex="-1" hidden>
-      ${sellingHtml()}
+      <section class="card" id="cg-controls" hidden>
+        <p class="small muted" id="cg-period" style="margin:0 0 10px"></p>
+        <fieldset class="radio-row" style="border:0;padding:0;margin:0 0 12px">
+          <legend class="small muted" style="padding:0;margin-bottom:4px">Convert the cost at</legend>
+          <label><input type="radio" name="cost-rate" value="acquired" checked> SBI's rate on the vesting or purchase
+            day (recommended)</label>
+          <label><input type="radio" name="cost-rate" value="sale"> the sale's rate, like the sale value</label>
+        </fieldset>
+        <fieldset class="radio-row" id="cg-espp-basis" hidden style="border:0;padding:0;margin:0 0 12px">
+          <legend class="small muted" style="padding:0;margin-bottom:4px">ESPP shares: cost at</legend>
+          <label><input type="radio" name="cg-espp-basis" value="fmv" checked> market price on the purchase day
+            (recommended)</label>
+          <label><input type="radio" name="cg-espp-basis" value="paid"> the price you paid</label>
+        </fieldset>
+        <div class="controls-row">${rateField('Your slab rate, for the tax estimate')}</div>
+        <p class="small muted" style="margin:10px 0 0">The rate only changes the estimate of Indian tax in Schedule FSI:
+          short-term gains at this rate, long-term gains at 12.5% plus cess (and surcharge, capped at 15%). It is the
+          same setting as on the Dividends tab.</p>
+      </section>
+      <div id="cg-results"></div>
+      ${cgMethod()}
     </div>
 
     ${itrChecklistHtml()}`;
@@ -182,7 +215,9 @@ function faMethod() {
         <p><strong>Amount paid or credited.</strong> ${esc(company.short)}'s cash dividends paid during the year on the
           lot's shares, if the lot was acquired before the ex-dividend date. The amounts are gross, before the US tax
           withheld, and converted at the rate on the payment date, as is common practice for Schedule FA.</p>
-        <p><strong>Sale proceeds.</strong> Zero here, because this export holds only shares you still own.</p>
+        <p><strong>Sale proceeds.</strong> For shares sold during the year (from Fidelity's View closed lots.csv): the
+          amount Fidelity paid for them, after its fees, at the rate on the day of the sale. A sold lot's closing value
+          is nil, and its peak counts only the days it was held, including the sale.</p>
         <p><strong>One row per lot.</strong> Some guides combine all lots of a company into one row. A row per vest or
           purchase gives the date of acquisition the form asks for, and is the more detailed choice.</p>
         <p><strong>Data.</strong> Prices are Yahoo Finance daily closes, refreshed weekly with the dividends. Values
@@ -199,9 +234,9 @@ function divMethod() {
       <div class="prose">
         <p><strong>Which year.</strong> Dividends are income of the <em>financial</em> year in which they are paid,
           1 April – 31 March. (Schedule FA uses the calendar year instead, so its dividend totals differ.)</p>
-        <p><strong>Which shares.</strong> A lot receives a dividend if it was acquired before the ex-dividend date.
-          Shares you sold are not in this export: if you sold any during the year, add the dividends they received
-          before the sale (your Fidelity statements list every payment).</p>
+        <p><strong>Which shares.</strong> A lot receives a dividend if it was acquired before the ex-dividend date
+          and, if you sold it, sold on or after that date. Shares you sold are in Fidelity's View closed lots.csv: load
+          it too if you sold any, so the dividends they received before the sale are counted.</p>
         <p><strong>Exchange rate.</strong> Rule 115 converts a dividend at SBI's TT buying rate on the last day of the
           month before the month it is paid; on a weekend or holiday, the last rate before it. Rule 128 converts the
           US tax withheld at the same rate.</p>
@@ -222,39 +257,73 @@ function divMethod() {
   </section>`;
 }
 
-function sellingHtml() {
+// The tax-rate select appears on the Dividends and Selling tabs; syncControls() keeps them in step.
+function rateField(label) {
+  return `<label class="field">${label}
+      <select data-india-rate>${TAX_RATES.map(([v, text]) => `<option value="${v}"${v === state.indiaRate
+        ? ' selected' : ''}>${text}</option>`).join('')}<option value="custom">Another rate…</option></select>
+    </label>
+    <label class="field" data-custom-wrap hidden>Rate in %
+      <input type="number" data-custom-rate min="0" max="50" step="0.01" inputmode="decimal" placeholder="e.g. 32">
+    </label>`;
+}
+
+function cgMethod() {
   return `<section class="card">
-    <div class="card-head"><h2>Selling shares: coming next</h2></div>
-    <p style="margin:0 0 10px">This tab will work out the capital gains on ${esc(company.short)} shares you sold, from
-      Fidelity's <strong>Previously held shares</strong> export:</p>
-    <ul class="check-list">
-      <li><strong>Schedule CG.</strong> Held more than 24 months: long-term, taxed at 12.5% without indexation.
-        Otherwise short-term, at your slab rate.</li>
-      <li><strong>Values.</strong> The sale price converted at SBI's TT buying rate on the last day of the month before
-        the sale (Rule 115), against the cost: the value at vesting or purchase that was taxed as salary.</li>
-      <li><strong>Schedule FA.</strong> The sale proceeds for the lots you sold.</li>
-    </ul>
-    <p class="small muted" style="margin:10px 0 0">Want it sooner? Contact me at
-      <a data-contact data-contact-subject="Rupevo RSU tax: selling shares"></a>.</p>
+    <details class="fold">
+      <summary><h2>How the capital gains are worked out</h2></summary>
+      <div class="prose">
+        <p><strong>Which year.</strong> A gain is income of the financial year (1 April – 31 March) in which the
+          shares were sold.</p>
+        <p><strong>Short or long.</strong> ${esc(company.short)} shares are listed in the US, not on an Indian stock
+          exchange, so they are long-term only when held for <em>more than 24 months</em> (section 2(42A)), from the
+          vesting or purchase date to the sale date; exactly 24 months is still short-term. Fidelity's “Term” column
+          uses the US one-year rule and does not count.</p>
+        <p><strong>Tax rates.</strong> Long-term gains: 12.5% without indexation (section 112, for sales from 23 July
+          2024), plus surcharge, capped at 15%, and 4% cess. The ₹1.25 lakh exemption is only for shares listed in
+          India and equity funds (section 112A), so it does not apply. Short-term gains: your slab rate.</p>
+        <p><strong>Sale value.</strong> Fidelity's proceeds in US dollars, after its fees, converted at SBI's TT
+          buying rate on the last day of the month before the month of the sale (Rule 115); on a weekend or holiday,
+          the last rate before it.</p>
+        <p><strong>Cost.</strong> For RSU and ESPP shares, the cost is the fair market value that was taxed as salary
+          when you got them (section 49(2AA)): the value at vesting from your export, or the closing price on the ESPP
+          purchase day. It is converted at SBI's TT buying rate on that day. The rupee has mostly fallen against the
+          dollar since then, so the same dollars are worth more rupees at the sale: that difference is part of the
+          gain, and each sale's maths shows how much.</p>
+        <p><strong>The other view.</strong> Some advisers convert the whole gain at the sale's Rule 115 rate (the gain
+          in dollars × that rate), which leaves the rupee's fall out. That is the usual method for shares bought with
+          your own dollars. For shares taxed as salary in rupees, section 49(2AA) points to the rupee cost. Switch
+          above to compare, and ask your CA which to file.</p>
+        <p><strong>Losses.</strong> Within these sales, a short-term loss is set off against long-term gains; a
+          long-term loss only against long-term gains. In the table of gains by date, each period gets the gains of
+          the sales in it, with losses taken off the latest periods first.</p>
+        <p><strong>Data.</strong> SBI rates from the same archive as the other tabs; prices are Yahoo Finance daily
+          closes. Values are rounded to whole rupees, sale by sale.</p>
+      </div>
+    </details>
   </section>`;
 }
 
 function itrChecklistHtml() {
+  const fa = ['fa', 'Foreign assets'];
+  const div = ['dividends', 'Dividends'];
+  const sell = ['selling', 'Selling shares'];
   const rows = [
-    ['Schedule FA', 'The shares (Table A3) and the Fidelity account (Table A2)', 'fa', 'Foreign assets'],
-    ['Schedule AL', 'Only if your total income is above ₹1 crore: the cost of the shares', 'fa', 'Foreign assets'],
-    ['Schedule OS', 'Dividend income, gross, with its quarterly breakup', 'dividends', 'Dividends'],
-    ['Schedule FSI', 'The dividends and the US tax paid on them', 'dividends', 'Dividends'],
-    ['Schedule TR', 'The foreign tax credit claimed under section 90', 'dividends', 'Dividends'],
-    ['Form 67', 'Filed separately on the e-filing portal, before the ITR', 'dividends', 'Dividends'],
-    ['Schedule CG', 'Gains on shares you sold', 'selling', 'Selling shares (next)'],
+    ['Schedule FA', 'The shares (Table A3), including any sold during the year, and the Fidelity account (Table A2)', [fa]],
+    ['Schedule AL', 'Only if your total income is above ₹1 crore: the cost of the shares', [fa]],
+    ['Schedule OS', 'Dividend income, gross, with its quarterly breakup', [div]],
+    ['Schedule CG', 'Gains on shares you sold: A5 short-term, B8 long-term, and when they arose', [sell]],
+    ['Schedule FSI', 'The dividends and the US tax paid on them, and the capital gains', [div, sell]],
+    ['Schedule TR', 'The foreign tax credit claimed under section 90', [div]],
+    ['Form 67', 'Filed separately on the e-filing portal, before the ITR', [div]],
   ];
   return `<section class="card">
     <div class="card-head"><h2>Your ITR checklist for ${esc(company.short)} shares</h2></div>
     <div class="table-scroll"><table class="fa checklist-table">
       <thead><tr><th class="left">Where in the ITR</th><th class="left">What goes there</th><th class="left">On this page</th></tr></thead>
-      <tbody>${rows.map(([where, what, tab, label]) => `<tr><td class="left"><strong>${where}</strong></td>
-        <td class="left">${what}</td><td class="left"><a href="#${tab}" data-goto="${tab}">${label}</a></td></tr>`).join('')}
+      <tbody>${rows.map(([where, what, links]) => `<tr><td class="left"><strong>${where}</strong></td>
+        <td class="left">${what}</td><td class="left">${links.map(([tab, label]) => `<a href="#${tab}"
+          data-goto="${tab}">${label}</a>`).join(' · ')}</td></tr>`).join('')}
         <tr><td class="left"><strong>Unlisted equity shares</strong></td><td class="left" colspan="2">The instructions
           ask for shares of <em>unlisted</em> foreign companies here, even when they are also in Schedule FA.
           ${esc(company.short)} is listed in the US, so it is usually left out; some CAs still add foreign shares
@@ -279,104 +348,201 @@ function selectTab(name, { focus = false } = {}) {
   if (location.hash.slice(1) !== name) history.replaceState(null, '', `#${name}`);
 }
 
-// ── Loading the file ──
+// ── Loading the files ──
 function setDrop(stateName, name = '') {
   els.drop.dataset.state = stateName;
   if (els.dropName) els.dropName.textContent = name;
+  const busy = els.drop.querySelector('.dz-busy-text');
+  if (busy && stateName === 'busy') busy.textContent = name.includes(' + ') ? 'Reading your files…' : 'Reading your file…';
 }
 
-function showStatus(html, cls = '') {
-  els.status.innerHTML = html ? `<div class="status-line ${cls}" style="margin-top:12px">${html}</div>` : '';
+function refreshDrop() {
+  const names = Object.keys(KINDS).map((k) => state.files[k]?.name).filter(Boolean);
+  setDrop(names.length ? 'done' : 'idle', names.join(' + '));
 }
 
-// A file that cannot be used also clears the previous file's results.
-function fail(html) {
-  showStatus(html, 'bad');
-  state.lots = null;
-  setDrop('idle');
-  renderAll();
+class LoadError extends Error {
+  constructor(html, kind = null) {
+    super(html);
+    this.html = html;
+    this.kind = kind;
+  }
 }
 
-async function useText(text, label) {
+// Reads one export: works out which of the two it is, then checks its currency and prices.
+async function readExport(text, name) {
+  const file = `<strong>${esc(name)}</strong>`;
+  const kind = detectExport(text);
+  if (!kind) {
+    throw new LoadError(`${file} does not look like a Fidelity share export: it has no “Date acquired” and
+      “Quantity” columns. Choose <strong>View open lots.csv</strong> or <strong>View closed lots.csv</strong>.`);
+  }
   let parsed;
   try {
-    parsed = parseOpenLots(text);
+    parsed = kind === 'open' ? parseOpenLots(text) : parseClosedLots(text);
   } catch (err) {
-    fail(esc(err.message));
-    return false;
+    throw new LoadError(`${file}: ${esc(err.message)}`, kind);
   }
   if (parsed.currency && parsed.currency !== 'USD') {
-    fail(`This export shows values in ${esc(parsed.currency)}. Indian tax needs the US-dollar values, each converted
-      at SBI's rate for its own date. In Fidelity's share details window, choose <strong>Asset currency</strong>
-      before clicking <strong>Export</strong>.`);
-    return false;
+    throw new LoadError(`${file} shows values in ${esc(parsed.currency)}. Indian tax needs the US-dollar values, each
+      converted at SBI's rate for its own date. In Fidelity's share details window, choose <strong>Asset
+      currency</strong> before clicking <strong>Export</strong>.`, kind);
   }
+  let data;
   try {
-    state.data = await loadData();
+    data = await loadData();
   } catch (err) {
-    fail(`Could not load the exchange rates and prices (${esc(err.message)}). Please try again.`);
-    return false;
+    throw new LoadError(`Could not load the exchange rates and prices (${esc(err.message)}). Please try again.`);
   }
-  const check = priceCheck(parsed.lots, state.data.prices);
+  const check = priceCheck(parsed.lots, data.prices);
   if (!check.ok) {
-    fail(`The cost per share in this file does not match ${esc(company.short)}'s share price in US dollars on
-      the dates the shares were acquired (${check.off} of ${check.checked} lots are far off). Check that this is
-      your ${esc(company.short)} export, saved with <strong>Asset currency</strong> selected.`);
-    return false;
+    throw new LoadError(`The cost per share in ${file} does not match ${esc(company.short)}'s share price in US
+      dollars on the dates the shares were acquired (${check.off} of ${check.checked} lots are far off). Check that
+      this is your ${esc(company.short)} export, saved with <strong>Asset currency</strong> selected.`, kind);
   }
-  Object.assign(state, { lots: parsed.lots, label, rateOverrides: {} });
+  state.data = data;
+  return { kind, name, lots: parsed.lots, skipped: parsed.skipped };
+}
 
-  const types = parsed.lots.map((l) => classifyLot(l, state.data.prices, { esppDiscount: company.esppDiscount }).type);
+// The closed-lots export has no share source or grant date: take them from the shares of the
+// same lot still held (a partial sale), when those agree.
+function mergeLots() {
+  const open = state.files.open?.lots || [];
+  state.closedLots = (state.files.closed?.lots || []).map((l) => {
+    if (l.source !== null) return l;
+    const same = open.filter((o) => o.acquired === l.acquired);
+    const agree = same.length && same.every((o) => o.source === same[0].source && o.grantDate === same[0].grantDate);
+    return agree ? { ...l, source: same[0].source, grantDate: same[0].grantDate } : l;
+  });
+  state.lots = open.length || state.closedLots.length ? [...open, ...state.closedLots] : null;
+}
+
+function setFile(kind, file) {
+  state.files[kind] = file;
+  // Rates typed in belong to the lots of the file they were typed for.
+  for (const id of Object.keys(state.rateOverrides)) {
+    if (id.startsWith(KINDS[kind].idPrefix)) delete state.rateOverrides[id];
+  }
+  mergeLots();
+}
+
+function describe(f) {
+  const total = f.lots.reduce((a, l) => a + l.quantity, 0);
+  const skipped = f.skipped.length ? ` Skipped ${plural(f.skipped.length, 'row')} without a quantity, date or cost
+    (line ${f.skipped.map((s) => s.line).join(', ')}).` : '';
+  const head = `<strong>${KINDS[f.kind].title}</strong> · ${esc(f.name)}:`;
+  if (f.kind === 'closed') {
+    const moved = f.lots.filter((l) => l.transferred).length;
+    const dates = f.lots.map((l) => l.sold);
+    return `${head} ${plural(f.lots.length, 'lot')}${moved ? ` (${moved} transferred out)` : ''}, ${shares(total)}
+      shares, sold ${esc(longDate(dates[0]))} – ${esc(longDate(dates[dates.length - 1]))}.${skipped}`;
+  }
+  const types = state.data
+    ? f.lots.map((l) => classifyLot(l, state.data.prices, { esppDiscount: company.esppDiscount }).type) : [];
   const rsu = types.filter((t) => t === 'RSU').length;
   const kinds = [rsu && plural(rsu, 'RSU vest'), types.length - rsu && plural(types.length - rsu, 'ESPP purchase')]
     .filter(Boolean).join(', ');
-  const totalShares = parsed.lots.reduce((a, l) => a + l.quantity, 0);
-  const first = parsed.lots[0].acquired;
-  const last = parsed.lots[parsed.lots.length - 1].acquired;
-  showStatus(`Loaded <strong>${esc(label)}</strong>: ${plural(parsed.lots.length, 'lot')} (${kinds}),
-    ${shares(totalShares)} shares, acquired ${esc(longDate(first))} – ${esc(longDate(last))}.${parsed.skipped.length
-    ? ` Skipped ${plural(parsed.skipped.length, 'row')} without a quantity or cost (line ${parsed.skipped.map((s) => s.line).join(', ')}).`
-    : ''}`, 'ok');
-  els.tool.querySelector('#espp-basis').hidden = rsu === types.length;
-  renderAll();
-  return true;
+  return `${head} ${plural(f.lots.length, 'lot')}${kinds ? ` (${kinds})` : ''}, ${shares(total)} shares, acquired
+    ${esc(longDate(f.lots[0].acquired))} – ${esc(longDate(f.lots[f.lots.length - 1].acquired))}.${skipped}`;
 }
 
-// Only the latest file picked may update the drop zone and scroll the page.
+function renderStatus(errors = []) {
+  const lines = [];
+  for (const kind of Object.keys(KINDS)) {
+    const f = state.files[kind];
+    if (f) {
+      lines.push(`<div class="status-line ok file-line"><span>${describe(f)}</span><button class="btn ghost small"
+        type="button" data-remove="${kind}" aria-label="Remove ${esc(f.name)}">Remove</button></div>`);
+    }
+  }
+  for (const html of errors) lines.push(`<div class="status-line bad">${html}</div>`);
+  if (state.files.open && !state.files.closed) {
+    lines.push(`<p class="small muted load-hint">Sold or transferred any ${esc(company.short)} shares? Load
+      <strong>View closed lots.csv</strong> too (step 1, Previously held shares): Schedule FA includes shares sold
+      during the year, and the <a href="#selling" data-goto="selling">Selling shares</a> tab works out the capital
+      gains.</p>`);
+  } else if (state.files.closed && !state.files.open) {
+    lines.push(`<p class="small muted load-hint">Still hold ${esc(company.short)} shares? Load <strong>View open
+      lots.csv</strong> too (step 1, Current shares): Schedule FA and the dividends need them as well.</p>`);
+  }
+  els.status.innerHTML = lines.length ? `<div class="load-lines">${lines.join('')}</div>` : '';
+}
+
+// Only the latest files picked may update the page.
 let loadSeq = 0;
 
-async function useFile(file) {
-  if (!file) return;
+async function useFiles(list) {
+  const files = [...(list || [])].filter(Boolean);
+  if (!files.length) return;
   const seq = ++loadSeq;
-  if (file.size > MAX_FILE_BYTES) {
-    fail('That file is too large to be a Fidelity export. Please choose “View open lots.csv”.');
-    return;
-  }
-  setDrop('busy', file.name);
-  showStatus('');
+  setDrop('busy', files.map((f) => f.name).join(' + '));
   const started = Date.now();
-  let ok = false;
-  try {
-    const text = await file.text();
-    if (seq !== loadSeq) return;
-    ok = await useText(text, file.name);
-  } catch (err) {
-    if (seq === loadSeq) fail(`Could not read the file (${esc(err.message)}).`);
+  const loaded = [];
+  const errors = [];
+  for (const file of files.slice(0, MAX_FILES)) {
+    if (file.size > MAX_FILE_BYTES) {
+      errors.push(new LoadError(`<strong>${esc(file.name)}</strong> is too large to be a Fidelity export.`));
+      continue;
+    }
+    try {
+      loaded.push(await readExport(await file.text(), file.name));
+    } catch (err) {
+      errors.push(err instanceof LoadError ? err
+        : new LoadError(`Could not read <strong>${esc(file.name)}</strong> (${esc(err.message)}).`));
+    }
   }
-  // Keep the spinner up long enough to be seen: the file is read in milliseconds.
+  if (files.length > MAX_FILES) errors.push(new LoadError(`Only the first ${MAX_FILES} files were read.`));
+  // Keep the spinner up long enough to be seen: the files are read in milliseconds.
   const wait = MIN_BUSY_MS - (Date.now() - started);
   if (wait > 0) await new Promise((resolve) => { setTimeout(resolve, wait); });
-  if (!ok || seq !== loadSeq) return;
-  setDrop('done', file.name);
+  if (seq !== loadSeq) return;
+  // A file that cannot be used also clears the earlier file of its kind, so its results are not
+  // mistaken for the new file's.
+  for (const err of errors) if (err.kind) setFile(err.kind, null);
+  for (const f of loaded) setFile(f.kind, f);
+  renderStatus(errors.map((err) => err.html));
+  renderAll();
+  refreshDrop();
+  if (!loaded.length) return;
+  if (!loaded.some((f) => f.kind === 'open')) selectTab('selling');
   document.getElementById('tool-top').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
+function removeFile(kind) {
+  setFile(kind, null);
+  renderStatus();
+  renderAll();
+  refreshDrop();
+}
+
 // ── Rendering ──
+// The same setting can appear on two tabs (tax rate, ESPP basis): show the current one on both.
+function syncControls() {
+  const preset = !state.customRate && TAX_RATES.some(([v]) => v === state.indiaRate);
+  for (const select of els.tool.querySelectorAll('select[data-india-rate]')) {
+    select.value = preset ? String(state.indiaRate) : 'custom';
+    const wrap = select.closest('.controls-row').querySelector('[data-custom-wrap]');
+    wrap.hidden = preset;
+    const input = wrap.querySelector('input');
+    if (!preset && input !== document.activeElement) {
+      input.value = state.indiaRate ? String(Number((state.indiaRate * 100).toFixed(2))) : '';
+    }
+  }
+  for (const radio of els.tool.querySelectorAll('input[name="espp-basis"], input[name="cg-espp-basis"]')) {
+    radio.checked = radio.value === state.esppBasis;
+  }
+  for (const radio of els.tool.querySelectorAll('input[name="cost-rate"]')) {
+    radio.checked = radio.value === state.costRate;
+  }
+}
+
 function renderAll() {
   const cy = Number(els.tool.querySelector('#year-select').value);
   const option = returnOptions(today()).find((o) => o.cy === cy);
+  syncControls();
   renderFa(cy, option);
   renderDividends(cy, option);
+  renderSelling(cy, option);
   renderHistory(cy);
 }
 
@@ -411,10 +577,13 @@ function renderFa(cy, option) {
   } catch (err) {
     head.hidden = true;
     out.innerHTML = `<div class="banner warn">${esc(err.message)}</div>`;
+    state.fa = null;
     return;
   }
   state.fa = res;
   head.hidden = false;
+  els.tool.querySelector('#espp-basis').hidden = !state.lots.some((l) => classifyLot(l, state.data.prices,
+    { esppDiscount: company.esppDiscount }).type === 'ESPP');
   els.tool.querySelector('#fa-period').innerHTML = (option?.complete
     ? `Schedule FA covers 1 January – 31 December ${cy}. The year is over, so these values are final.`
     : `Schedule FA covers 1 January – 31 December ${cy}. The year is still running, so the values are
@@ -446,12 +615,7 @@ function renderFa(cy, option) {
 
 function workingHtml(r, res) {
   const q = shares(r.lot.quantity);
-  const basis = {
-    cost: 'value at vesting, from your export',
-    close: 'closing price on the purchase day',
-    paid: 'price you paid',
-    estimated: 'estimated from the price paid',
-  }[r.basis];
+  const basis = BASIS_TEXT[r.basis];
   const items = [];
   items.push(r.initial.needsRate
     ? `Initial value: ${q} shares × ${usd(r.fmvPerShare)} (${basis}) × the SBI TT buying rate on
@@ -463,20 +627,34 @@ function workingHtml(r, res) {
     closing: `${res.final ? 'the 31 December value' : 'the latest value'}, ${q} shares × ${usd(p.price)} close on
       ${longDate(p.date)} × ${rateText(p.rate)}`,
     acquired: `the value when acquired, ${q} shares × ${usd(p.price)} (${basis}) × ${rateText(p.rate)}`,
+    sold: `the sale value, ${usd(p.usd)} for ${q} shares on ${longDate(p.date)} × ${rateText(p.rate)}`,
   }[p.kind];
   items.push(p.fallback
     ? `Peak value: no closing price yet after acquisition, so the acquisition value is used: ${rupees(p.inr)}`
-    : `Peak value, the highest rupee value on any day of the period: ${peakDetail} = ${rupees(p.inr)}`);
-  items.push(`Closing value: ${usd(r.closing.price)} close on ${longDate(r.closing.date)} × ${q} shares ×
-    ${rateText(r.closing.rate)} = ${rupees(r.closing.inr)}`);
+    : `Peak value, the highest rupee value on any day ${r.sold ? 'it was held' : 'of the period'}: ${peakDetail}
+      = ${rupees(p.inr)}`);
+  items.push(r.sold
+    ? `Closing value: nil, the shares were ${r.transferred ? 'transferred out' : 'sold'} on ${longDate(r.sold)}.`
+    : `Closing value: ${usd(r.closing.price)} close on ${longDate(r.closing.date)} × ${q} shares ×
+      ${rateText(r.closing.rate)} = ${rupees(r.closing.inr)}`);
   if (r.dividends.items.length) {
     items.push(`Dividends: ${r.dividends.items.map((d) => `${money(d.perShare, 4)} × ${q} shares paid
       ${longDate(d.pay)}${d.payKnown ? '' : ' (ex-date)'} × ${rateText(d.rate)} = ${
       d.exact === null ? '—' : rupees(Math.round(d.exact))}`).join('; ')}`);
   } else {
-    items.push(`Dividends: none paid in ${res.cy} on these shares (a lot only gets dividends whose ex-dividend date is after it was acquired).`);
+    items.push(`Dividends: none paid in ${res.cy} on these shares (a lot only gets dividends whose ex-dividend date is
+      after it was acquired${r.lot.sold ? ' and not after it was sold' : ''}).`);
   }
-  items.push('Sale proceeds: none, the shares are still held.');
+  if (r.sold && !r.transferred) {
+    items.push(`Sale proceeds: ${usd(r.proceeds.usd)} (Fidelity's proceeds, after fees) × ${rateText(r.proceeds.rate)}
+      = ${rupees(r.proceeds.inr)}`);
+  } else if (r.transferred) {
+    items.push('Sale proceeds: none, the shares were transferred out of the account, not sold.');
+  } else if (r.lot.sold) {
+    items.push(`Sale proceeds: none in ${res.cy}; the shares were sold on ${longDate(r.lot.sold)}.`);
+  } else {
+    items.push('Sale proceeds: none, the shares are still held.');
+  }
   return `<ul class="working-list">${items.map((t) => `<li>${t}</li>`).join('')}</ul>`;
 }
 
@@ -507,7 +685,7 @@ function a2Html(res) {
     <div class="a2-amount">
       <h3>Gross amount paid/credited to the account during the period</h3>
       <p class="small muted">In the form this column has two boxes: choose the <strong>nature of amount</strong> from
-        the list, then type the <strong>amount</strong>, here the dividends credited to the account during
+        the list, then type the <strong>amount</strong>: what was credited to the account during
         ${res.cy}${amounts.length > 1 ? `. The account received more than one kind of amount, so add one A2 row for
         each; the details and balances above repeat on every row` : ''}.</p>
       ${amounts.map(([nature, value]) => `<dl class="fixed-fields pair">
@@ -516,8 +694,8 @@ function a2Html(res) {
       </dl>`).join('')}
     </div>
     <p class="small muted" style="margin:10px 0 0">Use the institution name and address printed on your Fidelity
-      statement if they differ. The balances count only the shares in this export: if the account also held cash
-      (Fidelity's money-market fund) or shares you have since sold, add those. Your statements show the account's
+      statement if they differ. The balances count only the shares in your exports: if the account also held cash,
+      such as sale proceeds left in Fidelity's money-market fund, add it. Your statements show the account's
       value.</p>
   </section>`;
 }
@@ -532,7 +710,8 @@ function a3Html(res) {
     return `<tr>
       <td>${i + 1}</td>
       <td class="left lotcell">${copyText(dmy(r.lot.acquired))}<span class="sub"><span
-        class="type-badge ${r.type === 'ESPP' ? 'espp' : ''}">${r.type}</span>${shares(r.lot.quantity)} shares</span></td>
+        class="type-badge ${r.type === 'ESPP' ? 'espp' : ''}">${r.type}</span>${shares(r.lot.quantity)} shares</span>${
+        r.sold ? `<span class="sub">${r.transferred ? 'Transferred out' : 'Sold'} ${dmy(r.sold)}</span>` : ''}</td>
       <td>${initial}</td>
       <td>${copyVal(r.peak.inr)}</td>
       <td>${copyVal(r.closing.inr)}</td>
@@ -544,11 +723,13 @@ function a3Html(res) {
     <tr class="working" id="work-${i}" hidden><td colspan="8">${workingHtml(r, res)}</td></tr>`;
   }).join('');
   const t = res.totals;
+  const soldRows = res.rows.filter((r) => r.sold).length;
   return `<section class="card">
     <div class="card-head"><h2>Schedule FA · Table A3: foreign equity and debt interest</h2>
       <span class="spacer"></span><button class="btn alt small" type="button" id="download-csv">⤓ Download CSV</button></div>
-    <p class="small muted" style="margin:0 0 8px">Add one row per lot: ${res.rows.length} in all. These five details are
-      the same on every row. Click any value to copy it; <strong>Show maths</strong> opens the working for a row.</p>
+    <p class="small muted" style="margin:0 0 8px">Add one row per lot: ${res.rows.length} in all${soldRows
+      ? `, including ${soldRows} sold or transferred during ${res.cy} (closing balance nil)` : ''}. These five details
+      are the same on every row. Click any value to copy it; <strong>Show maths</strong> opens the working for a row.</p>
     <dl class="fixed-fields">
       <div><dt>Country/Region name and code</dt><dd>${copyText(COUNTRY)}</dd></div>
       <div><dt>Name of entity</dt><dd>${copyText(company.name)}</dd></div>
@@ -589,8 +770,12 @@ function faChecklistHtml(res) {
     <ul class="check-list">
       <li>Schedule FA is for residents who are <strong>ordinarily resident (ROR)</strong>. If you were not ordinarily
         resident (RNOR) or non-resident in this year, you do not fill it in.</li>
-      <li><strong>Sold shares since 1 January ${res.cy}?</strong> They are not in this export but must be reported too.
-        Support for Fidelity's “Previously held shares” is coming next.</li>
+      <li>${state.files.closed
+        ? `<strong>Shares you sold</strong> are included from ${esc(state.files.closed.name)}: held during ${res.cy},
+          they are reported with their sale proceeds and a nil closing balance. Their gains go in Schedule CG: see the
+          <a href="#selling" data-goto="selling">Selling shares tab</a>.`
+        : `<strong>Sold shares since 1 January ${res.cy}?</strong> Shares held at any time in the year must be reported
+          too, with their sale proceeds: load Fidelity's <strong>View closed lots.csv</strong> as well (step 1).`}</li>
       <li><strong>Dividends are taxable income too.</strong> See the <a href="#dividends" data-goto="dividends">Dividends
         tab</a> for Schedule OS, FSI, TR and Form 67.</li>
       <li>The tax department receives details of US accounts under FATCA, so keep this export and your Fidelity
@@ -619,14 +804,16 @@ function renderDividends(fy, option) {
   state.div = res;
   els.tool.querySelector('#div-period').innerHTML = `Dividends paid ${esc(longDate(res.start))} – ${esc(longDate(res.end))}
     (${fyLabel(fy)}).${res.final ? '' : ` The year is still running, so only payments made so far are counted:
-    the values are <strong>provisional</strong>.`}${newActNote(option)}`;
+    the values are <strong>provisional</strong>.`}${state.files.closed ? '' : ` Shares you sold count only if you also
+    load <strong>View closed lots.csv</strong>.`}${newActNote(option)}`;
 
   const upcoming = res.upcoming.length ? `<p class="small muted" style="margin:10px 0 0">Declared but not paid yet in
     ${fyLabel(fy)}: ${res.upcoming.map((d) => `${money(d.amount, 4)} a share on ${esc(longDate(d.pay))} (ex-dividend
     ${esc(longDate(d.ex))})`).join('; ')}. It will count once paid.</p>` : '';
   if (!res.rows.length) {
-    out.innerHTML = `<section class="card"><p style="margin:0">None of the shares in this export received a
-      ${esc(company.short)} dividend paid in ${fyLabel(fy)}, so there is no dividend income to report from them.</p>${upcoming}</section>`;
+    out.innerHTML = `<section class="card"><p style="margin:0">None of the shares in your
+      export${state.files.open && state.files.closed ? 's' : ''} received a ${esc(company.short)} dividend paid in
+      ${fyLabel(fy)}, so there is no dividend income to report from them.</p>${upcoming}</section>`;
     return;
   }
   const t = res.totals;
@@ -655,8 +842,9 @@ function renderDividends(fy, option) {
     <section class="card">
       <div class="card-head"><h2>Dividends your shares received</h2></div>
       <p class="small muted" style="margin:0 0 8px">Every ${esc(company.short)} dividend paid in ${fyLabel(fy)} on the
-        shares in this export, before and after the US tax. Each payment is converted at SBI's rate on the last day of
-        the month before it was paid (Rule 115).</p>
+        shares in your export${state.files.closed ? 's, including shares sold on or after the ex-dividend date' : ''},
+        before and after the US tax. Each payment is converted at SBI's rate on the last day of the month before it
+        was paid (Rule 115).</p>
       <div class="table-scroll"><table class="fa div-table">
         <thead><tr><th class="left">Paid on</th><th class="left">Ex-dividend</th><th>Per share</th><th>Shares</th>
           <th>Gross</th><th>US tax</th><th class="left">Rate</th><th>Gross (₹)</th><th>US tax (₹)</th></tr></thead>
@@ -763,6 +951,349 @@ function form67Html(res, option) {
   </section>`;
 }
 
+// ── Selling shares: capital gains ──
+function renderSelling(fy, option) {
+  const controls = els.tool.querySelector('#cg-controls');
+  const out = els.tool.querySelector('#cg-results');
+  if (!state.files.closed || !state.data) {
+    controls.hidden = true;
+    state.cg = null;
+    out.innerHTML = `<section class="card empty-state">
+      <p style="margin:0"><strong>Load Fidelity's <em>View closed lots.csv</em> in step 2</strong> to see the capital
+        gains on ${esc(company.short)} shares you sold. To get it, open <strong>Previously held shares</strong> in the
+        same Fidelity window as in step 1, keep <strong>Asset currency</strong> and click <strong>Export</strong>. The
+        file is read on your device and never uploaded.</p>
+      <p style="margin:8px 0 0"><a href="#step1" data-scroll="step1">See step 1 ↑</a> · <a href="#step2"
+        data-scroll="step2">Go to step 2 ↑</a></p>
+    </section>`;
+    return;
+  }
+  controls.hidden = false;
+  const res = computeCapitalGains({
+    lots: state.closedLots, prices: state.data.prices, rates: state.data.rates, fy, today: today(),
+    esppBasis: state.esppBasis, esppDiscount: company.esppDiscount, costRate: state.costRate,
+    rateOverrides: state.rateOverrides, indiaRate: state.indiaRate,
+  });
+  state.cg = res;
+  els.tool.querySelector('#cg-espp-basis').hidden = !res.rows.some((r) => r.type === 'ESPP');
+  els.tool.querySelector('#cg-period').innerHTML = `Shares sold ${esc(longDate(res.start))} – ${esc(longDate(res.end))}
+    (${fyLabel(fy)}).${res.final ? '' : ' The year is still running, so this covers the sales so far.'}${newActNote(option)}`;
+
+  const notes = [...res.warnings];
+  if (res.transfers.length) {
+    const one = res.transfers.length === 1;
+    notes.push(`${plural(res.transfers.length, 'lot')} ${one ? 'was' : 'were'} transferred out of Fidelity in
+      ${fyLabel(fy)} rather than sold. Moving shares to another account of yours is not a sale, so there is no gain on
+      ${one ? 'it' : 'them'}.`);
+  }
+  const offered = returnOptions(today()).map((o) => o.cy);
+  for (const e of res.elsewhere) {
+    const one = e.count === 1;
+    notes.push(`${plural(e.count, 'other lot')} in your file ${one ? 'was' : 'were'} sold or transferred in
+      ${fyLabel(e.fy)}: ${offered.includes(e.fy) ? `choose the ${fyLabel(e.fy)} return above to see ${one ? 'it' : 'them'}`
+        : `${one ? 'it belongs' : 'they belong'} in that year's return`}.`);
+  }
+  const banner = notes.length ? `<div class="banner">${notes.map((n) => `<div>${n}</div>`).join('')}</div>` : '';
+  if (!res.rows.length) {
+    out.innerHTML = `${banner}<section class="card"><p style="margin:0">Your file has no ${esc(company.short)} shares
+      sold in ${fyLabel(fy)}, so there is no capital gain to report for this return.</p></section>`;
+    return;
+  }
+  const count = (term) => res.rows.filter((r) => r.term === term).length;
+  const { stock, fx } = state.data;
+  const status = res.complete
+    ? `<span class="chip ${res.final ? 'pos' : 'warn'}"><span class="dot"></span>${res.final
+      ? `Final: ${fyLabel(fy)}` : `${fyLabel(fy)} so far`}</span>`
+    : `<span class="chip warn"><span class="dot"></span>Incomplete: ${res.missingRates} waiting for a rate</span>`;
+  const termCount = (b) => b.count + b.pending;
+  out.innerHTML = `
+    <div class="result-head">
+      ${status}
+      <span class="chip">${res.rows.length} ${res.rows.length === 1 ? 'lot' : 'lots'} sold</span>
+      ${count('short') ? `<span class="chip">${count('short')} short-term</span>` : ''}
+      ${count('long') ? `<span class="chip">${count('long')} long-term</span>` : ''}
+      <span class="small muted">SBI rates to ${esc(longDate(fx.last))} · ${esc(company.short)} prices to
+        ${esc(longDate(stock.last))}</span>
+    </div>
+    ${pendingHtml(res)}
+    ${banner}
+    ${salesHtml(res)}
+    ${termCount(res.short) ? cgBlockHtml(res, 'short', true) : ''}
+    ${termCount(res.long) ? cgBlockHtml(res, 'long', !termCount(res.short)) : ''}
+    ${periodsHtml(res)}
+    ${cgFsiHtml(res)}
+    ${cgChecklistHtml(res)}`;
+}
+
+// Sales whose exchange rate is not available yet are left out of every total until it is.
+function pendingHtml(res) {
+  if (res.complete) return '';
+  const p = res.pending;
+  const items = [];
+  if (p.before) {
+    items.push(`${plural(p.before, 'lot')} acquired before ${esc(longDate(res.ratesFrom))}, when the SBI rate history
+      starts: type SBI's TT buying rate on the acquisition date into the sale's <strong>Cost</strong> box below (your
+      bank or payslip records for that vest have it).`);
+  }
+  if (p.later) {
+    items.push(`${plural(p.later, 'lot')} acquired after ${esc(longDate(res.ratesTo))}, the latest SBI rate here (the
+      rates are updated every week): type the rate into the sale's <strong>Cost</strong> box, or check back after the
+      next update.`);
+  }
+  if (p.sale) {
+    items.push(`${plural(p.sale, 'sale')} whose Rule 115 rate, for the last day of the month before the sale, is not in
+      the rates yet (they run to ${esc(longDate(res.ratesTo))} and are updated every week): check back after the next
+      update.`);
+  }
+  return `<div class="banner warn"><div><strong>Not complete yet.</strong> ${plural(res.missingRates, 'sale')}
+    ${res.missingRates === 1 ? 'is' : 'are'} waiting for an exchange rate, so the Schedule CG totals, the gains by date
+    of sale and Schedule FSI below leave ${res.missingRates === 1 ? 'it' : 'them'} out for now:</div>
+    <ul class="pending-list">${items.map((t) => `<li>${t}</li>`).join('')}</ul></div>`;
+}
+
+function salesHtml(res) {
+  const rows = res.rows.map((r, i) => {
+    const sale = r.sale.rate
+      ? `${copyVal(r.sale.inr)}<span class="sub">${usd(r.sale.usd)} × ₹${r.sale.rate.rate.toFixed(2)}</span>`
+      : `<span class="muted">waiting for SBI's rate for ${dmy(r.sale.rateDate)}</span>`;
+    let cost = '—';
+    if (r.needsAcqRate) {
+      cost = `<label class="small">Rate on ${dmy(r.lot.acquired)}<br><input class="rate-input" type="number" min="1"
+        step="0.01" inputmode="decimal" data-rate-lot="${r.lot.id}" placeholder="SBI TT buy"
+        value="${esc(state.rateOverrides[r.lot.id] ?? '')}"></label>`;
+    } else if (r.cost.rate) {
+      cost = `${copyVal(r.cost.inr)}<span class="sub">${usd(r.cost.usd)} × ₹${r.cost.rate.rate.toFixed(2)}</span>`;
+    }
+    let gain = '—';
+    if (r.gain !== null) {
+      gain = `${copyVal(r.gain)}${r.currency ? `<span class="sub">incl. ${rupees(r.currency)} from the rupee's
+        ${r.currency > 0 ? 'fall' : 'rise'}</span>` : ''}`;
+    }
+    return `<tr>
+      <td class="left lotcell">${dmy(r.lot.sold)}<span class="sub">${QUARTERS[r.quarter]}</span></td>
+      <td class="left lotcell">${dmy(r.lot.acquired)}<span class="sub"><span class="type-badge ${r.type === 'ESPP'
+        ? 'espp' : ''}">${r.type}</span>${shares(r.lot.quantity)} shares</span></td>
+      <td class="left"><span class="type-badge term-${r.term}">${r.term === 'long' ? 'Long-term' : 'Short-term'}</span>
+        <span class="sub">${plural(r.months, 'month')}${r.term === 'short' ? `; long-term from ${dmy(r.longFrom)}` : ''}</span></td>
+      <td>${sale}</td>
+      <td>${cost}</td>
+      <td>${gain}</td>
+      <td><button class="btn ghost small disclosure" type="button" data-working="cg-${i}" aria-expanded="false"
+        aria-controls="cg-work-${i}"><span class="disc-label">Show maths</span><span class="chev" aria-hidden="true">▾</span></button></td>
+    </tr>
+    <tr class="working" id="cg-work-${i}" hidden><td colspan="7">${cgWorkingHtml(r, res)}</td></tr>`;
+  }).join('');
+  const done = res.rows.filter((r) => r.gain !== null);
+  const sum = (pick) => done.reduce((a, r) => a + pick(r), 0);
+  const left = res.rows.length - done.length;
+  return `<section class="card">
+    <div class="card-head"><h2>Shares you sold in ${fyLabel(res.fy)}</h2>
+      <span class="spacer"></span><button class="btn alt small" type="button" id="download-cg-csv">⤓ Download CSV</button></div>
+    <p class="small muted" style="margin:0 0 8px">One row per lot sold. The sale value is at SBI's rate for the last day
+      of the month before the sale; the cost at ${res.costRate === 'sale' ? 'the same rate'
+        : 'the rate on the day the shares vested or were bought'}. <strong>Show maths</strong> opens the working.</p>
+    <div class="table-scroll"><table class="fa cg-table">
+      <thead><tr><th class="left">Sold on</th><th class="left">Acquired</th><th class="left">Held</th>
+        <th>Sale value</th><th>Cost</th><th>Gain</th><th></th></tr></thead>
+      <tbody>${rows}</tbody>
+      <tfoot><tr><td class="left">Total${left ? `<span class="sub">without the ${left} waiting for a rate</span>` : ''}</td>
+        <td></td><td></td><td>${rupees(sum((r) => r.sale.inr))}</td>
+        <td>${rupees(sum((r) => r.cost.inr))}</td><td>${rupees(sum((r) => r.gain))}</td><td></td></tr></tfoot>
+    </table></div>
+  </section>`;
+}
+
+function cgWorkingHtml(r, res) {
+  const q = shares(r.lot.quantity);
+  const items = [];
+  const usLong = r.lot.usTerm === 'LONG';
+  items.push(`Held ${plural(r.months, 'month')}, ${longDate(r.lot.acquired)} to ${longDate(r.lot.sold)}: ${
+    r.term === 'long' ? 'more than 24 months, so long-term'
+      : `not more than 24 months, so short-term (long-term from ${longDate(r.longFrom)})`}.${
+    r.lot.usTerm && usLong !== (r.term === 'long') ? ` Fidelity shows “${usLong ? 'Long' : 'Short'}”: that is the US
+      one-year rule, which does not count in India.` : ''}`);
+  items.push(r.sale.rate
+    ? `Sale value: ${usd(r.sale.usd)} (Fidelity's proceeds after fees, ${money(r.sale.perShare, 4)} a share) ×
+      ${rateText(r.sale.rate)}, the rate for the last day of the month before the sale (Rule 115) = ${rupees(r.sale.inr)}`
+    : `Sale value: ${usd(r.sale.usd)} × SBI's rate for ${longDate(r.sale.rateDate)}, the last day of the month before
+      the sale (Rule 115), which is not in the rates yet (they run to ${longDate(res.ratesTo)}).`);
+  const basis = BASIS_TEXT[r.basis];
+  if (r.needsAcqRate) {
+    items.push(`Cost: ${q} shares × ${money(r.fmvPerShare, 4)} (${basis}) = ${usd(r.cost.usd)} × SBI's TT buying rate
+      on ${longDate(r.lot.acquired)}, which ${r.acqRateMissing === 'later'
+        ? `is not in the rates yet (they run to ${longDate(res.ratesTo)})` : 'is before the published history'}; type
+      it in to calculate.`);
+  } else if (r.cost.rate) {
+    items.push(`Cost: ${q} shares × ${money(r.fmvPerShare, 4)} (${basis}) = ${usd(r.cost.usd)} × ${rateText(r.cost.rate)}${
+      res.costRate === 'sale' ? ', the sale\'s rate' : ''} = ${rupees(r.cost.inr)}`);
+  }
+  if (r.gain !== null) {
+    let text = `Gain: ${rupees(r.sale.inr)} − ${rupees(r.cost.inr)} = ${rupees(r.gain)}.`;
+    if (r.currency) {
+      text += ` Of this, ${rupees(r.gain - r.currency)} is the shares' ${r.usdGain >= 0 ? 'rise' : 'fall'} of
+        ${usd(Math.abs(r.usdGain))} at the sale's rate, and ${rupees(r.currency)} the rupee's ${r.currency > 0
+        ? 'fall' : 'rise'} against the dollar since the shares were acquired: the ${usd(r.cost.usd)} cost × (₹${
+        r.sale.rate.rate.toFixed(2)} − ₹${r.cost.rate.rate.toFixed(2)}).`;
+    }
+    items.push(text);
+  }
+  return `<ul class="working-list">${items.map((t) => `<li>${t}</li>`).join('')}</ul>`;
+}
+
+function cgBlockHtml(res, term, withNote) {
+  const long = term === 'long';
+  const b = long ? res.long : res.short;
+  const all = b.count + b.pending;
+  return `<section class="card">
+    <div class="card-head"><h2>Schedule CG · ${long ? 'B8: long-term' : 'A5: short-term'} capital gains</h2>
+      <span class="chip${b.pending ? ' warn' : ''}">${b.pending ? `${b.count} of ${all}` : b.count} ${all === 1 ? 'lot'
+        : 'lots'}</span></div>
+    <p class="small muted" style="margin:0 0 8px">${long
+      ? '<strong>B. Long-term capital gains → 8. From sale of assets where B1 to B7 above are not applicable.</strong> Held more than 24 months: taxed at 12.5% without indexation (section 112).'
+      : '<strong>A. Short-term capital gains → 5. From sale of assets other than at A1 or A2 or A3 or A4 above.</strong> Held 24 months or less: taxed at your slab rate.'}
+      Enter the totals of these lots once; the e-filing utility works out c and e from what you type.</p>
+    ${leftOutHtml(b.pending)}
+    <dl class="fixed-fields">
+      <div><dt>a(ii) Full value of consideration in respect of assets other than unquoted shares</dt><dd>${
+        copyVal(b.consideration)}</dd></div>
+      <div><dt>a(iii) Total (ic + ii)</dt><dd>${copyVal(b.consideration)}</dd></div>
+      <div><dt>b(i) Cost of acquisition without indexation</dt><dd>${copyVal(b.cost)}</dd></div>
+      <div><dt>b(ii) Cost of improvement without indexation</dt><dd>${copyVal(0)}</dd></div>
+      <div><dt>b(iii) Expenditure wholly and exclusively in connection with transfer</dt><dd>${copyVal(0)}<span
+        class="hint">Fidelity's proceeds are after fees</span></dd></div>
+      <div><dt>b(iv) Total (i + ii + iii)</dt><dd>${copyVal(b.deductions)}</dd></div>
+      <div><dt>c Balance (aiii – biv)</dt><dd>${copyVal(b.gain)}</dd></div>
+      ${long
+        ? `<div><dt>d Deduction under section 54F</dt><dd>${copyVal(0)}<span class="hint">only with a new house; see
+            below</span></dd></div>
+          <div><dt>e Long-term Capital Gains on assets at B8 above (8c – 8d)</dt><dd>${copyVal(b.gain)}</dd></div>`
+        : `<div><dt>d Loss to be disallowed u/s 94(7) or 94(8)</dt><dd>${copyVal(0)}<span class="hint">usually
+            nil</span></dd></div>
+          <div><dt>e STCG on assets other than at A1 or A2 or A3 or A4 above (5c + 5d)</dt><dd>${copyVal(b.gain)}</dd></div>`}
+    </dl>
+    ${withNote ? `<p class="small muted" style="margin:0">Shares listed only abroad are not listed on an Indian stock
+      exchange, so some CAs treat them as <em>unquoted</em> shares and enter the sale value under a(i) instead, as both
+      (a) the consideration and (b) the fair market value, with a(ii) left at 0. The gain is the same either way.</p>`
+      : ''}
+  </section>`;
+}
+
+// A reminder on each Schedule CG card while some sales are still waiting for an exchange rate.
+function leftOutHtml(n) {
+  return n ? `<div class="banner warn" style="margin:0 0 10px">Not complete yet: leaves out ${plural(n, 'sale')} still
+    waiting for an exchange rate (see above).</div>` : '';
+}
+
+function periodsHtml(res) {
+  const s = res.setOff;
+  const notes = [];
+  const shortLoss = s.shortLossUsed + s.shortLossCarried;
+  // Until every sale has its rate, losses may still be absorbed by the gains left out.
+  if (res.complete && s.shortLossUsed) {
+    notes.push(`The short-term loss of ${rupees(shortLoss)} is set off against the long-term gain${s.shortLossCarried
+      ? `; the other ${rupees(s.shortLossCarried)} is carried forward` : ''}.`);
+  } else if (res.complete && shortLoss) {
+    notes.push(`The short-term loss of ${rupees(shortLoss)} has no gain here to be set off against, so it is carried
+      forward.`);
+  }
+  if (res.complete && s.longLossCarried) {
+    notes.push(`The long-term loss of ${rupees(s.longLossCarried)} can only be set off against long-term gains, so it
+      is carried forward.`);
+  }
+  if (res.complete && (s.shortLossCarried || s.longLossCarried)) {
+    notes.push('Losses carried forward go in Schedule CFL and can be used for 8 years, if the return is filed by its due date.');
+  }
+  const row = (label, values) => `<tr><td class="left">${label}</td>${values.map((v) => `<td>${copyVal(v)}</td>`).join('')}</tr>`;
+  return `<section class="card">
+    <div class="card-head"><h2>Schedule CG: gains by date of sale</h2></div>
+    <p class="small muted" style="margin:0 0 8px">At the end of Schedule CG, <strong>Information about accrual/receipt
+      of capital gain</strong> asks when the gains arose, to work out interest on late advance tax (section 234C).
+      Each sale's gain goes in the period of its sale date, after losses are set off:</p>
+    ${leftOutHtml(res.missingRates)}
+    ${notes.length ? `<div class="banner">${notes.map((n) => `<div>${n}</div>`).join('')}</div>` : ''}
+    <div class="table-scroll"><table class="fa quarters cg-periods">
+      <thead><tr><th class="left">Type of capital gain</th>${QUARTERS.map((q) => `<th>${q}</th>`).join('')}</tr></thead>
+      <tbody>
+        ${row('3. Short-term capital gains taxable at applicable rates', res.periods.short)}
+        ${row('5. Long-term capital gains taxable at the rate of 12.5%', res.periods.long)}
+      </tbody>
+    </table></div>
+    <p class="small muted" style="margin:10px 0 0">This assumes these are your only capital gains and losses in the
+      year. Other gains or losses (Indian shares, mutual funds, property) and losses brought forward change the
+      set-off: the e-filing utility works it out in Schedule CG's set-off table and Schedule BFLA, which these rows
+      follow.</p>
+  </section>`;
+}
+
+function cgFsiHtml(res) {
+  if (!res.fsi) {
+    return `<section class="card">
+      <div class="card-head"><h2>Schedule FSI</h2></div>
+      <p class="small" style="margin:0">${res.complete
+        ? 'These sales add up to a loss, so there is no capital gain from outside India to report in Schedule FSI.'
+        : `The Schedule FSI values appear once every sale has its exchange rate: ${plural(res.missingRates, 'sale')}
+          ${res.missingRates === 1 ? 'is' : 'are'} still waiting for one (see above).`}</p>
+    </section>`;
+  }
+  const s = res.setOff;
+  const t = res.tax;
+  const parts = [];
+  if (s.shortAfter) {
+    parts.push(t.short === null ? `short-term ${rupees(s.shortAfter)} at your slab rate (choose it above)`
+      : `short-term ${rupees(s.shortAfter)} × ${pct(t.shortRate)} = ${rupees(t.short)}`);
+  }
+  if (s.longAfter) {
+    parts.push(`long-term ${rupees(s.longAfter)} × ${pct(t.longRate)} (12.5% plus ${t.longRate > 0.131
+      ? 'surcharge and ' : ''}4% cess) = ${rupees(t.long)}`);
+  }
+  return `<section class="card">
+    <div class="card-head"><h2>Schedule FSI: capital gains from outside India</h2></div>
+    <p class="small muted" style="margin:0 0 8px">Schedule FSI lists all income from outside India. Under the United
+      States (the same entry as your dividends, if you have any), add a row for <strong>Capital gains</strong>:</p>
+    ${leftOutHtml(res.missingRates)}
+    <dl class="fixed-fields">
+      <div><dt>Country/Region code</dt><dd>${copyText(COUNTRY)}</dd></div>
+      <div><dt>Taxpayer Identification Number</dt><dd>${tinHint}</dd></div>
+      <div><dt>Head of income</dt><dd>${copyText('Capital Gains')}</dd></div>
+      <div><dt>Income from outside India (included in Part B-TI)</dt><dd>${copyVal(res.fsi.income)}<span
+        class="hint">gains after set-off</span></dd></div>
+      <div><dt>Tax paid outside India</dt><dd>${copyVal(0)}<span class="hint">the US does not tax them</span></dd></div>
+      <div><dt>Tax payable on such income under normal provisions in India</dt><dd>${copyVal(t.total)}<span
+        class="hint">estimate</span></dd></div>
+      <div><dt>Tax relief available in India</dt><dd>${copyVal(0)}</dd></div>
+      <div><dt>Relevant article of DTAA</dt><dd>${copyText(String(DTAA_GAINS.article))}<span class="hint">Capital
+        gains</span></dd></div>
+    </dl>
+    <p class="small muted" style="margin:0">Tax estimate: ${parts.join('; ')}. Fidelity does not withhold US tax on
+      sales by a non-resident with a W-8BEN on file, so there is no foreign tax credit on these gains, and nothing to
+      add for them in Schedule TR or Form 67.</p>
+  </section>`;
+}
+
+function cgChecklistHtml(res) {
+  const { fy } = res;
+  return `<section class="card">
+    <div class="card-head"><h2>Before you file</h2></div>
+    <ul class="check-list">
+      <li><strong>Short or long is India's rule:</strong> more than 24 months from vesting or purchase to sale is
+        long-term. Fidelity's “Term” column uses the US one-year rule; ignore it.</li>
+      <li><strong>The cost is what was taxed as salary.</strong> If your payslip or Form 16 shows a different perquisite
+        value for a vest, use that value as the cost.</li>
+      <li><strong>Fees.</strong> Fidelity's proceeds are after its commission and fees. If your trade confirmation shows
+        the gross amount and the fees, you can enter the gross amount as the sale value and the fees under b(iii): the
+        gain is the same.</li>
+      <li><strong>Schedule FA too.</strong> It covers the calendar year: this return's Schedule FA lists every share held
+        at any time in ${fy}, including those sold during ${fy}, with their sale proceeds. Shares sold from January to
+        March ${fy + 1} appear in the next return's. See the <a href="#fa" data-goto="fa">Foreign assets tab</a>.</li>
+      <li><strong>Advance tax.</strong> Tax on a gain is due with the next advance-tax instalment after the sale
+        (15 June, 15 September, 15 December or 15 March; by 31 March for sales after 15 March). Paid then, there is no
+        interest under section 234C.</li>
+      <li><strong>Section 54F.</strong> Investing the sale value in a residential house can exempt a long-term gain,
+        subject to conditions such as owning no more than one other house. Ask your CA.</li>
+    </ul>
+  </section>`;
+}
+
 function renderHistory(fy) {
   const box = els.tool.querySelector('#div-history');
   if (!state.data) return;
@@ -793,7 +1324,7 @@ function renderHistory(fy) {
 
 // ── Events ──
 els.file.addEventListener('change', () => {
-  useFile(els.file.files[0]);
+  useFiles(els.file.files);
   els.file.value = '';
 });
 ['dragenter', 'dragover'].forEach((type) => els.drop.addEventListener(type, (e) => {
@@ -803,7 +1334,25 @@ els.file.addEventListener('change', () => {
 ['dragleave', 'drop'].forEach((type) => els.drop.addEventListener(type, () => els.drop.classList.remove('drag')));
 els.drop.addEventListener('drop', (e) => {
   e.preventDefault();
-  useFile(e.dataTransfer?.files?.[0]);
+  useFiles(e.dataTransfer?.files);
+});
+
+function goTo(tab) {
+  selectTab(tab);
+  document.getElementById('tool-top').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+els.status.addEventListener('click', (e) => {
+  const remove = e.target.closest('[data-remove]');
+  if (remove) {
+    removeFile(remove.dataset.remove);
+    return;
+  }
+  const goto = e.target.closest('[data-goto]');
+  if (goto) {
+    e.preventDefault();
+    goTo(goto.dataset.goto);
+  }
 });
 
 async function copy(text) {
@@ -824,17 +1373,26 @@ async function copy(text) {
   }
 }
 
-function downloadCsv() {
-  const csv = scheduleFaCsv(state.fa, { country: COUNTRY, name: company.name, address: company.address,
-    zip: company.zip, nature: company.nature });
+function saveCsv(csv, name) {
   const url = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' }));
   const a = document.createElement('a');
   a.href = url;
-  a.download = `schedule-fa-table-a3-${company.short.toLowerCase()}-${state.fa.cy}.csv`;
+  a.download = name;
   document.body.append(a);
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function downloadCsv() {
+  saveCsv(scheduleFaCsv(state.fa, { country: COUNTRY, name: company.name, address: company.address,
+    zip: company.zip, nature: company.nature }),
+  `schedule-fa-table-a3-${company.short.toLowerCase()}-${state.fa.cy}.csv`);
+}
+
+function downloadCgCsv() {
+  saveCsv(capitalGainsCsv(state.cg), `capital-gains-${company.short.toLowerCase()}-${fyLabel(state.cg.fy)
+    .slice(3)}.csv`);
 }
 
 function wireTool() {
@@ -856,8 +1414,7 @@ function wireTool() {
     const goto = e.target.closest('[data-goto]');
     if (goto) {
       e.preventDefault();
-      selectTab(goto.dataset.goto);
-      document.getElementById('tool-top').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      goTo(goto.dataset.goto);
       return;
     }
     const scrollTo = e.target.closest('[data-scroll]');
@@ -876,6 +1433,10 @@ function wireTool() {
     }
     if (e.target.closest('#download-csv') && state.fa) {
       downloadCsv();
+      return;
+    }
+    if (e.target.closest('#download-cg-csv') && state.cg) {
+      downloadCgCsv();
       return;
     }
     if (e.target.closest('#history-toggle')) {
@@ -897,25 +1458,32 @@ function wireTool() {
     selectTab(TABS[next], { focus: true });
   });
 
+  const typedRate = (input) => {
+    const typed = Number(input.value);
+    return typed > 0 && typed <= 50 ? typed / 100 : null;
+  };
   els.tool.addEventListener('change', (e) => {
     const t = e.target;
     if (t.id === 'year-select') {
       renderAll();
-    } else if (t.name === 'espp-basis') {
+    } else if (t.name === 'espp-basis' || t.name === 'cg-espp-basis') {
       state.esppBasis = t.value;
-      renderFa(Number(els.tool.querySelector('#year-select').value),
-        returnOptions(today()).find((o) => o.cy === Number(els.tool.querySelector('#year-select').value)));
-    } else if (t.id === 'india-rate') {
-      const custom = t.value === 'custom';
-      els.tool.querySelector('#custom-rate-wrap').hidden = !custom;
-      if (custom) {
-        const typed = Number(els.tool.querySelector('#custom-rate').value);
-        state.indiaRate = typed > 0 ? typed / 100 : null;
-        els.tool.querySelector('#custom-rate').focus();
-      } else {
-        state.indiaRate = Number(t.value);
-      }
       renderAll();
+    } else if (t.name === 'cost-rate') {
+      state.costRate = t.value;
+      renderAll();
+    } else if (t.matches('select[data-india-rate]')) {
+      if (t.value === 'custom') {
+        const input = t.closest('.controls-row').querySelector('input[data-custom-rate]');
+        state.customRate = true;
+        state.indiaRate = typedRate(input);
+        renderAll();
+        input.focus();
+      } else {
+        state.customRate = false;
+        state.indiaRate = Number(t.value);
+        renderAll();
+      }
     } else if (t.id === 'us-rate') {
       state.usRate = Number(t.value);
       renderAll();
@@ -927,9 +1495,9 @@ function wireTool() {
     }
   });
   els.tool.addEventListener('input', (e) => {
-    if (e.target.id !== 'custom-rate') return;
-    const typed = Number(e.target.value);
-    state.indiaRate = typed > 0 && typed <= 50 ? typed / 100 : null;
+    if (!e.target.matches('input[data-custom-rate]')) return;
+    state.customRate = true;
+    state.indiaRate = typedRate(e.target);
     renderAll();
   });
 }
