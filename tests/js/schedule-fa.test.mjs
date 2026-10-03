@@ -71,6 +71,15 @@ test('ESPP lots are recognised by their discount to the close and valued at FMV'
   assert.equal(classifyLot({ ...rsu, grantDate: '2024-03-01' }, PRICES).type, 'RSU');
   const old = lot('O', '2010-03-31', 1, 9, { grantDate: '2010-01-02', source: 'SP' });
   assert.deepEqual(classifyLot(old, PRICES), { type: 'ESPP', fmvPerShare: 10, basis: 'estimated' });
+  // A lookback purchase (15% off a much lower offering-start price) is still ESPP by its code.
+  const lookback = lot('K', '2025-10-01', 1, 70, { grantDate: '2025-04-01', source: 'SP' });
+  assert.equal(classifyLot(lookback, PRICES).type, 'ESPP');
+  assert.equal(classifyLot(lookback, PRICES).fmvPerShare, 120);
+  // Without the code, a discount and a grant date still mark an ESPP purchase.
+  assert.equal(classifyLot({ ...espp, source: '' }, PRICES).type, 'ESPP');
+  assert.equal(classifyLot({ ...espp, source: '', grantDate: null }, PRICES).type, 'RSU');
+  // Oracle's RSU lots: share source RS, with a grant date, at market price.
+  assert.equal(classifyLot(lot('R2', '2025-03-31', 1, 100, { grantDate: '2024-03-01', source: 'RS' }), PRICES).type, 'RSU');
 });
 
 test('completed year: initial, peak, 31 December and dividends per lot', () => {

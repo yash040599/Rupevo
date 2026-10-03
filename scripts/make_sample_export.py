@@ -1,4 +1,4 @@
-"""Write the synthetic Fidelity "View open lots" export used by "Try sample data".
+"""Write the synthetic Fidelity "View open lots" export used by the tests.
 
     python scripts/make_sample_export.py
 
@@ -16,7 +16,7 @@ import os
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PRICES = os.path.join(REPO_ROOT, "site", "data", "tax", "msft.json")
-OUT = os.path.join(REPO_ROOT, "site", "assets", "samples", "fidelity-msft-open-lots-sample.csv")
+OUT = os.path.join(REPO_ROOT, "tests", "fixtures", "fidelity-msft-open-lots-sample.csv")
 
 RSU_SHARES = 5.0
 ESPP_SHARES = 0.5

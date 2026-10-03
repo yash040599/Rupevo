@@ -450,25 +450,17 @@ html[data-theme="dark"] .coffee-btn { color: #1f1300; }
                background: var(--soft); border: 1px solid var(--line); color: var(--fg);
                user-select: all; overflow-wrap: anywhere; }
 .coffee-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
-/* Phones: one button per UPI app (coffee.js), then a compact QR row. */
+/* Phones: the UPI ID, how to pay it from any app, then a compact QR row (coffee.js). */
 .upi-box { display: grid; gap: 6px; }
-.pay-here { display: grid; gap: 10px; padding: 12px; border: 1px solid var(--line);
+.pay-here { display: grid; gap: 8px; padding: 12px; border: 1px solid var(--line);
             border-radius: var(--radius-sm); background: var(--card-2); }
 .pay-here h3 { margin: 0; font-size: 14px; }
-.upi-apps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-.upi-app { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 10px;
-           border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--card);
-           color: var(--fg); font-size: 13.5px; font-weight: 700; line-height: 1.2; text-decoration: none; }
-.upi-app:hover { border-color: var(--accent); text-decoration: none; }
-.upi-app:focus-visible { outline: none; border-color: var(--accent); box-shadow: var(--ring); }
-.upi-app-mark { flex: none; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 8px;
-                color: #fff; font-size: 12px; font-weight: 800; letter-spacing: -.02em; }
+.pay-steps { margin: 0; padding-left: 20px; display: grid; gap: 4px; color: var(--fg-2); font-size: 13.5px; }
 .qr-row { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; align-items: center; }
 .qr-row .qr-card img { width: 120px; height: 120px; }
 .qr-row .qr-card figcaption { font-size: 11px; }
 .qr-side { display: grid; gap: 6px; }
 .qr-side p { margin: 0; }
-@media (min-width: 560px) { .upi-apps { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 
 /* Breadcrumbs */
 .crumbs { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin: 0 0 8px;
@@ -602,8 +594,41 @@ html[data-theme="dark"] .coffee-btn { color: #1f1300; }
 .dropzone.drag, .dropzone:focus-within { border-color: var(--accent); background: var(--accent-soft); }
 .dropzone .big { font-size: 15px; font-weight: 700; color: var(--fg); }
 .dropzone input[type="file"] { position: absolute; width: 1px; height: 1px; opacity: 0; }
-.load-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+/* Drop zone states (rsu-tool.js sets data-state): idle → busy (spinner) → done. */
+.dropzone .dz-idle { display: grid; place-items: center; gap: 8px; }
+.dropzone .dz-busy, .dropzone .dz-done { display: none; align-items: center; gap: 10px; font-weight: 700; color: var(--fg); }
+.dropzone[data-state="busy"] .dz-idle, .dropzone[data-state="done"] .dz-idle { display: none; }
+.dropzone[data-state="busy"] .dz-busy, .dropzone[data-state="done"] .dz-done { display: flex; flex-wrap: wrap; justify-content: center; }
+.dropzone[data-state="busy"] { border-color: var(--accent); background: var(--accent-soft); cursor: progress; }
+.dropzone[data-state="done"] { border-style: solid; border-color: var(--pos-line); background: var(--pos-bg); }
+.dropzone .dz-check { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%;
+                      background: var(--pos); color: #fff; font-size: 15px; }
+.dropzone .dz-again { font-weight: 600; font-size: 13px; color: var(--accent); text-decoration: underline; }
+.spinner { width: 22px; height: 22px; border-radius: 50%; border: 3px solid var(--accent-line);
+           border-top-color: var(--accent); animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2.4s; } }
 .privacy-note { display: flex; gap: 8px; align-items: flex-start; margin: 12px 0 0; font-size: 12.5px; color: var(--fg-2); }
+
+/* Return bar and tabs on the company tax pages */
+.tool-bar { scroll-margin-top: 84px; }
+.tabs { display: flex; gap: 6px; margin-top: 14px; border-bottom: 1px solid var(--line); overflow-x: auto; }
+.tab { flex: 1 1 0; min-width: 132px; display: grid; gap: 2px; justify-items: start; text-align: left;
+       padding: 10px 12px 9px; border: 0; border-bottom: 3px solid transparent; border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+       background: transparent; color: var(--fg-2); font: inherit; cursor: pointer; }
+.tab:hover { background: var(--soft); }
+.tab[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); background: var(--accent-soft); }
+.tab:focus-visible { outline: none; box-shadow: var(--ring); }
+.tab-title { font-size: 14px; font-weight: 800; }
+.tab-sub { font-size: 11.5px; color: var(--muted); font-weight: 600; }
+.tab-panel:focus { outline: none; }
+@media (max-width: 560px) {
+  .tabs { gap: 2px; }
+  .tab { min-width: 0; padding: 8px 6px 7px; }
+  .tab-title { font-size: 13px; }
+  .tab-sub { font-size: 10.5px; }
+}
+.empty-state { border-style: dashed; background: var(--card-2); }
 
 .controls-row { display: flex; gap: 16px 24px; flex-wrap: wrap; align-items: flex-end; }
 .controls-row .field { min-width: min(100%, 360px); max-width: 100%; grid-template-columns: minmax(0, 1fr); }
@@ -636,6 +661,18 @@ table.fa .sub { display: block; font-size: 11.5px; color: var(--muted); font-wei
 table.fa tfoot td { font-weight: 800; background: var(--card-2); }
 table.fa tr.working > td { text-align: left; background: var(--card-2); }
 .table-scroll > table.fa { min-width: 860px; }
+.table-scroll > table.fa.div-table { min-width: 780px; }
+.table-scroll > table.fa.history { min-width: 520px; }
+.table-scroll > table.fa.quarters { min-width: 560px; }
+.table-scroll > table.fa.checklist-table { min-width: 560px; }
+table.fa.checklist-table td { font-size: 13.5px; }
+table.fa.history tr.in-fy > td { background: var(--accent-soft); }
+.tag { display: inline-block; margin-left: 4px; padding: 0 6px; border-radius: 5px; font-size: 10.5px; font-weight: 800;
+       border: 1px solid var(--accent-line); background: var(--card); color: var(--accent); white-space: nowrap; }
+.tag.warn { border-color: var(--warn-line); background: var(--warn-bg); color: var(--warn-fg); }
+.disclosure { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.disclosure .chev { display: inline-block; font-size: 11px; transition: transform .15s ease; }
+.disclosure[aria-expanded="true"] .chev { transform: rotate(180deg); }
 .type-badge { display: inline-block; padding: 0 6px; margin-right: 4px; border-radius: 5px; font-size: 10.5px;
               font-weight: 800; letter-spacing: .03em; background: var(--accent-soft); color: var(--accent); }
 .type-badge.espp { background: var(--pos-bg); color: var(--pos); }
@@ -643,9 +680,19 @@ table.fa tr.working > td { text-align: left; background: var(--card-2); }
 .rate-input { width: 120px; padding: 4px 6px !important; font-size: 12px !important; }
 
 .result-head { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
-.amount-rows { display: grid; gap: 6px; margin-top: 6px; }
-.amount-rows > div { display: flex; gap: 10px; justify-content: space-between; padding: 8px 10px;
-                     border: 1px solid var(--line); border-radius: var(--radius-sm); font-size: 13.5px; }
+.a2-amount { margin-top: 4px; padding: 10px 12px; border: 1px dashed var(--line-strong); border-radius: var(--radius-sm); }
+.a2-amount h3 { margin: 0 0 4px; font-size: 13.5px; }
+.a2-amount p { margin: 0 0 8px; }
+.fixed-fields.pair { grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0; }
+.fixed-fields.pair + .fixed-fields.pair { margin-top: 8px; }
+.alert-line { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: var(--radius-sm);
+              border: 1px solid var(--warn-line); background: var(--warn-bg); color: var(--warn-fg); font-size: 13.5px; }
+.alert-line p { margin: 0; color: inherit; }
+.bang { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%;
+        background: var(--warn-fg); color: #fff; font-size: 14px; font-weight: 900; line-height: 1; }
+html[data-theme="dark"] .bang { color: #1a1205; }
+.deadline { padding: 10px 12px; border-radius: var(--radius-sm); border: 1px solid var(--info-line);
+            background: var(--info-bg); color: var(--fg); font-size: 13.5px; }
 .check-list { margin: 0; padding-left: 20px; display: grid; gap: 8px; color: var(--fg-2); font-size: 13.5px; }
 
 /* ── Dialogs and toasts ─────────────────────────────────── */

@@ -76,19 +76,20 @@ export function returnOptions(today) {
 
 /**
  * ESPP or RSU, and the fair market value per share to use as its cost.
- * An ESPP lot costs a fixed discount below the closing price on the purchase
- * day and carries the offering's start as its grant date (Microsoft: 90% of
- * the close). Its discount is taxed in India as salary, so by default the
- * cost is the FMV (closing price), not the price paid.
+ * Fidelity marks stock-purchase-plan lots with share source "SP". Lots with
+ * another code count as ESPP when they carry a grant date (the offering
+ * start) and cost a typical ESPP discount below the close. The discount is
+ * taxed in India as salary, so by default an ESPP lot's cost is the FMV
+ * (closing price on the purchase day), not the price paid.
  */
 export function classifyLot(lot, prices, { esppBasis = 'fmv', esppDiscount = 0.1 } = {}) {
   const i = lastOnOrBefore(prices, lot.acquired);
   const close = i >= 0 ? prices.values[i] : null;
   const ratio = close ? lot.costPerShare / close : null;
-  const esppHints = Boolean(lot.grantDate) || /^(SP|ES|ESPP)$/.test(lot.source || '');
-  const espp = ratio !== null
-    ? esppHints && ratio >= ESPP_COST_RATIO[0] && ratio <= ESPP_COST_RATIO[1]
-    : /^(SP|ES|ESPP)$/.test(lot.source || '');
+  // A lookback plan can price far below the close, so the code alone decides.
+  const coded = /^(SP|ES|ESPP)$/.test(lot.source || '');
+  const espp = coded || (Boolean(lot.grantDate) && ratio !== null
+    && ratio >= ESPP_COST_RATIO[0] && ratio <= ESPP_COST_RATIO[1]);
   if (!espp) return { type: 'RSU', fmvPerShare: lot.costPerShare, basis: 'cost' };
   if (esppBasis === 'paid') return { type: 'ESPP', fmvPerShare: lot.costPerShare, basis: 'paid' };
   if (close) return { type: 'ESPP', fmvPerShare: close, basis: 'close', basisDate: prices.dates[i] };

@@ -11,7 +11,7 @@ import os
 import unittest
 
 from pipeline.taxdata import (
-    TAX_STOCKS, merge_dividends, parse_nasdaq_dividends, parse_sbi_csv, stock_file,
+    TAX_STOCKS, merge_dividends, parse_nasdaq_dividends, parse_q4_dividends, parse_sbi_csv, stock_file,
 )
 
 TAX_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
@@ -89,6 +89,22 @@ class ParserTest(unittest.TestCase):
         self.assertEqual(parse_nasdaq_dividends(payload), [
             {"ex": "2026-08-20", "record": "2026-08-20", "pay": "2026-09-10",
              "declared": "2026-06-10", "amount": 0.91}])
+
+    def test_q4_investor_site_dividends(self):
+        payload = {"GetDividendListResult": [
+            {"Currency": "USD", "DeclaredDate": "06/10/2026 00:00:00", "DividendAmount": 0.5,
+             "ExDate": "07/10/2026 00:00:00", "PayDate": "07/24/2026 00:00:00",
+             "RecordDate": "07/10/2026 00:00:00", "Type": "OrdinaryDividend"},
+            {"Currency": "USD", "DeclaredDate": "", "DividendAmount": 0.05,
+             "ExDate": "04/06/2009 00:00:00", "PayDate": "05/08/2009 00:00:00",
+             "RecordDate": "04/08/2009 00:00:00", "Type": "OrdinaryDividend"},
+            {"Currency": "USD", "DividendAmount": None, "ExDate": "01/01/2026 00:00:00"},
+        ]}
+        self.assertEqual(parse_q4_dividends(payload), [
+            {"ex": "2009-04-06", "record": "2009-04-08", "pay": "2009-05-08", "declared": None,
+             "amount": 0.05},
+            {"ex": "2026-07-10", "record": "2026-07-10", "pay": "2026-07-24",
+             "declared": "2026-06-10", "amount": 0.5}])
 
     def test_merge_skips_same_dividend_with_shifted_date(self):
         primary = [{"ex": "2026-08-20", "pay": "2026-09-10", "amount": 0.91}]

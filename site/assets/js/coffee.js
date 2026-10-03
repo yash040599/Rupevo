@@ -1,9 +1,10 @@
-// "Buy me a coffee" dialog: the UPI QR code and UPI ID and, on phones, a
-// button per UPI app that copies the UPI ID and opens the app. upi.js
-// explains why it opens the app rather than a payment link.
+// "Buy me a coffee" dialog: the UPI QR code and the UPI ID to pay from any UPI
+// app. There is deliberately no button that opens a UPI app: apps reject
+// payment links (upi://pay?pa=…) to a personal UPI ID, so the payment has to
+// start inside the app, by typing the UPI ID or scanning the QR code.
 import { SITE } from './config.js';
 import { esc, openModal, siteUrl } from './core.js';
-import { UPI_APPS, appLink, mobilePlatform } from './upi.js';
+import { mobilePlatform } from './device.js';
 
 const TITLE = 'Buy me a coffee ☕';
 const INTRO = `<p>Rupevo is free and ad-free. If it helped you, chip in any amount you like — a coffee is
@@ -34,13 +35,7 @@ function desktopBody(id, payee) {
     <p class="small muted">Scan the code with your phone, or pay the UPI ID from any UPI app. ${PRIVACY}</p>`;
 }
 
-function phoneBody(id, payee, platform) {
-  const apps = UPI_APPS.map((app) => `<a class="upi-app" href="${esc(appLink(app, platform))}"
-      data-app="${esc(app.id)}"><span class="upi-app-mark" style="background:${esc(app.color)}"
-      aria-hidden="true">${esc(app.mark)}</span>${esc(app.name)}</a>`).join('');
-  const opens = platform === 'ios'
-    ? 'the app opens'
-    : 'the app\'s Play Store page opens, where you tap <strong>Open</strong>';
+function phoneBody(id, payee) {
   return `${INTRO}
     <div class="upi-box">
       <div class="small muted">UPI ID · paid to ${esc(payee)}</div>
@@ -48,32 +43,31 @@ function phoneBody(id, payee, platform) {
     </div>
     <section class="pay-here" aria-labelledby="pay-here-title">
       <h3 id="pay-here-title">Pay from this phone</h3>
-      <p class="small">Tap your UPI app: the UPI ID is copied and ${opens}. In the app, choose to pay a
-        UPI ID, paste it, enter the amount and pay.</p>
-      <div class="upi-apps">${apps}</div>
-      <div id="upi-app-hint" role="status" aria-live="polite"></div>
-      <p class="small muted">Another app? Copy the UPI ID and pay it from there.</p>
+      <ol class="pay-steps">
+        <li>Copy the UPI ID above.</li>
+        <li>Open the UPI app you use (Google Pay, PhonePe, Paytm, slice or any other) and choose to pay a UPI ID.</li>
+        <li>Paste it, enter the amount and pay.</li>
+      </ol>
     </section>
     <div class="qr-row">
       ${qrFigure(id, 120)}
       <div class="qr-side">
         <strong>Or use the QR code</strong>
-        <p class="small muted">Scan it from another phone. On this phone, save it, then in your UPI app tap
-          Scan and pick it from your photos.</p>
+        <p class="small muted">Scan it from another phone. On this phone, save it, then in your UPI app tap Scan
+          and pick it from your photos.</p>
         <div>${saveQr('small')}</div>
       </div>
     </div>
-    <p class="small muted">Why not a one-tap payment link? UPI apps reject payment links to personal UPI IDs
-      to stop fraud, so the payment has to start in your app. ${PRIVACY}</p>`;
+    <p class="small muted">Why no “pay now” button? UPI apps reject payment links to personal UPI IDs to stop
+      fraud, so the payment has to start in your app. ${PRIVACY}</p>`;
 }
 
 /**
- * Copies `text` while the tap is still being handled: the page loses focus
- * once the app opens, and a clipboard write still pending then is refused.
- * The helper element goes inside the dialog because a modal dialog makes the
- * rest of the page inert.
+ * Copies `text` synchronously where the browser allows (a modal dialog makes
+ * the rest of the page inert, so the helper element goes inside the dialog),
+ * then also through the Clipboard API.
  */
-function copyNow(text, host) {
+async function copyText(text, host) {
   const before = document.activeElement;
   const area = document.createElement('textarea');
   area.value = text;
@@ -82,35 +76,18 @@ function copyNow(text, host) {
   host.append(area);
   area.select();
   area.setSelectionRange(0, text.length);
-  let ok = false;
+  let copied = false;
   try {
-    ok = document.execCommand('copy');
+    copied = document.execCommand('copy');
   } catch {
-    ok = false;
+    copied = false;
   }
   area.remove();
   before?.focus?.({ preventScroll: true });
-  return ok;
-}
-
-async function copyText(text, host) {
-  const copied = copyNow(text, host);
-  // Also inside the tap: iOS can report a successful copy above without making one.
   const viaApi = navigator.clipboard?.writeText
     ? navigator.clipboard.writeText(text).then(() => true, () => false)
     : Promise.resolve(false);
   return copied || viaApi;
-}
-
-function appHint(app, platform, copied) {
-  const name = esc(app.name);
-  const where = app.payTo ? `tap <strong>${esc(app.payTo)}</strong>` : 'choose to pay a UPI ID';
-  const steps = platform === 'android'
-    ? `On ${name}'s Play Store page tap <strong>Open</strong>, then ${where}`
-    : `In ${name}, ${where}`;
-  return `<div class="status-line ${copied ? 'ok' : 'bad'}">${copied ? 'UPI ID copied.'
-    : 'Could not copy the UPI ID: copy it from the box above.'} ${steps}, paste the ID, enter the amount and
-    pay.${platform === 'ios' ? ` If ${name} did not open, open it yourself.` : ''}</div>`;
 }
 
 // iPhones save downloads to the Files app, but UPI apps pick QR images from
@@ -150,7 +127,7 @@ export function openCoffee() {
   const platform = mobilePlatform(navigator);
   const ui = openModal({
     title: TITLE,
-    body: platform ? phoneBody(id, payee, platform) : desktopBody(id, payee),
+    body: platform ? phoneBody(id, payee) : desktopBody(id, payee),
     actions: [{ label: 'Close', kind: 'alt' }],
   });
 
@@ -168,13 +145,6 @@ export function openCoffee() {
     }
     setTimeout(() => { btn.textContent = 'Copy'; }, 2500);
   });
-
-  const hint = ui.body.querySelector('#upi-app-hint');
-  ui.body.querySelectorAll('a.upi-app').forEach((link) => link.addEventListener('click', () => {
-    // No preventDefault: the link opens the app as soon as this handler returns.
-    const app = UPI_APPS.find((a) => a.id === link.dataset.app);
-    copyText(id, ui.dlg).then((copied) => { hint.innerHTML = appHint(app, platform, copied); });
-  }));
 
   if (platform === 'ios') saveQrViaShareSheet(ui.body.querySelector('#save-qr'));
 }

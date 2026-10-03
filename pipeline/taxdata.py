@@ -11,7 +11,8 @@ uploading it anywhere:
   during the day, the first rate of the day is kept.
 * <symbol>.json: daily closing prices (Yahoo Finance, split-adjusted, not
   dividend-adjusted) and cash dividends with ex/record/payment dates
-  (Nasdaq; Yahoo ex-dates as a fallback).
+  (Nasdaq, or the company's investor-relations feed where Nasdaq has no
+  history; Yahoo ex-dates as a fallback).
 
 A source that fails, or returns less history than the published file
 already has, leaves that file untouched.
@@ -42,7 +43,16 @@ MIN_RATE_ROWS = 1000
 MIN_PRICE_ROWS = 1000
 
 TAX_STOCKS: dict[str, dict] = {
-    "MSFT": {"name": "Microsoft Corporation", "exchange": "NASDAQ"},
+    "MSFT": {"name": "Microsoft Corporation", "exchange": "NASDAQ",
+             "dividends": {"source": "nasdaq", "label": "Nasdaq"}},
+    # Nasdaq returns no dividend history for ORCL, so use the feed behind
+    # Oracle's own investor-relations dividend page (a Q4 site). Its public
+    # API key is read from that page; the one below is the fallback.
+    "ORCL": {"name": "Oracle Corporation", "exchange": "NYSE",
+             "dividends": {"source": "q4", "label": "Oracle investor relations",
+                           "site": "https://investor.oracle.com",
+                           "page": "/dividends-and-splits/default.aspx",
+                           "stock": "XNYS:ORCL", "api_key": "BF185719B0464B3CB809D23926182246"}},
 }
 
 RATES_FILE = "sbi-tt-buy-usd.json"
@@ -109,6 +119,25 @@ def parse_nasdaq_dividends(payload: dict) -> list[dict]:
                     "pay": _us_date(row.get("paymentDate")),
                     "declared": _us_date(row.get("declarationDate")),
                     "amount": round(amount, 6)})
+    return sorted(out, key=lambda d: d["ex"])
+
+
+def parse_q4_dividends(payload: dict) -> list[dict]:
+    """Rows of a Q4 investor site's GetDividendList feed ('04/24/2026 00:00:00' dates)."""
+    def day(text) -> str | None:
+        return _us_date(str(text or "").split(" ")[0])
+
+    out = []
+    for row in (payload or {}).get("GetDividendListResult") or []:
+        try:
+            amount = float(row.get("DividendAmount"))
+        except (TypeError, ValueError):
+            continue
+        ex = day(row.get("ExDate"))
+        if not ex or amount <= 0 or (row.get("Currency") or "USD") != "USD":
+            continue
+        out.append({"ex": ex, "record": day(row.get("RecordDate")), "pay": day(row.get("PayDate")),
+                    "declared": day(row.get("DeclaredDate")), "amount": round(amount, 6)})
     return sorted(out, key=lambda d: d["ex"])
 
 
@@ -209,6 +238,23 @@ def fetch_nasdaq_dividends(symbol: str, http: requests.Session) -> list[dict]:
     return parse_nasdaq_dividends(resp.json())
 
 
+def fetch_q4_dividends(conf: dict, http: requests.Session) -> list[dict]:
+    headers = {"User-Agent": USER_AGENT, "Accept": "application/json, text/html"}
+    key = conf["api_key"]
+    try:
+        page = http.get(conf["site"] + conf["page"], timeout=30, headers=headers)
+        match = re.search(r"Q4ApiKey\s*=\s*'([0-9A-Fa-f]{32})'", page.text)
+        if match:
+            key = match.group(1)
+    except requests.RequestException:
+        pass
+    exchange, symbol = conf["stock"].split(":")
+    resp = http.get(conf["site"] + "/feed/StockQuote.svc/GetDividendList", timeout=30, headers=headers,
+                    params={"exchange": exchange, "symbol": symbol, "apiKey": key, "pageSize": -1})
+    resp.raise_for_status()
+    return parse_q4_dividends(resp.json())
+
+
 def build_stock(symbol: str, out_dir: str, log: Logger, chart: YahooChart,
                 http: requests.Session) -> dict:
     meta = TAX_STOCKS[symbol]
@@ -230,15 +276,19 @@ def build_stock(symbol: str, out_dir: str, log: Logger, chart: YahooChart,
         log.warning(f"{symbol}: Yahoo dividends unavailable ({exc})")
         yahoo_divs = []
     previous_divs = previous.get("dividends") or []
+    conf = meta.get("dividends") or {"source": "nasdaq", "label": "Nasdaq"}
     try:
-        nasdaq_divs = fetch_nasdaq_dividends(symbol, http)
-        merged = merge_dividends(nasdaq_divs, previous_divs)
-        source = "Nasdaq"
+        primary = (fetch_q4_dividends(conf, http) if conf["source"] == "q4"
+                   else fetch_nasdaq_dividends(symbol, http))
+        if not primary:
+            raise ValueError("the response had no dividends")
+        merged = merge_dividends(primary, previous_divs)
+        source = conf["label"]
     except (requests.RequestException, ValueError) as exc:
-        log.warning(f"{symbol}: Nasdaq dividends unavailable ({exc}); using the "
+        log.warning(f"{symbol}: {conf['label']} dividends unavailable ({exc}); using the "
                     "published list plus Yahoo ex-dates")
         merged = merge_dividends(previous_divs, yahoo_divs)
-        source = "Nasdaq (earlier refresh) and Yahoo Finance"
+        source = f"{conf['label']} (earlier refresh) and Yahoo Finance"
     first_close = closes[0][0]
     dividends = [d for d in merged if d["ex"] >= first_close]
     if not dividends:
@@ -248,7 +298,7 @@ def build_stock(symbol: str, out_dir: str, log: Logger, chart: YahooChart,
     for d in dividends:
         other = yahoo_by_ex.get(d["ex"])
         if other is not None and abs(other - d["amount"]) > 0.005:
-            log.warning(f"{symbol}: dividend {d['ex']} is {d['amount']} on Nasdaq "
+            log.warning(f"{symbol}: dividend {d['ex']} is {d['amount']} in {source} "
                         f"but {other} on Yahoo")
 
     _write(path, dump_json({
