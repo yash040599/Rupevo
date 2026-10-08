@@ -1,7 +1,7 @@
 {
  "name": "NASDAQ-100",
  "source": "https://api.nasdaq.com/api/quote/list-type/nasdaq100",
- "as_of": "2026-10-02",
+ "as_of": "2026-10-09",
  "constituents": [
   {
    "symbol": "AAPL",
@@ -481,11 +481,6 @@
   {
    "symbol": "VRTX",
    "name": "Vertex Pharmaceuticals Incorporated",
-   "industry": ""
-  },
-  {
-   "symbol": "WBD",
-   "name": "Warner Bros. Discovery, Inc.",
    "industry": ""
   },
   {
