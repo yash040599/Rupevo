@@ -1,11 +1,13 @@
 # Rupevo
 
-**Market rankings and tax tools, explained.** Rupevo publishes rules-based
-rankings of the **Indian Nifty 100** and of **US stocks** (the NASDAQ-100 and
-the NYSE's 100 largest US companies), refreshed from
+**Market rankings, fund comparisons and tax tools, explained.** Rupevo
+publishes rules-based rankings of the **Indian Nifty 100** and of **US stocks**
+(the NASDAQ-100 and the NYSE's 100 largest US companies), refreshed from
 end-of-day prices, with every score broken down so readers can see *why* a
-stock ranks where it does — plus step-by-step **tax tools** for Indian
-investors, starting with foreign RSUs.
+stock ranks where it does; a **comparison of direct-plan mutual funds** within
+their group (which fund house's Nifty 50 fund, which mid-cap fund), with the
+reasons; and step-by-step **tax tools** for Indian investors, starting with
+foreign RSUs.
 
 Live site: **https://yash040599.github.io/Rupevo/**
 
@@ -13,14 +15,16 @@ Live site: **https://yash040599.github.io/Rupevo/**
 |---|---|---|
 | [Nifty 100 Ranking](site/india/index.html) | Technical setups, technical score (A–D), risk grade, 52-week dips, sector strength | Migrated from the ai-portfolio-manager swing scanner |
 | [US Stock Ranking](site/us/index.html) | Six-pillar long-term scorecard (quality, valuation vs sector, growth, momentum, balance sheet, risk) for two lists: the **NASDAQ-100** and the **NYSE top 100** (the 100 largest US companies listed on the NYSE, e.g. Oracle, Uber, JPMorgan). A switch shows **All US** (both lists ranked together), **NASDAQ-100** or **NYSE top 100**; search covers the lists in view, and searching one exchange for a company on the other says where it is | Migrated from the ai-portfolio-manager US long-term scorer |
+| [Mutual Fund Comparison](site/mf/index.html) | Every direct-plan equity fund ranked within its group: **14 index-fund groups** (Nifty 50, Sensex, Next 50, Nifty 100, Nifty 100 and Nifty 50 Equal Weight, LargeMidcap 250, Midcap 150, Smallcap 250, Nifty 500, Total Market, Momentum 30, Low Vol 30, Alpha Low-Vol 30) and **9 active categories** (large, large & mid, flexi, multi, mid, small cap, focused, value, ELSS). Each group opens with the top-ranked fund and *how we decided*; index groups show what the tracking gap is worth on a SIP, active groups where a low-cost index fund would rank on the same rules. Below: a **SIP split by age and risk** (by fund category) and a **lump-sum check** (each index's P/E against its own history) | `pipeline/mf.py` (see *The mutual fund comparison*) |
 | [Tax tools](site/tax/index.html) | RSU taxation → broker (Fidelity) → company (**Microsoft, Oracle**). Load Fidelity's *View open lots* CSV (shares held) and, if you sold any, *View closed lots* (Previously held shares); the company page has three tabs: **Foreign assets** (Schedule FA Table A2 for the Fidelity account and A3 with one row per RSU vest and ESPP purchase, including lots sold during the year with their proceeds, plus the Schedule AL cost), **Selling shares** (capital gains under India's 24-month rule: Schedule CG A5/B8, gains by date of sale, and the Schedule FSI row) and **Dividends** (the payments the shares received in the financial year, Schedule OS with its quarterly breakup, Schedule FSI, Schedule TR and the Form 67 fields with its deadline, plus the company's dividend history). Sold shares change Schedule FA and the dividends too, so those tabs ask for both exports unless nothing was ever sold. Visitors can request another company. Every tax page has an interactive "how far through the financial year are we" slider (advance-tax and ITR dates marked) and a "Did you know?" card mixing tax facts with stories from market history | Runs in the browser: the user's files are never uploaded. Uses published SBI TT buying rates, closes and dividends (`site/data/tax/`, refreshed weekly) |
 
 Every page has light/dark theme, a **Buy me a coffee** button (in the top
 bar, a floating ☕ on phones once the bar scrolls away, and the footer) and a
-disclaimer. Ranking pages add a USD/INR toggle, a "last synced" indicator, a
-**Request refresh** button and collapsible sections. No login is needed.
+disclaimer. Ranking pages and the fund comparison add a "last synced"
+indicator, a **Request refresh** button and collapsible sections (the ranking
+pages also a USD/INR toggle). No login is needed.
 
-The home, ranking and tax pages end with a **Did you know?** card: true stories
+The home, ranking, fund and tax pages end with a **Did you know?** card: true stories
 from market history (Indian and world: crashes, scams, bubbles, famous bets,
 quick maths) with a takeaway for ordinary investors, mixed with tax facts on the
 tax pages. Each page starts on a different story, the start moves on every day,
@@ -31,15 +35,18 @@ and ← / → step through the rest.
 ## How it works
 
 ```
-             ┌──────────────── GitHub Actions: "Refresh market data" ────────────────┐
- Admin ──────►  python -m pipeline refresh → site/data/{india,us,us-nyse}.json → commit │
- (Analyse now│      │  Yahoo Finance EOD prices + fundamentals                          │
-  button,    │      │  NSE / Nasdaq lists (NASDAQ-100; NYSE listings → NYSE top 100)    │
-  Actions tab│      └─ scoring engine (pipeline/engine, migrated from the local tool)    │
-  or local)  └──────────────────────────────┬───────────────────────────────────────────┘
-                                             ▼
-                              "Deploy site" → GitHub Pages (static: site/)
-                                             ▼
+               ┌──────────────── GitHub Actions: "Refresh market data" ──────────────────┐
+ Schedule ─────►  python -m pipeline refresh → site/data/{india,us,us-nyse}.json → commit  │
+ (daily/weekly)│      │  Yahoo Finance EOD prices + fundamentals                            │
+ Admin ────────►      │  NSE / Nasdaq lists (NASDAQ-100; NYSE listings → NYSE top 100)      │
+ (Analyse now, │      └─ scoring engine (pipeline/engine, migrated from the local tool)      │
+  email link,  │  python -m pipeline mf → site/data/mf.json                                  │
+  Actions tab  │      └─ AMFI (NAVs, returns, AUM, expense ratios, tracking error),          │
+  or local)    │         mfapi.in (NAV history), NSE (index P/E)                             │
+               └──────────────────────────────┬────────────────────────────────────────────┘
+                                              ▼
+                               "Deploy site" → GitHub Pages (static: site/)
+                                              ▼
  Visitors ◄── HTML/CSS/JS renders the JSON snapshots; "Request refresh" → Web3Forms → email
 ```
 
@@ -52,7 +59,10 @@ and ← / → step through the rest.
 * **Publishing is screener-style on purpose**: ranks, scores, grades and
   indicators only. Entry/stop/target levels and buy/sell wording are never
   published, and `tests/test_published_data.py` blocks any snapshot that
-  contains them (see *Compliance notes*).
+  contains them, the fund comparison included (see *Compliance notes*).
+* **Mutual funds**: `python -m pipeline mf` writes `site/data/mf.json`
+  (`pipeline/mf.py`, `mf_valuation.py`, `providers/amfi.py`,
+  `engine/mf_scoring.py`); see *The mutual fund comparison* below.
 * **Tax reference data**: `python -m pipeline tax-data` writes
   `site/data/tax/sbi-tt-buy-usd.json` (SBI telegraphic-transfer buying rates
   for USD since January 2020, from the MIT-licensed
@@ -71,41 +81,60 @@ and ← / → step through the rest.
 ## Refreshing the data (admin)
 
 Every successful refresh updates the **Last synced** time on its page.
-There are three ways to run one:
 
-1. **"Analyse now" on the website** (recommended).
+**Automatic refreshes** ([.github/workflows/refresh-data.yml](.github/workflows/refresh-data.yml),
+times in IST; GitHub can start scheduled runs a few minutes late):
+
+| When | What | Why then |
+|---|---|---|
+| Tuesday to Saturday, 06:47 | Both stock rankings | After the US close, so each morning shows the previous session of both markets (Yahoo fills in NSE's daily bar late in the evening) |
+| Saturday, 09:17 | Mutual fund comparison | Friday's NAVs and AMFI's returns are in; fund rankings move slowly, so weekly is enough |
+| Monday, 08:00 | Tax data only | SBI rates, Microsoft and Oracle prices and dividends |
+
+The tax data is also refreshed on every other run. A daily refresh adds about
+170 KB to the repository (roughly 45 MB a year), which is fine for years; the
+Actions minutes are free because the repository is public.
+
+Visitors who need data sooner press **Request refresh**, which emails you.
+To refresh by hand there are four ways:
+
+1. **From the request email.** The email ends with a *Refresh now* link
+   (the page with `?refresh=<market>`). Open it in a browser where admin mode
+   is on and the page asks you to confirm, then runs and follows the refresh;
+   anywhere else it first asks for your admin token (once per browser: tick
+   *Remember on this device*, including on your phone). The link itself grants
+   nothing, so only follow links that start with
+   `https://yash040599.github.io/Rupevo/`: anyone can send you an email that
+   looks like a request. The email also links the workflow on GitHub.
+2. **"Analyse now" on the website.**
    Click **Admin** in the footer, paste a GitHub fine-grained token (see
    setup step 3) and the page switches "Request refresh" for **Analyse now**.
    It dispatches the workflow, follows the run live and reloads the page
-   when the new data is deployed (about 3–6 minutes). The admin panel also
-   has *Refresh all* and recent-run history. Visitors never see the button,
+   when the new data is deployed (about 3–6 minutes for the rankings, 10–20
+   for the mutual funds). The admin panel also has *Refresh mutual funds*,
+   *Refresh all* and recent-run history. Visitors never see the button,
    and GitHub rejects dispatches from anyone without write access.
-2. **GitHub Actions tab / GitHub mobile app**: *Actions → Refresh market
-   data → Run workflow*, pick `both`, `india`, `us` or `tax` (`us` rebuilds
-   both US lists, `both` every ranking).
-3. **From your PC**:
+3. **GitHub Actions tab / GitHub mobile app**: *Actions → Refresh market
+   data → Run workflow*, pick `both` (both stock rankings), `india`, `us`
+   (both US lists), `mf` (mutual funds), `all` (everything) or `tax`.
+4. **From your PC**:
    ```powershell
    cd C:\Users\yashagrawal\AiPortfolioManager\Rupevo
    .\.venv\Scripts\python.exe -m pipeline refresh --market both
+   .\.venv\Scripts\python.exe -m pipeline mf
    .\.venv\Scripts\python.exe -m pipeline tax-data
    git add site/data; git commit -m "data: refresh"; git push
    ```
    Pushing `site/` triggers the deploy automatically.
 
-**Tax data** (SBI rates, Microsoft and Oracle prices and dividends) is refreshed on
-every run, and on its own every Monday at 08:00 IST by the workflow's
-schedule; choose `tax` to refresh only that. To refresh the rankings
-automatically too, add another `cron:` line to the `schedule:` block in
-[.github/workflows/refresh-data.yml](.github/workflows/refresh-data.yml)
-(there is a commented example); any schedule other than the Monday one
-refreshes both markets.
-
 If a list fails (for example Yahoo throttling), its previous snapshot
 stays live, the other lists still publish, and the run is marked failed
 with the reason in the job summary. A list is never published when more
-than 20% of its stocks failed to download. The tax data works the same way:
-a file that fails its checks (too few rows, or older than the published one)
-is not replaced.
+than 20% of its stocks failed to download. The fund comparison works the same
+way (more than 20% of NAV histories missing, a third of the fund groups
+failing, fewer than 150 funds ranked, or older data than the published file
+keeps the previous `mf.json`), and so does the tax data: a file that fails its
+checks (too few rows, or older than the published one) is not replaced.
 
 ---
 
@@ -145,7 +174,9 @@ is not replaced.
    emails/month, spam filtering included. Domain locking is a paid feature
    and not needed.
 5. **Run one cloud refresh** (*Actions → Refresh market data → Run
-   workflow*) to confirm Yahoo works from GitHub's runners.
+   workflow*) to confirm Yahoo works from GitHub's runners, and one with
+   `mf` to confirm AMFI and NSE answer them too (NSE sometimes blocks cloud
+   IPs; the lump-sum check then keeps its last P/E readings, with their date).
 6. **UPI for "Buy me a coffee"** — done (`yash040599@okhdfcbank`). To change
    it, edit `upi` in `site/assets/js/config.js` and regenerate the QR image:
    `python scripts/make_upi_qr.py <upi-id> --payee "<name>"` (a test fails
@@ -174,6 +205,10 @@ node --test "tests/js/*.test.mjs"                               # JS unit tests
 
 # Quick partial run into a scratch folder (never overwrites site/data)
 .\.venv\Scripts\python.exe -m pipeline refresh --limit 10 --out .cache\scratch
+
+# Mutual funds: 3 funds per group into a scratch folder (NAV histories and
+# expense ratios are cached in .cache\mf for 18 hours, so re-runs are quick)
+.\.venv\Scripts\python.exe -m pipeline mf --limit 3 --out .cache\scratch
 
 # Tax reference data (SBI rates, Microsoft and Oracle prices and dividends)
 .\.venv\Scripts\python.exe -m pipeline tax-data --out .cache\scratch\tax
@@ -209,21 +244,25 @@ next to the NASDAQ-100 in `site/data/us.json`; the US page combines the two.
 
 ```
 pipeline/
-  engine/          pure scoring code migrated from ai-portfolio-manager
-  providers/       Yahoo Finance prices, dividends + US fundamentals (network I/O)
+  engine/          pure scoring code migrated from ai-portfolio-manager; mf_scoring.py (fund maths)
+  providers/       Yahoo Finance prices, dividends + US fundamentals; amfi.py (AMFI, mfapi.in, NSE index file)
   universes/       Nifty 100 / NASDAQ-100 / NYSE top 100 lists, sector buckets, refresher
   india.py, us.py  snapshot builders;  publish.py, cli.py  the command line
+  mf.py            mutual fund comparison (groups, name matching, scoring, reasons)
+  mf_valuation.py  index P/E history for the lump-sum check
   taxdata.py       tax reference data: SBI TT buying rates, closes, dividends
 scripts/
   make_upi_qr.py   regenerates the "Buy me a coffee" UPI QR image
   make_sample_export.py  writes the synthetic Fidelity exports in tests/fixtures/
 site/
-  index.html, india/, us/, 404.html
+  index.html, india/, us/, mf/, 404.html
   tax/             Tax tools → rsu/ → fidelity/ → msft/, orcl/ (tabs: foreign assets, selling shares, dividends)
   assets/css/rupevo.css   design tokens ported from the local dashboard
   assets/js/              core, shell (nav/footer), coffee (UPI dialog),
                           device, ranking (+ us-lists: the US page's
-                          NASDAQ/NYSE views), admin,
+                          NASDAQ/NYSE views), mf (fund page) + mf-plan
+                          (SIP split and SIP maths), admin (refreshes and
+                          email refresh links),
                           mail (forms → Web3Forms/mailto), request, tax,
                           fy (financial-year slider), trivia (the
                           "Did you know?" stories and facts), config,
@@ -234,13 +273,68 @@ site/
   data/                   published snapshots (written by the pipeline);
                           data/tax/ holds the tax tools' reference data
 tests/             engine, snapshot, universe, parser, publication-safety,
-                   tax-data and site-structure (links, assets, QR) tests;
+                   tax-data, mutual fund (offline, with fake AMFI/NSE data)
+                   and site-structure (links, assets, QR) tests;
                    tests/js/ holds Node tests for the financial-year maths,
                    the trivia content, the Fidelity parser, the Schedule FA, dividend and capital
-                   gains engines, the US list views and phone detection;
+                   gains engines, the US list views, the SIP split and phone detection;
                    tests/fixtures/ the synthetic exports
 .github/workflows/ ci.yml · pages.yml (deploy) · refresh-data.yml (refresh + deploy)
 ```
+
+### The mutual fund comparison
+
+`python -m pipeline mf` ([pipeline/mf.py](pipeline/mf.py)) builds
+`site/data/mf.json` from public data, about 10–15 minutes in the cloud
+(AMFI allows about one request a second):
+
+* **Which funds**: AMFI's fund-performance data lists every open-ended fund
+  per SEBI sub-category with its benchmark, direct and benchmark returns,
+  daily AUM and riskometer. Active groups are equity sub-categories; index
+  groups come from the *Index Funds / ETFs* sub-category, without ETFs (no
+  direct NAV) and ELSS index funds. Each fund is matched to its direct growth
+  plan in `NAVAll.txt` for the scheme code (some fund houses call the growth
+  option *Cumulative*; a few rows give no plan or option and are used only
+  when their NAV matches the direct plan's).
+* **Joins by name**: expense ratios (AMFI's daily TER rows per fund house: this
+  month's, or last month's when a fund house has not posted yet) and tracking
+  error (AMFI, the last three days published) are matched by scheme name
+  through `name_key` with a close-match fallback that never pairs names with
+  different numbers (Nifty 50 never matches Nifty 500).
+* **Index funds** are grouped by the index their **name** spells out (AMFI's
+  benchmark label is occasionally wrong: a Nifty 50 fund labelled Nifty 500).
+  Tracking difference is computed from AMFI's returns: the fund's 1-, 3-, 5-
+  and 10-year return minus the group's index return (the median of what the
+  group's funds report). AMFI's monthly tracking-difference disclosure is not
+  used because fund houses report it with different signs. Scores, on fixed
+  scales: the gap to the index either way, averaged over 1 and 3 years (50%;
+  0% scores 100, 1% or more 0; a fund with only a 1-year record is pulled
+  halfway toward the group's typical fund), tracking error (20%), expense
+  ratio (20%) and size (10%, log scale from ₹10 crore to ₹10,000 crore). A
+  fund needs a 1-year return to be ranked.
+* **Active funds**, as percentiles within the category among funds with
+  5 years of history: consistency (the share of the last 60 month-ends at
+  which the fund's 3-year return beat the category median; from mfapi.in NAV
+  history) 30%, 3- and 5-year returns 20%, 5-year return per unit of
+  volatility 20%, the worst fall in 5 years 15%, expense ratio 15%. The best
+  index fund of the matching index group (with 5 years of history) is scored
+  on the same rules to say where it would rank (*index check*).
+* **Valuation check** ([pipeline/mf_valuation.py](pipeline/mf_valuation.py)):
+  each index's P/E from NSE's daily index file against its own month-end P/E
+  since April 2021 (NSE has computed P/E from consolidated profits since
+  31 March 2021). Months already in the published file are not downloaded
+  again. Factor indices are left out: their P/E jumps at every rebalance.
+* Every fund carries its pillar scores, `reasons` and `notes` (small fund,
+  regrouped by name, one-year record), which the page shows as *Why it ranks
+  here*. The SIP split by age and risk is plain rules in
+  [site/assets/js/mf-plan.js](site/assets/js/mf-plan.js) (`SPLITS`), tested
+  in `tests/js/mf-plan.test.mjs`.
+
+To add a group, add a `Group` to `INDEX_GROUPS` (its `benchmark` as
+`benchmark_key` normalises it, e.g. `"nifty 200 momentum 30"`) or to
+`ACTIVE_GROUPS` (AMFI's equity sub-category: 1 large, 2 large & mid, 3 flexi,
+4 multi, 5 mid, 6 small, 7 value, 8 ELSS, 9 contra, 10 dividend yield,
+11 focused), with a `valuation` key from `mf_valuation.INDICES` if it has one.
 
 ### Adding a tax guide page
 
@@ -336,9 +430,21 @@ and copy a company page, changing the names in step 1.
   price levels, and a disclaimer on every page. This is not legal advice;
   take professional advice before adding recommendations, paid features or
   personalised advice.
+* **Mutual funds.** The fund comparison is the same kind of mechanical
+  screen: it ranks direct plans within a group by published numbers, states
+  its rules, and uses neutral wording ("top ranked", never buy/sell; the same
+  publication test covers `mf.json`). The SIP split is a general rule of thumb
+  by fund *category* and never names a fund; the lump-sum check is a rule of
+  thumb about index valuations. Selling mutual funds needs an AMFI
+  registration (ARN) and personalised advice needs SEBI registration as an
+  Investment Adviser, so the site links to no fund's purchase page, earns
+  nothing from fund houses and asks nothing about a visitor's finances. The
+  data comes from AMFI's public website, mfapi.in and NSE: keep it attributed
+  and the site non-commercial.
 
 ## Roadmap
 
+* Debt and hybrid fund groups, for the debt slice of the SIP split.
 * More brokers and companies as people request them.
 * Personal features (watchlists, portfolio analysis) — need sign-in and a
   backend; portfolio import is best done from broker CSV exports or the

@@ -1,4 +1,4 @@
-// Landing page: links to the rankings with their latest sync status, and a story from market history.
+// Landing page: links to the rankings and the fund comparison with their latest sync status, and a story from market history.
 import { ago, dataUrl, esc, istDateTime, loadJSON } from './core.js';
 import { renderShell } from './shell.js';
 import { pageSeed, renderTrivia } from './trivia.js';
@@ -30,3 +30,11 @@ Promise.allSettled(US_LISTS.map((list) => loadJSON(dataUrl(list.key)))).then((re
   }
   showMeta('us', snap, snap.multi ? ` (${snap.lists.map((l) => `${esc(l.exchange)} ${l.ranked}`).join(', ')})` : '');
 });
+
+// The fund card: when it was synced, how much is compared, and the top Nifty 50 index fund.
+loadJSON(dataUrl('mf')).then((snap) => {
+  const meta = document.querySelector('[data-meta="mf"]');
+  const top = snap.groups.find((g) => g.key === 'nifty50')?.funds.find((f) => f.rank === 1);
+  meta.innerHTML = `Last synced ${esc(istDateTime(snap.generated_at))} (${esc(ago(snap.generated_at))})
+    <br>${snap.stats.funds} funds in ${snap.stats.groups} groups${top ? ` · top Nifty 50 fund: <strong>${esc(top.name)}</strong>` : ''}`;
+}).catch(() => unavailable('mf'));

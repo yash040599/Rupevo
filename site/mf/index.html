@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mutual Fund Comparison: direct plans ranked — Rupevo</title>
+  <meta name="description" content="Every direct-plan equity mutual fund in India compared with its peers: index funds by how closely and cheaply they track their index, active funds by rolling-return consistency, risk and cost, with the reasons for every rank. Plus a SIP split by age and a lump-sum valuation check.">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://api.github.com https://api.web3forms.com; base-uri 'self'; form-action 'self'; object-src 'none'">
+  <meta property="og:title" content="Mutual Fund Comparison — Rupevo">
+  <meta property="og:description" content="Which AMC's Nifty 50 fund, which mid-cap fund? Direct plans ranked within their group, with the reasons.">
+  <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../assets/css/rupevo.css">
+  <script src="../assets/js/boot.js"></script>
+  <script type="module" src="../assets/js/mf.js"></script>
+</head>
+<body>
+  <header id="site-nav"></header>
+  <main id="app" class="wrap" aria-busy="true">
+    <section class="hero">
+      <div class="eyebrow">India · Mutual funds · Direct plans</div>
+      <h1>Mutual Fund Comparison</h1>
+      <p class="lede">Every direct-plan equity fund compared with the funds that do the same job: index funds
+        that track the same index, and active funds in the same SEBI category. Each rank comes with its reasons,
+        so you can see how the decision was made. Below the comparison: a SIP split by age and risk, and a check
+        of whether markets look cheap or expensive for a lump sum.</p>
+      <div class="sync-bar" id="sync-bar"><span class="skel" style="width:320px"></span></div>
+    </section>
+    <noscript><div class="banner warn">This page needs JavaScript to display the comparison.</div></noscript>
+    <div id="notice"></div>
+    <section class="card group-nav" id="group-nav" aria-label="Fund groups">
+      <span class="skel" style="width:60%"></span><span class="skel" style="width:80%"></span>
+    </section>
+    <section class="card verdict-card" id="verdict-card" aria-live="polite">
+      <span class="skel" style="width:40%"></span><span class="skel"></span><span class="skel"></span>
+    </section>
+    <section class="card" id="funds-card" hidden></section>
+    <section class="card" id="plan-card" hidden></section>
+    <section class="card" id="lumpsum-card" hidden></section>
+    <section class="card" id="method-card">
+      <details class="fold"><summary><h2>How the comparison works</h2></summary><div id="method-body"></div></details>
+    </section>
+    <aside class="card trivia-card" data-trivia="market" aria-label="Stories from the market">
+      <span class="skel" style="width:40%"></span><span class="skel"></span><span class="skel"></span>
+    </aside>
+  </main>
+  <footer id="site-footer"></footer>
+</body>
+</html>

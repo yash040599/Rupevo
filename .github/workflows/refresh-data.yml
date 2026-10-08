@@ -1,26 +1,31 @@
-# Rebuilds the ranking snapshots and the tax tools' reference data, commits
-# them and redeploys the site.
+# Rebuilds the ranking snapshots, the mutual fund comparison and the tax
+# tools' reference data, commits them and redeploys the site.
 #
-# Triggered by the admin "Analyse now" button on the website (workflow
-# dispatch through the GitHub API), by "Run workflow" on the Actions tab, and
-# weekly on a schedule. The weekly run refreshes only the tax data (SBI
-# exchange rates, prices, dividends); rankings stay admin-triggered unless
-# another schedule is added below.
+# Triggered on a schedule, by the admin "Analyse now" button on the website
+# (workflow dispatch through the GitHub API, also reached from the link in a
+# visitor's refresh-request email), and by "Run workflow" on the Actions tab.
+#
+# Schedule (UTC cron, IST in the comments):
+#   * Tuesday to Saturday 06:47 IST: both stock rankings, after the US close,
+#     so each morning shows the previous session of both markets.
+#   * Saturday 09:17 IST: the mutual fund comparison (Friday's NAVs).
+#   * Monday 08:00 IST: tax data only.
+# The tax data (SBI exchange rates, prices, dividends) is refreshed on every run.
 name: Refresh market data
-run-name: Refresh market data (${{ github.event_name == 'schedule' && (github.event.schedule == '30 2 * * 1' && 'tax' || 'both') || inputs.market || 'both' }})
+run-name: Refresh market data (${{ github.event_name == 'schedule' && (github.event.schedule == '30 2 * * 1' && 'tax' || github.event.schedule == '47 3 * * 6' && 'mf' || 'both') || inputs.market || 'both' }})
 
 on:
   workflow_dispatch:
     inputs:
       market:
-        description: What to refresh (the tax data is refreshed on every run)
+        description: "What to refresh: both = both stock rankings, mf = mutual funds, all = everything (the tax data is refreshed on every run)"
         type: choice
-        options: [both, india, us, tax]
+        options: [both, india, us, mf, all, tax]
         default: both
   schedule:
-    - cron: "30 2 * * 1"   # Mondays 08:00 IST: tax data only
-  # Any other schedule refreshes both rankings too, for example (UTC):
-  #   - cron: "15 11 * * 1-5"   # 16:45 IST, after the NSE close
+    - cron: "17 1 * * 2-6"  # Tue-Sat 06:47 IST: both stock rankings
+    - cron: "47 3 * * 6"    # Saturdays 09:17 IST: mutual funds
+    - cron: "30 2 * * 1"    # Mondays 08:00 IST: tax data only
 
 concurrency:
   group: refresh-data
@@ -32,15 +37,29 @@ permissions:
 jobs:
   refresh:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     permissions:
       contents: write
     outputs:
       changed: ${{ steps.commit.outputs.changed }}
     env:
-      MARKET: ${{ github.event_name == 'schedule' && (github.event.schedule == '30 2 * * 1' && 'tax' || 'both') || inputs.market || 'both' }}
+      MARKET: ${{ github.event_name == 'schedule' && (github.event.schedule == '30 2 * * 1' && 'tax' || github.event.schedule == '47 3 * * 6' && 'mf' || 'both') || inputs.market || 'both' }}
     steps:
       - uses: actions/checkout@v7
+
+      # RANKINGS: the --market for the stock rankings (empty: none).
+      # MUTUAL_FUNDS: whether to rebuild the mutual fund comparison.
+      - name: Plan the run
+        run: |
+          case "$MARKET" in
+            both|india|us) echo "RANKINGS=$MARKET" >> "$GITHUB_ENV" ;;
+            all) echo "RANKINGS=both" >> "$GITHUB_ENV" ;;
+            *) echo "RANKINGS=" >> "$GITHUB_ENV" ;;
+          esac
+          case "$MARKET" in
+            mf|all) echo "MUTUAL_FUNDS=true" >> "$GITHUB_ENV" ;;
+            *) echo "MUTUAL_FUNDS=false" >> "$GITHUB_ENV" ;;
+          esac
 
       - uses: actions/setup-python@v7
         with:
@@ -52,7 +71,7 @@ jobs:
 
       # US fundamentals are cached for 14 days between runs.
       - name: Restore pipeline cache
-        if: env.MARKET != 'tax'
+        if: env.RANKINGS != ''
         uses: actions/cache/restore@v6
         with:
           path: .cache/us_fundamentals.json
@@ -61,22 +80,31 @@ jobs:
 
       # NSE / Nasdaq sometimes block cloud IPs; the checked-in lists are kept then.
       - name: Update index constituents
-        if: env.MARKET != 'tax'
+        if: env.RANKINGS != ''
         continue-on-error: true
         run: python -m pipeline universe
 
       - name: Build rankings
         id: refresh
-        if: env.MARKET != 'tax'
+        if: env.RANKINGS != ''
         continue-on-error: true
-        run: python -m pipeline refresh --market "$MARKET"
+        run: python -m pipeline refresh --market "$RANKINGS"
 
       - name: Save pipeline cache
-        if: always() && env.MARKET != 'tax' && hashFiles('.cache/us_fundamentals.json') != ''
+        if: always() && env.RANKINGS != '' && hashFiles('.cache/us_fundamentals.json') != ''
         uses: actions/cache/save@v6
         with:
           path: .cache/us_fundamentals.json
           key: pipeline-cache-${{ github.run_id }}
+
+      # AMFI (NAVs, returns, expense ratios, tracking data), mfapi.in (NAV
+      # history) and NSE (index P/E). AMFI allows about one request a second,
+      # so this takes 10-15 minutes. A failure keeps the published file.
+      - name: Build mutual fund comparison
+        id: mf
+        if: env.MUTUAL_FUNDS == 'true'
+        continue-on-error: true
+        run: python -m pipeline mf
 
       # Exchange rates, prices and dividends used by the RSU tax tools.
       - name: Update tax data
@@ -104,9 +132,9 @@ jobs:
           echo "changed=true" >> "$GITHUB_OUTPUT"
 
       - name: Report data that could not be refreshed
-        if: steps.refresh.outcome == 'failure' || steps.taxdata.outcome == 'failure'
+        if: steps.refresh.outcome == 'failure' || steps.mf.outcome == 'failure' || steps.taxdata.outcome == 'failure'
         run: |
-          echo "::error::Some data failed to refresh and kept its previous version. See the 'Build rankings' and 'Update tax data' steps."
+          echo "::error::Some data failed to refresh and kept its previous version. See the 'Build rankings', 'Build mutual fund comparison' and 'Update tax data' steps."
           exit 1
 
   deploy:

@@ -10,6 +10,7 @@ import { contactAddress, mailtoHref } from './mail.js';
 const NAV = [
   { key: 'india', label: 'Nifty 100', href: 'india/', title: 'Indian Nifty 100 Ranking' },
   { key: 'us', label: 'US stocks', href: 'us/', title: 'US Stock Ranking: NASDAQ-100 and NYSE top 100' },
+  { key: 'mf', label: 'Mutual funds', href: 'mf/', title: 'Mutual Fund Comparison: direct plans ranked within their group' },
   { key: 'tax', label: 'Tax', href: 'tax/', title: 'Tax tools: RSU taxation and more' },
 ];
 
@@ -77,15 +78,16 @@ export function renderShell(page, { showCurrency = true, onAdminRefreshed } = {}
     <div class="inner">
       <div class="footer-row">
         <a class="brand" href="${siteUrl('')}"><span class="brand-mark">R</span>Rupevo</a>
-        <span class="muted small">Market rankings and tax tools, explained.</span>
+        <span class="muted small">Market rankings, fund comparisons and tax tools, explained.</span>
         <span class="spacer"></span>
         <button class="btn coffee-btn" id="coffee-btn" type="button">☕ Buy me a coffee</button>
       </div>
       <p class="disclaimer">${DISCLAIMER}</p>
       <div class="footer-links">
         <span>Prices &amp; fundamentals: Yahoo Finance (end-of-day). Index lists: NSE India, Nasdaq (NASDAQ-100;
-          NYSE listings for the NYSE top 100).
-          Not affiliated with any exchange, data provider, broker or employer.</span>
+          NYSE listings for the NYSE top 100). Mutual funds: AMFI (NAVs, returns, expense ratios, tracking error),
+          mfapi.in (NAV history), NSE India (index P/E).
+          Not affiliated with any exchange, data provider, fund house, broker or employer.</span>
         <a data-contact data-contact-subject="Rupevo" data-contact-label="Contact"></a>
         <a href="https://github.com/${esc(SITE.repo.owner)}/${esc(SITE.repo.name)}" target="_blank" rel="noopener">Source on GitHub</a>
         <button class="linkish" id="admin-link" type="button">Admin</button>

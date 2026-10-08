@@ -2,7 +2,8 @@
 
 The site is public, so these run on every push: a published snapshot must
 be well-formed and must never contain trade-call fields or buy/sell
-language (SEBI treats entry/stop/target calls as research services).
+language (SEBI treats entry/stop/target calls as research services). The
+mutual fund comparison (mf.json) is held to the same wording rules.
 """
 
 import datetime
@@ -85,6 +86,42 @@ class PublishedSnapshotTest(unittest.TestCase):
         for market, snap in self._snapshots():
             hits = [t for t in _texts(snap) if FORBIDDEN_WORDS.search(t)]
             self.assertEqual(hits, [], f"{market}: recommendation wording published")
+
+
+class PublishedFundsTest(unittest.TestCase):
+    """site/data/mf.json, the mutual fund comparison."""
+
+    def _snapshot(self) -> dict:
+        path = os.path.join(DATA_DIR, "mf.json")
+        if not os.path.exists(path):
+            self.skipTest("no fund comparison published yet")
+        with open(path, encoding="utf-8") as fh:
+            return json.load(fh)
+
+    def test_schema(self):
+        snap = self._snapshot()
+        self.assertEqual(snap["market"], "mf")
+        self.assertFalse(snap.get("partial"), "partial snapshot published")
+        datetime.datetime.fromisoformat(snap["generated_at"])
+        datetime.date.fromisoformat(snap["data_through"])
+        self.assertTrue(snap["groups"])
+        for group in snap["groups"]:
+            with self.subTest(group=group["key"]):
+                self.assertIn(group["kind"], ("index", "active"))
+                ranks = [f["rank"] for f in group["funds"] if f["rank"] is not None]
+                self.assertEqual(ranks, list(range(1, len(ranks) + 1)), "ranked funds come first, in order")
+                self.assertEqual(group["stats"]["ranked"], len(ranks))
+                for fund in group["funds"]:
+                    self.assertIsInstance(fund["code"], int)
+                    self.assertEqual(fund["rank"] is None, fund["status"] != "ranked")
+                    if fund["rank"]:
+                        self.assertTrue(fund["reasons"], f"{fund['name']}: ranked without reasons")
+
+    def test_no_trade_fields_or_buy_sell_language(self):
+        snap = self._snapshot()
+        self.assertFalse(FORBIDDEN_KEYS & {k for k, _, _ in _walk(snap)}, "trade fields published")
+        hits = [t for t in _texts(snap) if FORBIDDEN_WORDS.search(t)]
+        self.assertEqual(hits, [], "recommendation wording published")
 
 
 if __name__ == "__main__":

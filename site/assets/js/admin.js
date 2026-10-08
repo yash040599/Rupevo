@@ -10,7 +10,12 @@ const API = 'https://api.github.com';
 const { owner, name: repo, branch, workflow } = SITE.repo;
 const REPO_PATH = `/repos/${owner}/${repo}`;
 const WORKFLOW_URL = `https://github.com/${owner}/${repo}/actions/workflows/${workflow}`;
-const MARKET_TITLES = { india: 'Nifty 100', us: 'US stocks (NASDAQ-100 and NYSE top 100)', both: 'all rankings' };
+const MARKET_TITLES = {
+  india: 'Nifty 100', us: 'US stocks (NASDAQ-100 and NYSE top 100)', both: 'both stock rankings',
+  mf: 'mutual funds', all: 'everything (stock rankings and mutual funds)',
+};
+// Rough run times shown before a refresh starts (AMFI allows about one request a second).
+const MARKET_MINUTES = { india: '3–6', us: '3–6', both: '4–8', mf: '10–20', all: '15–25' };
 
 export const getToken = () => store.get(TOKEN_KEY, 'session') || store.get(TOKEN_KEY) || '';
 export const isAdmin = () => Boolean(getToken());
@@ -80,8 +85,8 @@ export function startRefresh(market, { onDone } = {}) {
   openModal({
     title: `Refresh ${title}?`,
     body: `<p>This runs the <strong>Refresh market data</strong> workflow on GitHub Actions:
-      it downloads end-of-day prices, recomputes the ranking, commits the new snapshot and
-      redeploys the site. It usually takes 3–6 minutes.</p>`,
+      it downloads the latest data, recomputes the ${market === 'mf' ? 'comparison' : 'ranking'}, commits
+      the new snapshot and redeploys the site. It usually takes ${MARKET_MINUTES[market] || '3–6'} minutes.</p>`,
     actions: [
       { label: 'Cancel', kind: 'alt' },
       { label: 'Run refresh', onClick: ({ close }) => { close(); dispatchAndFollow(market, title, onDone); } },
@@ -151,12 +156,13 @@ function runRow(run) {
     <span class="${cls}">${esc(result)}</span> <span class="muted">${esc(market)} · ${esc(ago(run.created_at))}</span></li>`;
 }
 
-/** Footer "Admin" link: enable admin mode, or run refreshes when enabled. */
-export function openAdminPanel({ onRefreshed } = {}) {
+/** Footer "Admin" link: enable admin mode, or run refreshes when enabled.
+ * `onEnabled` runs once a pasted token is verified; `reason` explains why the panel opened. */
+export function openAdminPanel({ onRefreshed, onEnabled, reason = '' } = {}) {
   if (!isAdmin()) {
     const ui = openModal({
       title: 'Admin mode',
-      body: `
+      body: `${reason ? `<div class="callout"><p>${esc(reason)}</p></div>` : ''}
         <p>Admin mode lets the site owner refresh the rankings from this page. It needs a GitHub
         fine-grained personal access token that can run this repository's workflows.</p>
         <ol>
@@ -193,6 +199,7 @@ export function openAdminPanel({ onRefreshed } = {}) {
               setToken(token, ui.body.querySelector('#admin-remember').checked);
               close();
               toast('Admin mode enabled on this browser.', 'ok');
+              onEnabled?.();
             } catch (err) {
               out.className = 'status-line bad';
               out.textContent = err.status === 403 ? err.message : explain(err);
@@ -214,8 +221,11 @@ export function openAdminPanel({ onRefreshed } = {}) {
       <div class="footer-row">
         <button class="btn" type="button" data-market="india">Refresh Nifty 100</button>
         <button class="btn" type="button" data-market="us">Refresh US (NASDAQ + NYSE)</button>
-        <button class="btn alt" type="button" data-market="both">Refresh all</button>
+        <button class="btn" type="button" data-market="mf">Refresh mutual funds</button>
+        <button class="btn alt" type="button" data-market="all">Refresh all</button>
       </div>
+      <p class="small muted" style="margin:0">Automatic refreshes: both stock rankings every Tuesday to
+        Saturday at 06:47 IST, mutual funds every Saturday at 09:17 IST.</p>
       <div><h3 class="small muted" style="margin:0 0 6px">Recent refresh runs</h3>
         <ul class="tile-list" id="admin-runs"><li class="muted">Loading…</li></ul></div>`,
     actions: [
@@ -233,4 +243,40 @@ export function openAdminPanel({ onRefreshed } = {}) {
   }).catch((err) => {
     ui.body.querySelector('#admin-runs').innerHTML = `<li class="neg">${esc(explain(err))}</li>`;
   });
+}
+
+// ── Refresh links in request emails ──
+// A visitor's "Request refresh" email carries a link to the page with ?refresh=<market>.
+// Opened in a browser where admin mode is on, the page asks to confirm and runs the
+// refresh; anywhere else it asks for the token first. The link itself grants nothing.
+const REFRESH_PARAM = 'refresh';
+export const WORKFLOW_PAGE = WORKFLOW_URL;
+
+export function refreshLink(market, href = window.location.href) {
+  const url = new URL(href);
+  url.search = '';
+  url.hash = '';
+  url.searchParams.set(REFRESH_PARAM, market);
+  return url.href;
+}
+
+/** Act on ?refresh=<market> in the page URL (then drop it). Returns true when present. */
+export function handleRefreshLink(pageMarket, { onDone } = {}) {
+  const url = new URL(window.location.href);
+  const wanted = url.searchParams.get(REFRESH_PARAM);
+  if (wanted === null) return false;
+  url.searchParams.delete(REFRESH_PARAM);
+  window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+  const market = MARKET_TITLES[wanted] ? wanted : pageMarket;
+  if (isAdmin()) {
+    startRefresh(market, { onDone });
+  } else {
+    openAdminPanel({
+      reason: `This link refreshes ${MARKET_TITLES[market] || market}. Only the site owner can run a refresh:
+        paste your admin token to continue.`,
+      onEnabled: () => startRefresh(market, { onDone }),
+      onRefreshed: onDone,
+    });
+  }
+  return true;
 }

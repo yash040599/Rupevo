@@ -6,7 +6,7 @@ import {
   num, pct, sleep, toast, toned, tradingDay,
 } from './core.js';
 import { renderShell, showFx, syncCurrencyToggle } from './shell.js';
-import { isAdmin, startRefresh } from './admin.js';
+import { handleRefreshLink, isAdmin, startRefresh } from './admin.js';
 import { openRequestModal } from './request.js';
 import { pageSeed, renderTrivia } from './trivia.js';
 import {
@@ -789,4 +789,6 @@ export async function start(marketKey) {
       Please try again in a few minutes.</div>`;
     els.sync.innerHTML = '<span class="muted">No data available.</span>';
   }
+  // Opened from the "Refresh now" link in a refresh-request email.
+  handleRefreshLink(marketKey, { onDone: () => reload(true) });
 }
