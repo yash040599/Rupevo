@@ -399,9 +399,9 @@ function renderFunds() {
   const g = current();
   const columns = COLUMNS[g.kind];
   els.funds.hidden = false;
-  els.funds.innerHTML = `<details class="fold"${isOpen(els.funds, true) ? ' open' : ''}>
+  els.funds.innerHTML = `<details class="fold"${isOpen(els.funds, false) ? ' open' : ''}>
     <summary><h2>All ${esc(g.label)} (${g.funds.length})</h2>
-      <span class="hint">Ranked funds first. Click a fund for its full breakdown.</span></summary>
+      <span class="hint">Every fund in this group with its numbers: sort, search, and click a fund for its full breakdown.</span></summary>
     <div class="toolbar">
       <input type="search" id="fund-q" placeholder="Search fund or fund house" aria-label="Search fund or fund house"
         value="${esc(state.query)}">
@@ -450,6 +450,54 @@ function renderRows() {
 function toggleFund(code, forceOpen = false) {
   if (state.open.has(code) && !forceOpen) state.open.delete(code); else state.open.add(code);
   renderRows();
+}
+
+// The funds table starts collapsed; opening a fund from elsewhere on the page unfolds it.
+function openFundsFold() {
+  const fold = els.funds.querySelector(':scope > details.fold');
+  if (fold) fold.open = true;
+}
+
+// ── Intro: live numbers and the quick links' one-line previews ──
+function renderIntro() {
+  const s = state.snap;
+  const stats = document.getElementById('mf-stats');
+  if (stats) {
+    stats.innerHTML = `<strong>${s.stats.funds}</strong> direct plans · <strong>${s.stats.amcs}</strong> fund houses ·
+      <strong>${s.stats.groups}</strong> groups · refreshed every Saturday from AMFI data`;
+  }
+  const teaser = (key, html) => {
+    const el = app.querySelector(`[data-teaser="${key}"]`);
+    if (el) el.innerHTML = html;
+  };
+  const top = groupByKey('nifty50')?.funds.find((f) => f.rank === 1);
+  teaser('compare', top ? `Top-ranked Nifty 50 index fund now: <strong>${esc(top.name)}</strong>` : '');
+  const { age, risk } = state.plan;
+  const equity = equityShare(age, risk);
+  const ageLabel = AGE_BANDS.find((b) => b.key === age)?.label || '';
+  const riskLabel = (RISK_LEVELS.find((r) => r.key === risk)?.label || '').toLowerCase();
+  teaser('plan', `${esc(ageLabel)}, ${esc(riskLabel)}: <strong>${equity}% in equity funds</strong>, ${100 - equity}% in debt`);
+  const zones = ['nifty50', 'midcap150', 'smallcap250']
+    .map((key) => s.valuation?.indices?.find((ix) => ix.key === key)).filter((ix) => ix?.zone);
+  teaser('lumpsum', zones.map((ix) => `<span class="chip ${ZONE_CHIP[ix.zone]}"><span class="dot"></span>${
+    esc(ix.name)}: ${esc(ix.zone_label.toLowerCase())}</span>`).join(''));
+}
+
+// ── Sections the quick links jump to; also shareable as #compare, #plan, #lumpsum and #how ──
+const SECTIONS = { compare: 'group-nav', plan: 'plan-card', lumpsum: 'lumpsum-card', how: 'method-card' };
+const sectionFromHash = () => {
+  const key = window.location.hash.replace(/^#/, '').toLowerCase();
+  return SECTIONS[key] ? key : null;
+};
+
+function jumpTo(section, { smooth = true } = {}) {
+  const el = document.getElementById(SECTIONS[section]);
+  if (!el || el.hidden) return;
+  const fold = el.querySelector(':scope > details.fold');
+  if (fold) fold.open = true;
+  el.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' });
+  const hash = `#${section}`;
+  if (window.location.hash !== hash) window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}${hash}`);
 }
 
 // ── SIP split by age and risk ──
@@ -637,6 +685,7 @@ function renderGroup() {
 function renderAll() {
   renderSync();
   renderNotice();
+  renderIntro();
   renderGroup();
   renderPlan();
   renderLumpSum();
@@ -659,10 +708,17 @@ function selectGroup(key, { openCode = null, scroll = null } = {}) {
   const hash = `#${key}`;
   if (window.location.hash !== hash) window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}${hash}`);
   renderGroup();
+  if (openCode !== null) openFundsFold();
   if (scroll) document.getElementById(scroll)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 app.addEventListener('click', (e) => {
+  const jump = e.target.closest('a[data-jump]');
+  if (jump && state.snap) {
+    e.preventDefault();
+    jumpTo(jump.dataset.jump);
+    return;
+  }
   const groupBtn = e.target.closest('button[data-group]');
   if (groupBtn && state.snap) {
     e.preventDefault();
@@ -674,6 +730,7 @@ app.addEventListener('click', (e) => {
   if (openBtn && state.snap) {
     state.query = '';
     renderFunds();
+    openFundsFold();
     toggleFund(Number(openBtn.dataset.open), true);
     document.getElementById('funds-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     return;
@@ -688,11 +745,17 @@ app.addEventListener('click', (e) => {
     state.plan[planBtn.dataset.plan] = planBtn.dataset.value;
     savePlan();
     renderPlan();
+    renderIntro();
   }
 });
 
 window.addEventListener('hashchange', () => {
   if (!state.snap) return;
+  const section = sectionFromHash();
+  if (section) {
+    jumpTo(section);
+    return;
+  }
   const key = groupFromHash(window.location.hash, state.snap.groups, state.group);
   if (key !== state.group) selectGroup(key);
 });
@@ -721,6 +784,9 @@ try {
   state.snap = await loadJSON(dataUrl('mf'));
   state.group = groupFromHash(window.location.hash, state.snap.groups);
   renderAll();
+  // A shared link to a section (#plan, #lumpsum, ...) lands on it once the page is drawn.
+  const section = sectionFromHash();
+  if (section) jumpTo(section, { smooth: false });
 } catch (err) {
   app.setAttribute('aria-busy', 'false');
   els.notice.innerHTML = `<div class="banner error">The fund data could not be loaded (${esc(err.message)}).

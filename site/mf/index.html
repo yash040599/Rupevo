@@ -3,11 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Mutual Fund Comparison: direct plans ranked — Rupevo</title>
-  <meta name="description" content="Every direct-plan equity mutual fund in India compared with its peers: index funds by how closely and cheaply they track their index, active funds by rolling-return consistency, risk and cost, with the reasons for every rank. Plus a SIP split by age and a lump-sum valuation check.">
+  <title>Mutual Fund Comparison: which fund, how much at your age, lump sum or SIP — Rupevo</title>
+  <meta name="description" content="Know the type of fund but not which fund house to pick? Every direct-plan equity fund in India ranked against the funds that do the same job, with the numbers that decide it. Plus a SIP split by age and risk, and a check of whether markets look cheap or expensive for a lump sum.">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://api.github.com https://api.web3forms.com; base-uri 'self'; form-action 'self'; object-src 'none'">
-  <meta property="og:title" content="Mutual Fund Comparison — Rupevo">
-  <meta property="og:description" content="Which AMC's Nifty 50 fund, which mid-cap fund? Direct plans ranked within their group, with the reasons.">
+  <meta property="og:title" content="Which fund house's Nifty 50 fund? Mutual funds compared — Rupevo">
+  <meta property="og:description" content="Direct plans ranked within their group, with the numbers that decide it. Plus a SIP split by age and a lump-sum check. Free, no login.">
   <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="../assets/css/rupevo.css">
   <script src="../assets/js/boot.js"></script>
@@ -19,10 +19,38 @@
     <section class="hero">
       <div class="eyebrow">India · Mutual funds · Direct plans</div>
       <h1>Mutual Fund Comparison</h1>
-      <p class="lede">Every direct-plan equity fund compared with the funds that do the same job: index funds
-        that track the same index, and active funds in the same SEBI category. Each rank comes with its reasons,
-        so you can see how the decision was made. Below the comparison: a SIP split by age and risk, and a check
-        of whether markets look cheap or expensive for a lump sum.</p>
+      <p class="lede">Choosing a mutual fund comes down to three questions: which fund, how much in each kind, and
+        what to do with a lump sum. Every direct-plan equity fund in India is compared here with the funds that do the
+        same job, and every rank shows the numbers behind it. Free, no login.</p>
+      <p class="mf-stats" id="mf-stats"></p>
+      <nav class="jump-grid" aria-label="On this page">
+        <a class="card jump-card" href="#compare" data-jump="compare">
+          <span class="eyebrow">Which fund?</span>
+          <h2>Know the type of fund, stuck on the fund house?</h2>
+          <p>You want a Nifty 50 index fund or a mid-cap fund, but twenty fund houses sell one. See them ranked on the
+            numbers that matter (cost, how closely they track the index, consistency, the worst fall) and why number
+            one comes first.</p>
+          <span class="jump-teaser" data-teaser="compare"></span>
+          <span class="go">Compare funds ↓</span>
+        </a>
+        <a class="card jump-card" href="#plan" data-jump="plan">
+          <span class="eyebrow">By age</span>
+          <h2>How could your SIP be split at your age?</h2>
+          <p>Pick your age and how much risk you can take. See a rule-of-thumb split across index, flexi-cap,
+            mid-cap, small-cap and debt, in rupees, with the reasoning.</p>
+          <span class="jump-teaser" data-teaser="plan"></span>
+          <span class="go">See the split ↓</span>
+        </a>
+        <a class="card jump-card" href="#lumpsum" data-jump="lumpsum">
+          <span class="eyebrow">Lump sum</span>
+          <h2>Got a lump sum? Are markets cheap or expensive?</h2>
+          <p>Each index's P/E against its own history, and the rule of thumb on investing it at once or spreading it
+            out.</p>
+          <span class="jump-teaser chips" data-teaser="lumpsum"></span>
+          <span class="go">Check valuations ↓</span>
+        </a>
+      </nav>
+      <p class="jump-more">Every number is explained: <a href="#how" data-jump="how">how the comparison works</a>.</p>
       <div class="sync-bar" id="sync-bar"><span class="skel" style="width:320px"></span></div>
     </section>
     <noscript><div class="banner warn">This page needs JavaScript to display the comparison.</div></noscript>

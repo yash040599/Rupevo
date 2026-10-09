@@ -329,6 +329,11 @@ tests/             engine, snapshot, universe, parser, publication-safety,
   here*. The SIP split by age and risk is plain rules in
   [site/assets/js/mf-plan.js](site/assets/js/mf-plan.js) (`SPLITS`), tested
   in `tests/js/mf-plan.test.mjs`.
+* The page opens with three questions (which fund, how much at your age,
+  what to do with a lump sum) that preview the live answer and jump to their
+  section; the full fund table starts folded. Sections and groups can be
+  shared as direct links: `mf/#compare`, `mf/#plan`, `mf/#lumpsum`, `mf/#how`,
+  or a group such as `mf/#midcap` or `mf/#nifty50`.
 
 To add a group, add a `Group` to `INDEX_GROUPS` (its `benchmark` as
 `benchmark_key` normalises it, e.g. `"nifty 200 momentum 30"`) or to
