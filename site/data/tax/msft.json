@@ -3,7 +3,7 @@
  "name": "Microsoft Corporation",
  "exchange": "NASDAQ",
  "currency": "USD",
- "generated_at": "2026-10-10T12:39:35+05:30",
+ "generated_at": "2026-10-10T15:49:05+05:30",
  "sources": {"prices": "Yahoo Finance daily close (split-adjusted)", "dividends": "Nasdaq"},
  "first": "2016-10-10",
  "last": "2026-10-09",
