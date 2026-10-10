@@ -1,7 +1,7 @@
 {
  "name": "NASDAQ-100",
  "source": "https://api.nasdaq.com/api/quote/list-type/nasdaq100",
- "as_of": "2026-10-09",
+ "as_of": "2026-10-10",
  "constituents": [
   {
    "symbol": "AAPL",
@@ -306,6 +306,11 @@
   {
    "symbol": "MPWR",
    "name": "Monolithic Power Systems, Inc.",
+   "industry": ""
+  },
+  {
+   "symbol": "MRNA",
+   "name": "Moderna, Inc.",
    "industry": ""
   },
   {
