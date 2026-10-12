@@ -15,7 +15,7 @@ Live site: **https://yash040599.github.io/Rupevo/**
 |---|---|---|
 | [Nifty 100 Ranking](site/india/index.html) | Technical setups, technical score (A–D), risk grade, 52-week dips, sector strength | Migrated from the ai-portfolio-manager swing scanner |
 | [US Stock Ranking](site/us/index.html) | Six-pillar long-term scorecard (quality, valuation vs sector, growth, momentum, balance sheet, risk) for two lists: the **NASDAQ-100** and the **NYSE top 100** (the 100 largest US companies listed on the NYSE, e.g. Oracle, Uber, JPMorgan). A switch shows **All US** (both lists ranked together), **NASDAQ-100** or **NYSE top 100**; search covers the lists in view, and searching one exchange for a company on the other says where it is | Migrated from the ai-portfolio-manager US long-term scorer |
-| [Mutual Fund Comparison](site/mf/index.html) | Every direct-plan equity fund ranked within its group: **14 index-fund groups** (Nifty 50, Sensex, Next 50, Nifty 100, Nifty 100 and Nifty 50 Equal Weight, LargeMidcap 250, Midcap 150, Smallcap 250, Nifty 500, Total Market, Momentum 30, Low Vol 30, Alpha Low-Vol 30) and **9 active categories** (large, large & mid, flexi, multi, mid, small cap, focused, value, ELSS). Each group opens with the top-ranked fund and *how we decided*; index groups show what the tracking gap is worth on a SIP, active groups where a low-cost index fund would rank on the same rules. Below: a **SIP split by age and risk** (by fund category) and a **lump-sum check** (each index's P/E against its own history) | `pipeline/mf.py` (see *The mutual fund comparison*) |
+| [Mutual Fund Comparison](site/mf/index.html) | Every direct-plan equity fund ranked within its group: **14 index-fund groups** (Nifty 50, Sensex, Next 50, Nifty 100, Nifty 100 and Nifty 50 Equal Weight, LargeMidcap 250, Midcap 150, Smallcap 250, Nifty 500, Total Market, Momentum 30, Low Vol 30, Alpha Low-Vol 30) and **9 active categories** (large, large & mid, flexi, multi, mid, small cap, focused, value, ELSS). Each group opens with the top-ranked fund, its key numbers against the typical fund and the runners-up; *why it comes first*, *how the funds are compared* and, for index groups, what the tracking gap is worth on a SIP (for active groups, where a low-cost index fund would rank on the same rules) are a click away. Below: a **SIP split by age and risk** (by fund category) and a **lump-sum check** (each index's P/E against its own history) | `pipeline/mf.py` (see *The mutual fund comparison*) |
 | [Tax tools](site/tax/index.html) | RSU taxation → broker (Fidelity) → company (**Microsoft, Oracle**). Load Fidelity's *View open lots* CSV (shares held) and, if you sold any, *View closed lots* (Previously held shares); the company page has three tabs: **Foreign assets** (Schedule FA Table A2 for the Fidelity account and A3 with one row per RSU vest and ESPP purchase, including lots sold during the year with their proceeds, plus the Schedule AL cost), **Selling shares** (capital gains under India's 24-month rule: Schedule CG A5/B8, gains by date of sale, and the Schedule FSI row) and **Dividends** (the payments the shares received in the financial year, Schedule OS with its quarterly breakup, Schedule FSI, Schedule TR and the Form 67 fields with its deadline, plus the company's dividend history). Sold shares change Schedule FA and the dividends too, so those tabs ask for both exports unless nothing was ever sold. Visitors can request another company. Every tax page has an interactive "how far through the financial year are we" slider (advance-tax and ITR dates marked) and a "Did you know?" card mixing tax facts with stories from market history | Runs in the browser: the user's files are never uploaded. Uses published SBI TT buying rates, closes and dividends (`site/data/tax/`, refreshed weekly) |
 
 Every page has light/dark theme, a **Buy me a coffee** button (in the top
@@ -23,6 +23,14 @@ bar, a floating ☕ on phones once the bar scrolls away, and the footer) and a
 disclaimer. Ranking pages and the fund comparison add a "last synced"
 indicator, a **Request refresh** button and collapsible sections (the ranking
 pages also a USD/INR toggle). No login is needed.
+
+Pages are written for newcomers: each opens with a one-line introduction and
+each section with its answer, while explanations, method notes and fine print
+sit in "more" links that open in place (`more()` in `assets/js/core.js`).
+The ranking tables show their top 25 rows and main columns, with **Show all**
+and **More columns** (remembered in the browser); a search shows every match.
+A stock's or fund's breakdown leads with its key numbers, the rest under
+*More numbers*.
 
 The home, ranking, fund and tax pages end with a **Did you know?** card: true stories
 from market history (Indian and world: crashes, scams, bubbles, famous bets,
@@ -331,9 +339,11 @@ tests/             engine, snapshot, universe, parser, publication-safety,
   in `tests/js/mf-plan.test.mjs`.
 * The page opens with three questions (which fund, how much at your age,
   what to do with a lump sum) that preview the live answer and jump to their
-  section; the full fund table starts folded. Sections and groups can be
-  shared as direct links: `mf/#compare`, `mf/#plan`, `mf/#lumpsum`, `mf/#how`,
-  or a group such as `mf/#midcap` or `mf/#nifty50`.
+  section; the full fund table starts folded. The lump-sum check states the
+  rule of thumb once and shows the Nifty 50, Midcap 150 and Smallcap 250, with
+  the other indices, the research and the method a click away. Sections and
+  groups can be shared as direct links: `mf/#compare`, `mf/#plan`,
+  `mf/#lumpsum`, `mf/#how`, or a group such as `mf/#midcap` or `mf/#nifty50`.
 
 To add a group, add a `Group` to `INDEX_GROUPS` (its `benchmark` as
 `benchmark_key` normalises it, e.g. `"nifty 200 momentum 30"`) or to

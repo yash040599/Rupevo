@@ -2,7 +2,7 @@
 // ranked against their peers with the reasons, the SIP split by age and risk (mf-plan.js) and the
 // lump-sum valuation check.
 import {
-  DASH, ago, dataUrl, esc, isNum, istDateTime, loadJSON, signedPct, sleep, store, toast, tradingDay,
+  DASH, ago, dataUrl, esc, isNum, istDateTime, loadJSON, more, openMores, signedPct, sleep, store, toast, tradingDay,
 } from './core.js';
 import { renderShell } from './shell.js';
 import { handleRefreshLink, isAdmin, startRefresh } from './admin.js';
@@ -24,12 +24,15 @@ const COMPONENTS = {
 const STATUS_LABEL = { too_new: 'Too new', no_history: 'No data', no_tracking: 'No data', no_score: 'No score', stale: 'Stale' };
 const VALUATION_ORDER = ['nifty50', 'nifty100', 'next50', 'nifty500', 'totalmarket', 'largemid250', 'midcap150',
   'smallcap250', 'nifty100ew', 'nifty50ew'];
+// The lump-sum check opens with one index per company size; the others are a click away.
+const KEY_INDICES = ['nifty50', 'midcap150', 'smallcap250'];
 const ZONE_CHIP = { low: 'pos', mid: 'info', high: 'warn' };
-const ZONE_RULE = {
-  low: 'Rule of thumb: a lump sum can go in at once or over a short spell.',
-  mid: 'Rule of thumb: either works; spreading it over 3 to 6 months is a common middle path.',
-  high: 'Rule of thumb: spread a lump sum over 6 to 12 months.',
-};
+// Labels as published (pipeline/mf_valuation.py ZONES), with the rule of thumb for each.
+const ZONES = [
+  ['low', 'Cheaper than usual', 'A lump sum can go in at once or over a short spell.'],
+  ['mid', 'Around usual', 'Either works; spreading it over 3 to 6 months is a common middle path.'],
+  ['high', 'More expensive than usual', 'Spread a lump sum over 6 to 12 months.'],
+];
 
 // ── Formatting ──
 const signed = (v, digits) => `${v < 0 ? '−' : ''}${Math.abs(v).toFixed(digits)}%`;
@@ -102,11 +105,13 @@ const valuationOf = (g) => state.snap.valuation?.indices?.find((v) => v.key === 
 renderShell('mf', { showCurrency: false, onAdminRefreshed: () => reload(true) });
 document.querySelectorAll('[data-trivia]').forEach((el) => renderTrivia(el, { seed: pageSeed(), pool: el.dataset.trivia || 'market' }));
 
-function zoneChip(ix, asButton = false) {
+// `short`: the zone alone, for rows that already name the index and its P/E.
+function zoneChip(ix, asButton = false, { short = false } = {}) {
   if (!ix?.zone) return '';
-  const inner = `<span class="dot"></span>${esc(ix.name)} P/E ${isNum(ix.pe) ? ix.pe.toFixed(1) : DASH}: ${esc(ix.zone_label)}`;
+  const inner = short ? `<span class="dot"></span>${esc(ix.zone_label)}`
+    : `<span class="dot"></span>${esc(ix.name)} P/E ${isNum(ix.pe) ? ix.pe.toFixed(1) : DASH}: ${esc(ix.zone_label)}`;
   return asButton
-    ? `<button class="chip ${ZONE_CHIP[ix.zone]} chip-btn" type="button" data-scroll="lumpsum-card"
+    ? `<button class="chip ${ZONE_CHIP[ix.zone]} chip-btn" type="button" data-scroll="val-${esc(ix.key)}"
         title="See the lump-sum check below">${inner}</button>`
     : `<span class="chip ${ZONE_CHIP[ix.zone]}">${inner}</span>`;
 }
@@ -152,29 +157,30 @@ function renderNav() {
     return `<div class="group-row"><span class="group-kind">${title}</span>
       <div class="view-switch" role="group" aria-label="${title}">${groups.map((g) => `
         <button class="view-btn" type="button" data-group="${esc(g.key)}" aria-pressed="${g.key === state.group}"
-          title="${esc(g.label)}: ${g.stats.ranked} of ${g.stats.funds} ranked"><span>${esc(g.short)}</span><span
-          class="view-count">${g.stats.ranked}</span></button>`).join('')}</div></div>`;
+          title="${esc(g.label)}: ${g.stats.ranked} of ${g.stats.funds} ranked">${esc(g.short)}</button>`).join('')}</div></div>`;
   };
   const options = kinds.map(([kind, title]) => `<optgroup label="${title}">${state.snap.groups
     .filter((g) => g.kind === kind).map((g) => `<option value="${esc(g.key)}"${g.key === state.group ? ' selected' : ''}>${
-      esc(g.short)} (${g.stats.ranked} ranked)</option>`).join('')}</optgroup>`).join('');
-  els.nav.innerHTML = `<label class="field group-select">Fund group<select id="group-select">${options}</select></label>
+      esc(g.short)}</option>`).join('')}</optgroup>`).join('');
+  els.nav.innerHTML = `<div class="card-head"><h2>Pick a type of fund</h2>
+      <span class="hint">Index funds copy an index at low cost; active funds pay a manager to pick shares.</span></div>
+    <label class="field group-select">Fund group<select id="group-select">${options}</select></label>
     ${kinds.map(([kind, title]) => row(kind, title)).join('')}`;
   els.nav.querySelector('#group-select').addEventListener('change', (e) => selectGroup(e.target.value));
 }
 
-// ── Verdict: the top-ranked fund and how the decision was made ──
+// ── Verdict: the top-ranked fund up front; how the decision was made one click away ──
 function renderVerdict() {
   const g = current();
   const ranked = g.funds.filter((f) => f.rank);
   const top = ranked[0];
   const val = valuationOf(g);
+  const keep = openMores(els.verdict);
   const head = `<div class="verdict-head">
       <div><div class="eyebrow">${g.kind === 'index' ? 'Index funds' : 'Active funds'}${g.benchmark
         ? ` · ${g.kind === 'index' ? 'tracking' : 'benchmark'} ${esc(g.benchmark)}` : ''}</div>
         <h2 class="verdict-title">${esc(g.label)}</h2>
-        <p class="verdict-about">${esc(g.about)} ${g.stats.funds} direct plan${g.stats.funds === 1 ? '' : 's'}, ${
-          g.stats.ranked} ranked.</p></div>
+        <p class="verdict-about">${esc(g.about)}</p></div>
       ${zoneChip(val, true)}
     </div>`;
   if (!top) {
@@ -191,7 +197,8 @@ function renderVerdict() {
       at least 5 years of history are scored out of 100 against each other: how often their 3-year return beat the
       category median at month-ends over the last 5 years (30%), 3- and 5-year returns (20%), return per unit of
       risk (20%), the worst fall in 5 years (15%) and the expense ratio (15%).`;
-  const next = ranked.slice(1, 3).map((f) => `#${f.rank} ${esc(f.name)} (${f.score.toFixed(1)})`).join(', ');
+  const runners = ranked.slice(1, 3).map((f) => `<button class="linkish" type="button" data-open="${f.code}">#${
+    f.rank} ${esc(f.name)}</button> <span class="muted">${f.score.toFixed(1)}</span>`).join(' · ');
   els.verdict.innerHTML = `${head}
     <div class="verdict-top">
       <div class="verdict-rank">#1</div>
@@ -200,16 +207,18 @@ function renderVerdict() {
         <div class="small muted">${esc(top.amc)} · score ${top.score.toFixed(1)} out of 100</div></div>
       <button class="btn alt small verdict-open" type="button" data-open="${top.code}">Full breakdown</button>
     </div>
-    <h3>How we decided</h3>
-    <p>${how}</p>
-    <h3>Why ${esc(top.name)} comes first</h3>
-    ${list(top.reasons)}
     ${top.notes?.length ? list(top.notes, 'reasons notes') : ''}
     <div class="facts">${g.kind === 'index' ? indexFacts(g, top) : activeFacts(g, top)}</div>
-    ${g.kind === 'index' ? gapCalc(g, top, ranked) : indexCheck(g)}
-    <p class="small muted">${next ? `Next: ${next}. ` : ''}Rank 1 is where these rules land on the latest data, not a
-      promise: scores move as returns, costs and fund sizes change. Check the scheme documents, exit load and taxes
-      before investing.</p>`;
+    ${runners ? `<p class="runners">Runners-up: ${runners}</p>` : ''}
+    <div class="more-list">
+      ${top.reasons?.length ? more('why', `Why ${esc(top.name)} comes first`, list(top.reasons), keep.has('why')) : ''}
+      ${more('how', 'How these funds are compared', `<p>${how}</p>
+        <p>Scores move as returns, costs and fund sizes change.</p>`, keep.has('how'))}
+      ${g.kind === 'index' ? more('gap', 'What the gap to the index is worth on a SIP', gapCalc(), keep.has('gap'))
+        : indexCheck(g, keep)}
+    </div>
+    <p class="small muted">Rank 1 is where these rules land on the latest data, not a promise. Check the scheme
+      documents, exit load and taxes before investing.</p>`;
   bindGapCalc(g, top, ranked);
 }
 
@@ -242,7 +251,6 @@ function activeFacts(g, top) {
 
 function gapCalc() {
   return `<div class="gap-calc">
-    <h3>What the gap is worth</h3>
     <div class="gap-inputs">
       <label>A SIP of ₹ <input type="number" id="gap-amount" min="500" step="500" inputmode="numeric"
         value="${state.calc.amount}" aria-label="Monthly SIP in rupees"></label>
@@ -282,7 +290,7 @@ function bindGapCalc(g, top, ranked) {
   update();
 }
 
-function indexCheck(g) {
+function indexCheck(g, keep) {
   const s = g.stats;
   const ic = g.index_check;
   const proxyGroup = ic ? groupByKey(ic.group) : null;
@@ -295,8 +303,7 @@ function indexCheck(g) {
       (it beat the category median in ${ic.consistency.beat} of ${ic.consistency.of} rolling 3-year periods).`
     : '';
   if (!beat && !check) return '';
-  return `<div class="gap-calc"><h3>Index check: is an active fund worth it here?</h3>
-    <p>${check} ${beat}</p></div>`;
+  return more('check', 'Index check: is an active fund worth it here?', `<p>${check} ${beat}</p>`, keep.has('check'));
 }
 
 // ── Funds table ──
@@ -361,36 +368,39 @@ function sortedFunds(g, columns) {
   });
 }
 
-function detail(f, g) {
+function detail(f, g, keep = new Set()) {
   const left = [section(f.rank ? 'Why it ranks here' : 'Why it is not ranked',
     `${f.status_reason ? `<p class="muted" style="margin:0 0 8px">${esc(f.status_reason)}</p>` : ''}${list(f.reasons)}`)];
   if (f.notes?.length) left.push(section('Worth knowing', list(f.notes)));
   const ret = (p) => `${pct1(f.returns[p])} <span class="muted">vs ${pct1(f.benchmark_returns?.[p])}</span>`;
-  const numbers = [
-    ['Return 1 year', ret('1y')], ['Return 3 years, a year', ret('3y')],
-    ['Return 5 years, a year', ret('5y')], ['Return 10 years, a year', ret('10y')],
+  // The numbers most readers want first; the rest fold under "More numbers".
+  const key = [
+    ['Return 1 year', ret('1y')], ['Return 3 years, a year', ret('3y')], ['Return 5 years, a year', ret('5y')],
   ];
+  const rest = [['Return 10 years, a year', ret('10y')]];
   if (g.kind === 'index') {
-    numbers.push(['Gap 1 year', gapPct(td(f, '1y'))], ['Gap 3 years, a year', gapPct(td(f, '3y'))],
-      ['Gap 5 years, a year', gapPct(td(f, '5y'))],
+    key.push(['Gap 1 year', gapPct(td(f, '1y'))], ['Gap 3 years, a year', gapPct(td(f, '3y'))]);
+    rest.push(['Gap 5 years, a year', gapPct(td(f, '5y'))],
       ['Tracking error', `${pct2(f.tracking_error)}${f.tracking_error_as_of ? ` <span class="muted">(${esc(tradingDay(f.tracking_error_as_of))})</span>` : ''}`]);
   } else {
-    numbers.push(['Consistency', f.consistency?.of ? `${f.consistency.beat} of ${f.consistency.of} (${pct1(f.consistency.pct)})` : DASH],
-      ['Volatility, 5 years', pct1(f.volatility)], ['Worst fall, 5 years', fall(f.max_drawdown)],
+    key.push(['Consistency', f.consistency?.of ? `${f.consistency.beat} of ${f.consistency.of} (${pct1(f.consistency.pct)})` : DASH],
+      ['Worst fall, 5 years', fall(f.max_drawdown)]);
+    rest.push(['Volatility, 5 years', pct1(f.volatility)],
       ['Return per unit of risk', isNum(f.return_per_risk) ? f.return_per_risk.toFixed(2) : DASH]);
   }
-  numbers.push(
+  key.push(
     ['Expense ratio', `${pct2(f.ter)}${f.ter_date ? ` <span class="muted">(${esc(tradingDay(f.ter_date))})</span>` : ''}`],
-    ['Fund size', crore(f.aum_cr)],
+    ['Fund size', crore(f.aum_cr)], ['Riskometer', esc(f.riskometer || DASH)],
+  );
+  rest.push(
     ['NAV', isNum(f.nav) ? `₹${f.nav.toLocaleString('en-IN', { maximumFractionDigits: 4 })} <span class="muted">(${esc(tradingDay(f.nav_date))})</span>` : DASH],
-    ['Direct plan since', f.since ? esc(tradingDay(f.since)) : DASH],
-    ['Riskometer', esc(f.riskometer || DASH)], ['Benchmark', esc(f.benchmark || DASH)],
+    ['Direct plan since', f.since ? esc(tradingDay(f.since)) : DASH], ['Benchmark', esc(f.benchmark || DASH)],
     ['AMFI scheme code', esc(String(f.code))], ['ISIN', esc(f.isin || DASH)],
   );
   const right = [
     section(`Score breakdown${isNum(f.score) ? ` · ${f.score.toFixed(1)}` : ''}`,
       bars(COMPONENTS[g.kind].map(([k, label, w]) => ({ label: `${label} (${w}%)`, value: f.components?.[k] })))),
-    section('Key numbers', kv(numbers)),
+    section('Key numbers', kv(key) + more(`nums-${f.code}`, 'More numbers', kv(rest), keep.has(`nums-${f.code}`))),
   ];
   return `<div>${left.join('')}</div><div>${right.join('')}</div>`;
 }
@@ -401,7 +411,7 @@ function renderFunds() {
   els.funds.hidden = false;
   els.funds.innerHTML = `<details class="fold"${isOpen(els.funds, false) ? ' open' : ''}>
     <summary><h2>All ${esc(g.label)} (${g.funds.length})</h2>
-      <span class="hint">Every fund in this group with its numbers: sort, search, and click a fund for its full breakdown.</span></summary>
+      <span class="hint">Sort, search, and click a fund for its full breakdown</span></summary>
     <div class="toolbar">
       <input type="search" id="fund-q" placeholder="Search fund or fund house" aria-label="Search fund or fund house"
         value="${esc(state.query)}">
@@ -430,13 +440,15 @@ function renderRows() {
   const g = current();
   const columns = COLUMNS[g.kind];
   const rows = sortedFunds(g, columns);
+  const tbody = els.funds.querySelector('tbody');
+  const keep = openMores(tbody);
   els.funds.querySelectorAll('th[data-key]').forEach((th) => th.setAttribute('aria-sort', th.dataset.key === state.sort.key
     ? (state.sort.dir > 0 ? 'ascending' : 'descending') : 'none'));
-  els.funds.querySelector('tbody').innerHTML = rows.length ? rows.map((f) => {
+  tbody.innerHTML = rows.length ? rows.map((f) => {
     const open = state.open.has(f.code);
     return `<tr class="row${open ? ' open' : ''}${f.rank ? '' : ' unranked'}" data-code="${f.code}">${columns.map((c) =>
       `<td class="${[c.cls, c.right ? 'right' : '', c.opt ? 'opt' : ''].filter(Boolean).join(' ')}">${c.render(f, open)}</td>`).join('')}</tr>${
-      open ? `<tr class="detail-row"><td colspan="${columns.length}"><div class="detail">${detail(f, g)}</div></td></tr>` : ''}`;
+      open ? `<tr class="detail-row"><td colspan="${columns.length}"><div class="detail">${detail(f, g, keep)}</div></td></tr>` : ''}`;
   }).join('') : `<tr><td colspan="${columns.length}" class="empty">No fund here matches “${esc(state.query)}”.</td></tr>`;
   els.funds.querySelector('#fund-count').textContent = rows.length === g.funds.length
     ? `${rows.length} funds` : `Showing ${rows.length} of ${g.funds.length}`;
@@ -464,7 +476,7 @@ function renderIntro() {
   const stats = document.getElementById('mf-stats');
   if (stats) {
     stats.innerHTML = `<strong>${s.stats.funds}</strong> direct plans · <strong>${s.stats.amcs}</strong> fund houses ·
-      <strong>${s.stats.groups}</strong> groups · refreshed every Saturday from AMFI data`;
+      <strong>${s.stats.groups}</strong> groups · <a href="#how" data-jump="how">How the comparison works</a>`;
   }
   const teaser = (key, html) => {
     const el = app.querySelector(`[data-teaser="${key}"]`);
@@ -500,6 +512,13 @@ function jumpTo(section, { smooth = true } = {}) {
   if (window.location.hash !== hash) window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}${hash}`);
 }
 
+// Opens every fold around `el` (a section, or a row inside "more indices") and scrolls to it.
+function reveal(el) {
+  if (!el) return;
+  for (let d = el.closest('details'); d; d = d.parentElement?.closest('details')) d.open = true;
+  el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 // ── SIP split by age and risk ──
 function renderPlan() {
   const { age, risk, amount } = state.plan;
@@ -512,6 +531,7 @@ function renderPlan() {
     data-value="${item.key}" aria-pressed="${item.key === chosen}">${esc(item.label)}</button>`).join('');
   const small = groupByKey('smallcap')?.stats.median_drawdown;
   const large = groupByKey('largecap')?.stats.median_drawdown;
+  const keep = openMores(els.plan);
   els.plan.hidden = false;
   els.plan.innerHTML = `<details class="fold"${isOpen(els.plan, true) ? ' open' : ''}>
     <summary><h2>SIP split by age and risk</h2><span class="hint">A rule-of-thumb starting point, by fund category</span></summary>
@@ -536,9 +556,7 @@ function renderPlan() {
         <p class="small muted" style="margin:8px 0 0">Shares ${equity}% · debt and safe savings ${100 - equity}%.</p>
       </div>
     </div>
-    <div class="prose">
-      <h3>How the split is built</h3>
-      <ol>
+    <div class="more-list plan-more">${more('split', 'How this split is worked out', `<ol>
         <li><strong>Shares versus safety.</strong> The share in equity funds is about 100 minus your age for a balanced
           investor, 15 points less if you are cautious and 15 more if you are aggressive. Money you will need within about
           five years belongs in the debt slice, whatever your age.</li>
@@ -551,10 +569,9 @@ function renderPlan() {
           slices shrink as you get older or more cautious.</li>
         <li><strong>The cushion.</strong> EPF, PPF, fixed deposits or debt funds make up the rest. Once a year, move money
           back to your split.</li>
-      </ol>
-      <p class="small muted">A general rule of thumb for illustration, not advice for your situation: it does not know
-        your goals, income, loans, emergency fund or existing investments.</p>
-    </div></details>`;
+      </ol>`, keep.has('split'))}</div>
+    <p class="small muted" style="margin:10px 0 0">A general rule of thumb for illustration, not advice for your
+      situation: it does not know your goals, income, loans, emergency fund or existing investments.</p></details>`;
   els.plan.querySelector('#plan-amount').addEventListener('change', (e) => {
     state.plan.amount = Math.max(0, Math.round(Number(e.target.value) || 0));
     savePlan();
@@ -572,44 +589,55 @@ function renderLumpSum() {
   const indices = (v?.indices || []).slice().sort((a, b) => VALUATION_ORDER.indexOf(a.key) - VALUATION_ORDER.indexOf(b.key));
   if (!indices.length) { els.lumpsum.hidden = true; return; }
   els.lumpsum.hidden = false;
+  const keep = openMores(els.lumpsum);
+  let main = indices.filter((ix) => KEY_INDICES.includes(ix.key));
+  if (!main.length) main = indices.slice(0, KEY_INDICES.length);
+  const rest = indices.filter((ix) => !main.includes(ix));
   const row = (ix) => {
     const lo = ix.min;
     const hi = ix.max;
     const spread = isNum(lo) && isNum(hi) && hi > lo;
     const at = (x) => Math.max(0, Math.min(100, ((x - lo) / (hi - lo)) * 100)).toFixed(1);
     const linked = state.snap.groups.filter((g) => g.valuation === ix.key);
-    return `<div class="val-row">
+    return `<div class="val-row" id="val-${esc(ix.key)}">
       <div class="val-name"><strong>${esc(ix.name)}</strong>
-        <span class="small muted">P/E ${isNum(ix.pe) ? ix.pe.toFixed(1) : DASH} on ${esc(tradingDay(ix.date))}</span></div>
+        <span class="small muted">P/E ${isNum(ix.pe) ? ix.pe.toFixed(1) : DASH}${ix.date && ix.date !== v.as_of
+          ? ` on ${esc(tradingDay(ix.date))}` : ''}</span></div>
       <div class="val-range">${spread ? `<div class="range pe-range"><div class="track">
           ${isNum(ix.median) ? `<span class="tick" style="left:${at(ix.median)}%" title="Median ${ix.median.toFixed(1)}"></span>` : ''}
           <span class="marker" style="left:${at(ix.pe)}%" title="Now ${ix.pe.toFixed(1)}"></span></div>
           <div class="ends"><span>low ${lo.toFixed(1)}</span><span>median ${isNum(ix.median) ? ix.median.toFixed(1) : DASH}</span><span>high ${hi.toFixed(1)}</span></div></div>`
         : '<span class="small muted">Not enough history yet.</span>'}</div>
-      <div class="val-zone">${zoneChip(ix) || '<span class="chip">No reading</span>'}
+      <div class="val-zone">${zoneChip(ix, false, { short: true }) || '<span class="chip">No reading</span>'}
         <span class="small muted">${esc(percentileText(ix))}</span></div>
-      <div class="val-rule small">${esc(ZONE_RULE[ix.zone] || 'Not enough history to judge.')}${linked.length
-        ? ` <span class="val-groups">${linked.map((g) => groupLink(g.key)).join(' ')}</span>` : ''}</div>
+      ${linked.length ? `<div class="val-links small">${linked.map((g) => groupLink(g.key)).join(' ')}</div>` : ''}
     </div>`;
   };
   els.lumpsum.innerHTML = `<details class="fold"${isOpen(els.lumpsum, true) ? ' open' : ''}>
     <summary><h2>Lump sum check: are markets cheap or expensive?</h2>
       <span class="hint">Index P/E against its own history${v.as_of ? ` · ${esc(tradingDay(v.as_of))}` : ''}</span></summary>
-    <div class="prose" style="max-width:none">
-      <p>Lump sum or spread it out? A 2012 Vanguard study of the US, UK and Australian markets found that investing a
-        lump sum at once beat spreading it over 12 months about two times in three, because markets rise more often than
-        they fall. Spreading it out, for example through a systematic transfer plan (STP) from a liquid fund, mainly
-        limits regret if prices drop soon after. A common middle path uses valuations as a tie-breaker: invest sooner
-        when an index is cheaper than usual, and spread the money out when it is more expensive than usual. A SIP already
-        spreads money over time, so this check matters little for SIPs.</p>
+    <dl class="zone-legend" aria-label="Rule of thumb for a lump sum">
+      ${ZONES.map(([zone, label, rule]) => `<dt><span class="chip ${ZONE_CHIP[zone]}"><span
+        class="dot"></span>${esc(label)}</span></dt><dd>${esc(rule)}</dd>`).join('')}
+    </dl>
+    <div class="val-list">${main.map(row).join('')}</div>
+    <div class="more-list">
+      ${rest.length ? more('indices', `${rest.length} more ${rest.length === 1 ? 'index' : 'indices'}`,
+        `<div class="val-list">${rest.map(row).join('')}</div>`, keep.has('indices')) : ''}
+      ${more('research', 'Lump sum or spread it out? What the research says', `<p>A 2012 Vanguard study of the US, UK
+        and Australian markets found that investing a lump sum at once beat spreading it over 12 months about two times
+        in three, because markets rise more often than they fall. Spreading it out, for example through a systematic
+        transfer plan (STP) from a liquid fund, mainly limits regret if prices drop soon after. A common middle path uses
+        valuations as a tie-breaker: invest sooner when an index is cheaper than usual, and spread the money out when it
+        is more expensive than usual. A SIP already spreads money over time, so this check matters little for SIPs.</p>`,
+        keep.has('research'))}
+      ${more('pe', 'How the check works', `<p>Each index's price-to-earnings ratio (P/E) is compared with its own
+        P/E at every month-end since April 2021: NSE has computed index P/E from consolidated profits since 31 March 2021,
+        so earlier figures are not comparable. “Cheaper than usual” means lower than at least 70% of those month-ends,
+        “more expensive than usual” higher than at least 70%. P/E is a rough gauge: profits can change quickly, and cheap
+        can get cheaper. The Sensex group uses the Nifty 50 reading. Factor indices (momentum, low volatility, alpha) are
+        left out: they swap most of their stocks at each rebalance, so their P/E history says little.</p>`, keep.has('pe'))}
     </div>
-    <div class="val-list">${indices.map(row).join('')}</div>
-    <p class="small muted" style="margin:10px 0 0">Each index's price-to-earnings ratio (P/E) is compared with its own
-      P/E at every month-end since April 2021: NSE has computed index P/E from consolidated profits since 31 March 2021,
-      so earlier figures are not comparable. “Cheaper than usual” means lower than at least 70% of those month-ends,
-      “more expensive than usual” higher than at least 70%. P/E is a rough gauge: profits can change quickly, and cheap
-      can get cheaper. The Sensex group uses the Nifty 50 reading. Factor indices (momentum, low volatility, alpha) are
-      left out: they swap most of their stocks at each rebalance, so their P/E history says little.</p>
   </details>`;
 }
 
@@ -737,7 +765,7 @@ app.addEventListener('click', (e) => {
   }
   const scrollBtn = e.target.closest('button[data-scroll]');
   if (scrollBtn) {
-    document.getElementById(scrollBtn.dataset.scroll)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    reveal(document.getElementById(scrollBtn.dataset.scroll));
     return;
   }
   const planBtn = e.target.closest('button[data-plan]');

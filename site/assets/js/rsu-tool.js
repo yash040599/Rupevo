@@ -4,7 +4,7 @@
 // shares sold. The files never leave the device: they are parsed here and kept
 // in memory.
 import './tax.js';
-import { esc, loadJSON, siteUrl, toast } from './core.js';
+import { esc, loadJSON, more, siteUrl, toast } from './core.js';
 import { fillContactLinks } from './shell.js';
 import { fmtDay, istWallClock } from './fy.js';
 import { detectExport, parseClosedLots, parseOpenLots } from './fidelity.js';
@@ -155,9 +155,9 @@ function skeleton() {
           <label><input type="radio" name="cg-espp-basis" value="paid"> the price you paid</label>
         </fieldset>
         <div class="controls-row">${rateField('Your slab rate, for the tax estimate')}</div>
-        <p class="small muted" style="margin:10px 0 0">The rate only changes the estimate of Indian tax in Schedule FSI:
-          short-term gains at this rate, long-term gains at 12.5% plus cess (and surcharge, capped at 15%). It is the
-          same setting as on the Dividends tab.</p>
+        ${more('cg-rate', 'What does this rate change?', `<p>The rate only changes the estimate of Indian
+          tax in Schedule FSI: short-term gains at this rate, long-term gains at 12.5% plus cess (and surcharge, capped
+          at 15%). It is the same setting as on the Dividends tab.</p>`)}
       </section>
       <div id="cg-results"></div>
       ${cgMethod()}
@@ -176,9 +176,9 @@ function skeleton() {
             </select>
           </label>
         </div>
-        <p class="small muted" style="margin:10px 0 0">The rate only changes the foreign tax credit, which is capped
-          at the Indian tax on the dividends. Most people with RSUs are in the 30% slab; if your CA uses your average
-          rate instead, choose “Another rate”.</p>
+        ${more('div-rate', 'What do these rates change?', `<p>The rate only changes the foreign tax
+          credit, which is capped at the Indian tax on the dividends. Most people with RSUs are in the 30% slab; if your
+          CA uses your average rate instead, choose “Another rate”.</p>`)}
       </section>
       <div id="div-results"></div>
       <section class="card" id="div-history"><span class="skel" style="width:40%"></span><span class="skel"></span></section>
@@ -320,7 +320,9 @@ function itrChecklistHtml() {
     ['Form 67', 'Filed separately on the e-filing portal, before the ITR', [div]],
   ];
   return `<section class="card">
-    <div class="card-head"><h2>Your ITR checklist for ${esc(company.short)} shares</h2></div>
+    <details class="fold">
+    <summary><h2>Your ITR checklist for ${esc(company.short)} shares</h2>
+      <span class="hint">Where each value goes in the return</span></summary>
     <div class="table-scroll"><table class="fa checklist-table">
       <thead><tr><th class="left">Where in the ITR</th><th class="left">What goes there</th><th class="left">On this page</th></tr></thead>
       <tbody>${rows.map(([where, what, links]) => `<tr><td class="left"><strong>${where}</strong></td>
@@ -334,6 +336,7 @@ function itrChecklistHtml() {
     </table></div>
     <p class="small muted" style="margin:10px 0 0">Use <strong>ITR-2</strong> (or ITR-3 with business income): ITR-1
       and ITR-4 cannot report foreign assets or income.</p>
+    </details>
   </section>`;
 }
 
@@ -569,9 +572,6 @@ function placeholder(what) {
   return `<section class="card empty-state">
     <p style="margin:0"><strong>Load your Fidelity exports in step 2</strong> to see ${what}. They are read on your
       device and never uploaded.</p>
-    <p class="small muted" style="margin:8px 0 0">For complete results load both <strong>View open lots.csv</strong>
-      and <strong>View closed lots.csv</strong>. If you have never sold or transferred any shares, View open lots.csv
-      alone is enough.</p>
     <p style="margin:8px 0 0"><a href="#step2" data-scroll="step2">Go to step 2 ↑</a></p>
   </section>`;
 }

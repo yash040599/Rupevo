@@ -37,6 +37,14 @@ export function signedPct(v, digits = 1) {
 export const tone = (v) => (!isNum(v) || v === 0 ? '' : v > 0 ? 'pos' : 'neg');
 export const toned = (v, digits = 1) => `<span class="${tone(v)}">${signedPct(v, digits)}</span>`;
 
+// ── "More details": explanations and fine print stay one click away ──
+/** A collapsed disclosure. `summary` and `body` are HTML; `key` lets a re-render keep it open (openMores). */
+export const more = (key, summary, body, open = false) => `<details class="more" data-more="${esc(key)}"${
+  open ? ' open' : ''}><summary>${summary}</summary><div class="more-body">${body}</div></details>`;
+/** Keys of the open disclosures in `root`, read before re-rendering it. */
+export const openMores = (root) => new Set([...(root?.querySelectorAll('details.more[open][data-more]') || [])]
+  .map((d) => d.dataset.more));
+
 // ── Currency: one global display preference, converted with the snapshot FX ──
 const CUR_KEY = 'rupevo-currency';
 const currencyState = { native: 'INR', rate: 0 };

@@ -3,7 +3,7 @@
 // two snapshots (NASDAQ-100 and NYSE top 100) through us-lists.js.
 import {
   DASH, ago, currency, dataUrl, esc, isNum, istDateTime, loadJSON, money, moneyCompact,
-  num, pct, sleep, toast, toned, tradingDay,
+  more, num, openMores, pct, sleep, store, toast, toned, tradingDay,
 } from './core.js';
 import { renderShell, showFx, syncCurrencyToggle } from './shell.js';
 import { handleRefreshLink, isAdmin, startRefresh } from './admin.js';
@@ -25,6 +25,13 @@ const list = (items) => (items?.length
   ? `<ul class="reasons">${items.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>` : '');
 const kv = (pairs) => `<dl class="kv">${pairs
   .map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${v}</dd></div>`).join('')}</dl>`;
+// The first `n` numbers, and the rest under "More numbers" (kept open across re-renders by `key`).
+const kvMore = (pairs, n, key, keep) => kv(pairs.slice(0, n)) + (pairs.length > n
+  ? more(key, `${pairs.length - n} more numbers`, kv(pairs.slice(n)), keep.has(key)) : '');
+// Ranking tables show this many rows until "Show all"; "More columns" is remembered per browser.
+const TOP_ROWS = 25;
+const COLUMNS_KEY = 'rupevo-all-columns';
+const allColumns = () => store.get(COLUMNS_KEY) === '1';
 const trendLabel = (state) => ({ GOLDEN_CROSS: 'Golden cross',
   DEATH_CROSS: 'Death cross' }[state] || DASH);
 const dipCell = (v) => {
@@ -122,7 +129,7 @@ const INDIA = {
       render: (r) => toned(r.change_1d_pct, 2) },
     { key: 'm1', label: '1M', align: 'right', desc: true, sort: (r) => r.return_1m_pct,
       render: (r) => toned(r.return_1m_pct) },
-    { key: 'dip', label: 'Below 52w high', align: 'right', desc: true,
+    { key: 'dip', label: 'Below 52w high', align: 'right', opt: true, desc: true,
       title: 'Distance below the highest close of the last 252 sessions',
       sort: (r) => r.below_52w_high_pct, render: (r) => dipCell(r.below_52w_high_pct) },
     { key: 'rsi', label: 'RSI', align: 'right', opt: true, desc: true, sort: (r) => r.rsi,
@@ -167,7 +174,7 @@ const INDIA = {
     ].join('');
   },
 
-  detail(r) {
+  detail(r, keep = new Set()) {
     const left = [];
     if (r.status === 'ranked') {
       left.push(section('Why it ranks here', list(r.reasons)));
@@ -188,11 +195,12 @@ const INDIA = {
     }
     const right = [
       range52(r),
-      section('Key numbers', kv([
+      section('Key numbers', kvMore([
         ['Close', money(r.close)], ['Day change', toned(r.change_1d_pct, 2)],
         ['Return 1M', toned(r.return_1m_pct)], ['Return 3M', toned(r.return_3m_pct)],
         ['Return 6M', toned(r.return_6m_pct)], ['Return 12M', toned(r.return_12m_pct)],
-        ['Momentum (12-1)', toned(r.momentum_12_1_pct)], ['RS vs NIFTY (60d)', toned(r.rs_vs_benchmark_pct)],
+        ['RS vs NIFTY (60d)', toned(r.rs_vs_benchmark_pct)], ['Industry (NSE)', esc(r.industry || DASH)],
+        ['Momentum (12-1)', toned(r.momentum_12_1_pct)],
         ['RS vs NIFTY (3M)', toned(r.rs_3m_pct)], ['RS vs NIFTY (6M)', toned(r.rs_6m_pct)],
         ['RSI (14)', num(r.rsi, 1)], ['ADX (14)', num(r.adx, 1)],
         ['ATR % of price', pct(r.atr_pct, 2)], ['Volume vs 20-day avg', isNum(r.volume_ratio) ? `${num(r.volume_ratio, 2)}×` : DASH],
@@ -201,9 +209,8 @@ const INDIA = {
         ['Weekly trend', r.weekly_trend_up === true ? 'Rising' : r.weekly_trend_up === false ? 'Falling' : DASH],
         ['Volatility (90d, ann.)', pct(r.volatility_90d_pct)], ['Max drawdown (1y)', pct(r.max_drawdown_1y_pct)],
         ['Sharpe (1y)', num(r.sharpe_1y, 2)], ['Beta vs NIFTY', num(r.beta, 2)],
-        ['Avg daily traded value', moneyCompact(r.avg_turnover)],
-        ['Industry (NSE)', esc(r.industry || DASH)], ['Last trading day', tradingDay(r.last_date)],
-      ])),
+        ['Avg daily traded value', moneyCompact(r.avg_turnover)], ['Last trading day', tradingDay(r.last_date)],
+      ], 8, `nums-${r.symbol}`, keep)),
       `<div class="links">
         <a href="https://www.nseindia.com/get-quotes/equity?symbol=${encodeURIComponent(r.symbol)}" target="_blank" rel="noopener">NSE quote ↗</a>
         <a href="https://finance.yahoo.com/quote/${encodeURIComponent(`${r.symbol}.NS`)}" target="_blank" rel="noopener">Yahoo Finance ↗</a>
@@ -339,7 +346,7 @@ const US = {
     ].join('');
   },
 
-  detail(r) {
+  detail(r, keep = new Set()) {
     const f = r.fundamentals || {};
     const left = [];
     if (r.status === 'ranked') {
@@ -358,31 +365,32 @@ const US = {
     }
     const right = [
       range52(r),
-      r.status === 'ranked' ? section('Fundamentals', kv([
+      r.status === 'ranked' ? section('Fundamentals', kvMore([
         ['Market cap', moneyCompact(f.market_cap)], ['P/E (trailing)', num(f.trailing_pe, 1)],
-        ['P/E (forward)', num(f.forward_pe, 1)], ['EV / EBITDA', num(f.ev_to_ebitda, 1)],
-        ['Price / book', num(f.price_to_book, 1)], ['FCF yield', pct(f.fcf_yield_pct)],
-        ['Dividend yield', pct(f.dividend_yield_pct, 2)], ['Return on equity', pct(f.roe_pct)],
-        ['Return on assets', pct(f.roa_pct)], ['Gross margin', pct(f.gross_margin_pct)],
-        ['Operating margin', pct(f.operating_margin_pct)], ['Net margin', pct(f.net_margin_pct)],
-        ['FCF margin', pct(f.fcf_margin_pct)], ['Revenue growth', toned(f.revenue_growth_pct)],
-        ['Earnings growth', toned(f.earnings_growth_pct)],
+        ['P/E (forward)', num(f.forward_pe, 1)], ['Dividend yield', pct(f.dividend_yield_pct, 2)],
+        ['Return on equity', pct(f.roe_pct)], ['Net margin', pct(f.net_margin_pct)],
+        ['Revenue growth', toned(f.revenue_growth_pct)],
         ['Debt / equity', isNum(f.debt_to_equity) ? `${num(f.debt_to_equity, 2)}×` : DASH],
+        ['EV / EBITDA', num(f.ev_to_ebitda, 1)],
+        ['Price / book', num(f.price_to_book, 1)], ['FCF yield', pct(f.fcf_yield_pct)],
+        ['Return on assets', pct(f.roa_pct)], ['Gross margin', pct(f.gross_margin_pct)],
+        ['Operating margin', pct(f.operating_margin_pct)], ['FCF margin', pct(f.fcf_margin_pct)],
+        ['Earnings growth', toned(f.earnings_growth_pct)],
         ['Current ratio', num(f.current_ratio, 2)], ['Beta', num(f.beta, 2)],
         ['Industry', esc(f.industry || DASH)],
         ['Fundamentals as of', f.fetched_at ? tradingDay(f.fetched_at) : DASH],
-      ])) : '',
-      section('Price and momentum', kv([
+      ], 8, `fund-${r.symbol}`, keep)) : '',
+      section('Price and momentum', kvMore([
         ['Close', money(r.close)], ['Day change', toned(r.change_1d_pct, 2)],
         ['Return 1M', toned(r.return_1m_pct)], ['Return 3M', toned(r.return_3m_pct)],
-        ['Return 12M', toned(r.return_12m_pct)], ['Momentum (12-1)', toned(r.momentum_12_1_pct)],
-        ['RS vs S&P 500 (12M)', toned(r.rs_12m_pct)], ['RSI (14)', num(r.rsi, 1)],
+        ['Return 12M', toned(r.return_12m_pct)], ['RS vs S&P 500 (12M)', toned(r.rs_12m_pct)],
+        ['Momentum (12-1)', toned(r.momentum_12_1_pct)], ['RSI (14)', num(r.rsi, 1)],
         ['SMA 50', money(r.sma_50)], ['SMA 200', money(r.sma_200)],
         ['50/200-day structure', trendLabel(r.trend_state)],
         ['Volatility (90d, ann.)', pct(r.volatility_90d_pct)], ['Max drawdown (1y)', pct(r.max_drawdown_1y_pct)],
         ['Sharpe (1y)', num(r.sharpe_1y, 2)], ['Avg daily traded value', moneyCompact(r.avg_turnover)],
         ['Last trading day', tradingDay(r.last_date)],
-      ])),
+      ], 6, `price-${r.symbol}`, keep)),
       `<div class="links">${quoteLinks(r).map((l) =>
         `<a href="${esc(l.href)}" target="_blank" rel="noopener">${esc(l.label)} ↗</a>`).join('')}</div>`,
     ];
@@ -444,9 +452,11 @@ function compare(a, b) {
   return typeof a === 'string' ? a.localeCompare(b) : a - b;
 }
 
-function makeTable(host, { columns, rows, detail, empty, sort, filtersFn, context }) {
-  const state = { sort: { ...sort }, open: new Set() };
-  host.innerHTML = `<div class="table-scroll"><table class="rank">
+// `limit`: rows shown until the reader asks for all; not applied while `filtered()` is true (a search).
+// `onRender` gets { shown, matched } after every render, for the count beside the search box.
+function makeTable(host, { columns, rows, detail, empty, sort, filtersFn, context, limit = 0, filtered, onRender }) {
+  const state = { sort: { ...sort }, open: new Set(), all: false };
+  host.innerHTML = `<div class="table-scroll"><table class="rank compact${allColumns() ? ' all-cols' : ''}">
       <thead><tr>${columns.map((c) => `<th class="${c.align === 'right' ? 'right' : ''}${c.opt ? ' opt' : ''}"
         ${c.title ? `title="${esc(c.title)}"` : ''}${c.sort ? ` data-key="${c.key}"` : ''}>
         ${c.sort ? `<button class="sort" type="button">${esc(c.label)}</button>` : esc(c.label)}</th>`).join('')}</tr></thead>
@@ -470,15 +480,23 @@ function makeTable(host, { columns, rows, detail, empty, sort, filtersFn, contex
     headers.forEach((th) => th.setAttribute('aria-sort', th.dataset.key === state.sort.key
       ? (state.sort.dir > 0 ? 'ascending' : 'descending') : 'none'));
     const ctx = context ? context() : {};
-    tbody.innerHTML = list.length ? list.map((r) => {
+    const keep = openMores(tbody);
+    const capped = limit > 0 && !state.all && !filtered?.() && list.length > limit;
+    const shown = capped ? list.slice(0, limit) : list;
+    tbody.innerHTML = shown.length ? shown.map((r) => {
       const open = state.open.has(r.symbol);
       return `<tr class="row${open ? ' open' : ''}" data-symbol="${esc(r.symbol)}">${columns.map((c) =>
         `<td class="${[c.cls, c.align === 'right' ? 'right' : '', c.opt ? 'opt' : ''].filter(Boolean).join(' ')}">${
-          c.render(r, { ...ctx, open })}</td>`).join('')}</tr>${open ? detailRow(r) : ''}`;
-    }).join('') : `<tr><td colspan="${columns.length}" class="empty">${typeof empty === 'function' ? empty() : empty}</td></tr>`;
-    return list.length;
+          c.render(r, { ...ctx, open })}</td>`).join('')}</tr>${open ? detailRow(r, keep) : ''}`;
+    }).join('') + (capped ? `<tr class="show-more-row"><td colspan="${columns.length}"><button class="btn alt small"
+        type="button" data-show-all>Show all ${list.length}</button></td></tr>` : '')
+      : `<tr><td colspan="${columns.length}" class="empty">${typeof empty === 'function' ? empty() : empty}</td></tr>`;
+    const result = { shown: shown.length, matched: list.length };
+    onRender?.(result);
+    return result;
   };
-  const detailRow = (r) => `<tr class="detail-row"><td colspan="${columns.length}"><div class="detail">${detail(r)}</div></td></tr>`;
+  const detailRow = (r, keep) => `<tr class="detail-row"><td colspan="${columns.length}"><div class="detail">${
+    detail(r, keep)}</div></td></tr>`;
 
   headers.forEach((th) => th.querySelector('button').addEventListener('click', () => {
     const key = th.dataset.key;
@@ -487,6 +505,13 @@ function makeTable(host, { columns, rows, detail, empty, sort, filtersFn, contex
     render();
   }));
   tbody.addEventListener('click', (e) => {
+    if (e.target.closest('[data-show-all]')) {
+      state.all = true;
+      render();
+      // Keyboard focus moves to the first newly shown row instead of being lost with the button.
+      tbody.querySelectorAll('tr.row')[limit]?.querySelector('button.sym')?.focus({ preventScroll: true });
+      return;
+    }
     const tr = e.target.closest('tr.row');
     if (!tr || e.target.closest('a')) return;
     const sym = tr.dataset.symbol;
@@ -501,7 +526,7 @@ function makeTable(host, { columns, rows, detail, empty, sort, filtersFn, contex
     } else {
       state.open.add(sym);
       tr.classList.add('open');
-      tr.insertAdjacentHTML('afterend', detailRow(row));
+      tr.insertAdjacentHTML('afterend', detailRow(row, new Set()));
       btn?.setAttribute('aria-expanded', 'true');
     }
   });
@@ -644,7 +669,7 @@ export async function start(marketKey) {
         item(d, `${esc(d.previous)} → ${esc(d.now)}`)).join('')}</ul></div>`);
     }
     const since = c.compared_to?.data_through ? ` vs. prices of ${esc(tradingDay(c.compared_to.data_through))}` : '';
-    els.changes.innerHTML = `<details class="fold"${isOpen(els.changes, true) ? ' open' : ''}>
+    els.changes.innerHTML = `<details class="fold"${isOpen(els.changes, false) ? ' open' : ''}>
       <summary><h2>What changed</h2>
         ${c.compared_to ? `<span class="hint">${esc(c.summary)}${since}</span>` : ''}</summary>
       ${groups.length ? `<div class="changes">${groups.join('')}</div>`
@@ -679,25 +704,38 @@ export async function start(marketKey) {
       <div class="toolbar">
         <input type="search" id="q" placeholder="${esc(placeholder)}" aria-label="${esc(placeholder)}" value="${esc(filters.query)}">
         ${filterOptions}
+        <button class="btn alt small" type="button" id="cols-btn" aria-pressed="${allColumns()}"
+          title="Show or hide the extra columns of numbers">More columns</button>
         <span class="count" id="count"></span>
       </div>
       <div id="ranked-table"></div></details>`;
     const match = (r) => matchesQuery(r, filters.query)
       && M.filters.every((f) => !filters[f.key] || r[f.key] === filters[f.key]);
+    const count = els.rankedCard.querySelector('#count');
     rankedTable = makeTable(els.rankedCard.querySelector('#ranked-table'), {
       columns: M.columns, rows: () => snap.ranked, detail: M.detail, filtersFn: match,
       sort: { key: 'rank', dir: 1 }, empty: emptyRanked, context: () => ({ multi: Boolean(snap.multi) }),
+      // A typed search shows every match, so the stock looked for is never behind "Show all".
+      limit: TOP_ROWS, filtered: () => Boolean(filters.query.trim()),
+      onRender: ({ shown, matched }) => {
+        const total = snap.ranked.length;
+        count.textContent = shown === total ? `${total} shown`
+          : shown < matched && matched < total ? `Showing ${shown} of ${matched} matches`
+            : `Showing ${shown} of ${total}`;
+      },
     });
-    const count = els.rankedCard.querySelector('#count');
-    const refresh = () => {
-      const shown = rankedTable.render();
-      count.textContent = shown === snap.ranked.length ? `${shown} shown` : `Showing ${shown} of ${snap.ranked.length}`;
-    };
+    const refresh = () => rankedTable.render();
     els.rankedCard.querySelector('#q').addEventListener('input', (e) => { filters.query = e.target.value; refresh(); });
     els.rankedCard.querySelectorAll('select[data-filter]').forEach((sel) => sel.addEventListener('change', () => {
       filters[sel.dataset.filter] = sel.value;
       refresh();
     }));
+    els.rankedCard.querySelector('#cols-btn').addEventListener('click', (e) => {
+      const on = !allColumns();
+      store.set(COLUMNS_KEY, on ? '1' : '0');
+      e.currentTarget.setAttribute('aria-pressed', String(on));
+      app.querySelectorAll('table.rank').forEach((table) => table.classList.toggle('all-cols', on));
+    });
     rankedTable.refresh = refresh;
     refresh();
   }
