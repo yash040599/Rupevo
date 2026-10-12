@@ -1,17 +1,20 @@
-// Page chrome shared by every page: navigation, currency/theme toggles,
-// "Buy me a coffee" (nav, floating button on mobile, footer), footer with the
-// disclaimer and the admin entry point.
+// Page chrome shared by every page, app-style: a top app bar (brand, search, display toggles,
+// "Buy me a coffee"), a navigation rail on wide screens that becomes a bottom navigation bar on
+// phones, and a compact footer whose full disclaimer is one tap away.
 import { SITE } from './config.js';
 import { currency, esc, istDateTime, num, siteUrl, toggleTheme } from './core.js';
 import { openAdminPanel } from './admin.js';
 import { openCoffee } from './coffee.js';
+import { icon } from './icons.js';
 import { contactAddress, mailtoHref } from './mail.js';
+import { attachSearch, openSearchView } from './search.js';
 
 const NAV = [
-  { key: 'india', label: 'Nifty 100', href: 'india/', title: 'Indian Nifty 100 Ranking' },
-  { key: 'us', label: 'US stocks', href: 'us/', title: 'US Stock Ranking: NASDAQ-100 and NYSE top 100' },
-  { key: 'mf', label: 'Mutual funds', href: 'mf/', title: 'Mutual Fund Comparison: direct plans ranked within their group' },
-  { key: 'tax', label: 'Tax', href: 'tax/', title: 'Tax tools: RSU taxation and more' },
+  { key: 'home', label: 'Home', href: '', icon: 'home', title: 'Rupevo home' },
+  { key: 'india', label: 'Nifty 100', href: 'india/', icon: 'india', title: 'Indian Nifty 100 Ranking' },
+  { key: 'us', label: 'US stocks', href: 'us/', icon: 'us', title: 'US Stock Ranking: NASDAQ-100 and NYSE top 100' },
+  { key: 'mf', label: 'Funds', href: 'mf/', icon: 'funds', title: 'Mutual Fund Comparison' },
+  { key: 'tax', label: 'Tax', href: 'tax/', icon: 'tax', title: 'Tax tools: RSU taxation and more' },
 ];
 
 const DISCLAIMER = `<strong>Disclaimer.</strong> Rupevo is an independent, educational
@@ -25,71 +28,72 @@ const DISCLAIMER = `<strong>Disclaimer.</strong> Rupevo is an independent, educa
   The tax guides are general information, not tax or legal advice; tax rules change and depend
   on your circumstances, so verify with a chartered accountant before filing.`;
 
+const SOURCES = `Prices and fundamentals: Yahoo Finance (end of day). Index lists: NSE India, Nasdaq
+  (NASDAQ-100; NYSE listings for the NYSE top 100). Mutual funds: AMFI (NAVs, returns, expense ratios,
+  tracking error), mfapi.in (NAV history), NSE India (index P/E). Not affiliated with any exchange, data
+  provider, fund house, broker or employer.`;
+
+const searchForm = (cls, placeholder) => `<form class="search-field ${cls}" role="search" autocomplete="off">
+    ${icon('search', { size: 20 })}<input type="search" placeholder="${placeholder}" aria-label="${placeholder}"
+      enterkeyhint="search"></form>`;
+
 export function renderShell(page, { showCurrency = true, onAdminRefreshed } = {}) {
-  const nav = document.getElementById('site-nav');
-  nav.className = 'topnav';
-  nav.innerHTML = `
+  document.body.classList.add('has-nav');
+  const bar = document.getElementById('site-nav');
+  bar.className = 'appbar';
+  bar.innerHTML = `
     <a class="brand" href="${siteUrl('')}" title="Rupevo home"><span class="brand-mark">R</span><span
       class="brand-text">Rupevo</span></a>
-    <nav class="nav-links" aria-label="Main">
-      ${NAV.map((item) => `<a href="${siteUrl(item.href)}" title="${esc(item.title)}"${
-        item.key === page ? ' aria-current="page"' : ''}>${esc(item.label)}</a>`).join('')}
-    </nav>
-    <span class="nav-spacer"></span>
+    ${searchForm('appbar-search', 'Search stocks, funds and tools')}
+    <span class="appbar-spacer"></span>
+    <button class="icon-btn search-open" type="button" aria-label="Search" title="Search">${icon('search')}</button>
     <span class="fx-badge" id="fx-badge" hidden></span>
     ${showCurrency ? `<button class="cur-toggle" id="cur-toggle" type="button"
         title="Show prices in rupees or dollars" aria-label="Display currency">
-        <span class="cur-pill" data-cur="INR">₹ INR</span><span class="cur-pill" data-cur="USD">$ USD</span>
+        <span class="cur-pill" data-cur="INR">₹</span><span class="cur-pill" data-cur="USD">$</span>
       </button>` : ''}
     <button class="icon-btn" id="theme-toggle" type="button" title="Switch light / dark theme"
-      aria-label="Toggle colour theme"><span class="theme-sun" aria-hidden="true">☀</span><span
-      class="theme-moon" aria-hidden="true">☾</span></button>
+      aria-label="Toggle colour theme"><span class="theme-sun">${icon('sun')}</span><span
+      class="theme-moon">${icon('moon')}</span></button>
     <button class="btn coffee-btn nav-coffee" id="nav-coffee" type="button"
-      title="Buy me a coffee — support Rupevo via UPI" aria-label="Buy me a coffee"><span
-      aria-hidden="true">☕</span><span class="nav-coffee-text">Buy me a coffee</span></button>`;
+      title="Buy me a coffee — support Rupevo via UPI" aria-label="Buy me a coffee">${icon('coffee', { size: 20 })}<span
+      class="nav-coffee-text">Buy me a coffee</span></button>`;
 
-  nav.querySelector('#theme-toggle').addEventListener('click', toggleTheme);
-  nav.querySelector('#nav-coffee').addEventListener('click', openCoffee);
-  nav.querySelector('#cur-toggle')?.addEventListener('click', () => {
+  bar.querySelector('#theme-toggle').addEventListener('click', toggleTheme);
+  bar.querySelector('#nav-coffee').addEventListener('click', openCoffee);
+  bar.querySelector('.search-open').addEventListener('click', openSearchView);
+  attachSearch(bar.querySelector('.appbar-search'));
+  bar.querySelector('#cur-toggle')?.addEventListener('click', () => {
     if (!currency.rate) return;
     currency.set(currency.display === 'INR' ? 'USD' : 'INR');
     syncCurrencyToggle();
   });
+  // The app bar gets a hairline once the page scrolls under it.
+  const onScroll = () => bar.classList.toggle('scrolled', window.scrollY > 4);
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
 
-  // The nav is sticky on wide screens, so its coffee button is always on
-  // screen there. On phones the nav scrolls away, so a floating button
-  // takes over once it is out of view.
-  const fab = document.createElement('button');
-  fab.className = 'coffee-fab';
-  fab.type = 'button';
-  fab.title = 'Buy me a coffee';
-  fab.setAttribute('aria-label', 'Buy me a coffee');
-  fab.textContent = '☕';
-  fab.addEventListener('click', openCoffee);
-  document.body.append(fab);
-  if ('IntersectionObserver' in window) {
-    new IntersectionObserver(([entry]) => fab.classList.toggle('show', !entry.isIntersecting))
-      .observe(nav);
-  }
+  // Navigation: a rail on wide screens, a bottom bar on phones (CSS decides which).
+  const nav = document.createElement('nav');
+  nav.className = 'navbar';
+  nav.setAttribute('aria-label', 'Main');
+  nav.innerHTML = NAV.map((item) => `<a class="nav-item" href="${siteUrl(item.href)}" title="${esc(item.title)}"${
+    item.key === page ? ' aria-current="page"' : ''}><span class="nav-icon">${icon(item.icon)}</span><span
+    class="nav-label">${esc(item.label)}</span></a>`).join('');
+  bar.after(nav);
 
   const footer = document.getElementById('site-footer');
   footer.className = 'site-footer';
   footer.innerHTML = `
     <div class="inner">
-      <div class="footer-row">
-        <a class="brand" href="${siteUrl('')}"><span class="brand-mark">R</span>Rupevo</a>
-        <span class="muted small">Market rankings, fund comparisons and tax tools, explained.</span>
-        <span class="spacer"></span>
-        <button class="btn coffee-btn" id="coffee-btn" type="button">☕ Buy me a coffee</button>
-      </div>
-      <p class="disclaimer">${DISCLAIMER}</p>
+      <p class="footer-note"><strong>For information and education only.</strong> Not investment, tax or legal
+        advice. Rupevo is not registered with SEBI.</p>
+      <details class="more footer-more"><summary>Full disclaimer and data sources</summary>
+        <div class="more-body"><p class="disclaimer">${DISCLAIMER}</p><p class="disclaimer">${SOURCES}</p></div></details>
       <div class="footer-links">
-        <span>Prices &amp; fundamentals: Yahoo Finance (end-of-day). Index lists: NSE India, Nasdaq (NASDAQ-100;
-          NYSE listings for the NYSE top 100). Mutual funds: AMFI (NAVs, returns, expense ratios, tracking error),
-          mfapi.in (NAV history), NSE India (index P/E).
-          Not affiliated with any exchange, data provider, fund house, broker or employer.</span>
         <a data-contact data-contact-subject="Rupevo" data-contact-label="Contact"></a>
         <a href="https://github.com/${esc(SITE.repo.owner)}/${esc(SITE.repo.name)}" target="_blank" rel="noopener">Source on GitHub</a>
+        <button class="linkish" id="coffee-btn" type="button">Buy me a coffee</button>
         <button class="linkish" id="admin-link" type="button">Admin</button>
         <span>© ${SITE.year} Rupevo</span>
       </div>

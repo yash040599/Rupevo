@@ -16,17 +16,24 @@
 </head>
 <body>
   <header id="site-nav"></header>
-  <main class="wrap">
+  <main id="app" class="wrap">
     <section class="home-hero">
-      <div class="eyebrow">404</div>
-      <h1>This page does not exist.</h1>
-      <p>Try one of these instead.</p>
+      <h1 class="home-logo"><span class="brand-mark" aria-hidden="true">R</span>Rupevo</h1>
+      <p class="home-tag"><strong>404.</strong> This page does not exist. Search for what you were after, or pick a
+        section.</p>
+      <form class="search-field hero-search" id="home-search" role="search" autocomplete="off">
+        <span class="hc-search" data-icon="search"></span>
+        <input type="search" placeholder="Search stocks, funds and tools" aria-label="Search stocks, funds and tools"
+          enterkeyhint="search">
+      </form>
+      <nav class="chip-row home-chips" aria-label="Sections">
+        <a class="chip" href="./">Home</a>
+        <a class="chip" href="india/">Nifty 100</a>
+        <a class="chip" href="us/">US stocks</a>
+        <a class="chip" href="mf/">Mutual funds</a>
+        <a class="chip" href="tax/">Tax tools</a>
+      </nav>
     </section>
-    <div class="home-cards">
-      <a class="card home-card" href="india/"><h2>Nifty 100 Ranking</h2><span class="go">Open →</span></a>
-      <a class="card home-card" href="us/"><h2>US Stock Ranking</h2><span class="go">Open →</span></a>
-      <a class="card home-card" href="tax/"><h2>Tax tools</h2><span class="go">Open →</span></a>
-    </div>
   </main>
   <footer id="site-footer"></footer>
 </body>

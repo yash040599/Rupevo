@@ -17,48 +17,37 @@
 <body>
   <header id="site-nav"></header>
   <main id="app" class="wrap" aria-busy="true">
-    <section class="hero">
-      <div class="eyebrow">India · Mutual funds · Direct plans</div>
-      <h1>Mutual Fund Comparison</h1>
-      <p class="lede">Every direct-plan equity fund in India, compared with the funds that do the same job. Free, no
-        login.</p>
-      <p class="mf-stats" id="mf-stats"></p>
-      <nav class="jump-grid" aria-label="On this page">
-        <a class="card jump-card" href="#compare" data-jump="compare">
-          <span class="eyebrow">Which fund?</span>
-          <h2>Know the type of fund, stuck on the fund house?</h2>
-          <span class="jump-teaser" data-teaser="compare"></span>
-          <span class="go">Compare funds ↓</span>
-        </a>
-        <a class="card jump-card" href="#plan" data-jump="plan">
-          <span class="eyebrow">By age</span>
-          <h2>How could your SIP be split at your age?</h2>
-          <span class="jump-teaser" data-teaser="plan"></span>
-          <span class="go">See the split ↓</span>
-        </a>
-        <a class="card jump-card" href="#lumpsum" data-jump="lumpsum">
-          <span class="eyebrow">Lump sum</span>
-          <h2>Got a lump sum? Are markets cheap or expensive?</h2>
-          <span class="jump-teaser chips" data-teaser="lumpsum"></span>
-          <span class="go">Check valuations ↓</span>
-        </a>
-      </nav>
-      <div class="sync-bar" id="sync-bar"><span class="skel" style="width:320px"></span></div>
+    <section class="page-head">
+      <h1>Mutual fund comparison</h1>
+      <p class="lede">Every direct-plan equity fund, compared with the funds that do the same job.</p>
+      <div class="sync-bar" id="sync-bar"><span class="skel" style="width:260px"></span></div>
     </section>
     <noscript><div class="banner warn">This page needs JavaScript to display the comparison.</div></noscript>
+    <div class="page-tabs" id="mf-tabs" role="tablist" aria-label="Mutual fund tools">
+      <a class="page-tab" role="tab" id="tab-compare" href="#compare" data-tab="compare" aria-controls="panel-compare"
+        aria-selected="true">Compare funds</a>
+      <a class="page-tab" role="tab" id="tab-plan" href="#plan" data-tab="plan" aria-controls="panel-plan"
+        aria-selected="false" tabindex="-1">SIP split</a>
+      <a class="page-tab" role="tab" id="tab-lumpsum" href="#lumpsum" data-tab="lumpsum" aria-controls="panel-lumpsum"
+        aria-selected="false" tabindex="-1">Lump sum</a>
+    </div>
     <div id="notice"></div>
-    <section class="card group-nav" id="group-nav" aria-label="Fund groups">
-      <span class="skel" style="width:60%"></span><span class="skel" style="width:80%"></span>
+    <section class="tab-panel" id="panel-compare" role="tabpanel" aria-labelledby="tab-compare">
+      <div class="group-nav" id="group-nav" aria-label="Fund groups">
+        <span class="skel" style="width:60%"></span><span class="skel" style="width:80%"></span>
+      </div>
+      <section class="card verdict-card" id="verdict-card" aria-live="polite">
+        <span class="skel" style="width:40%"></span><span class="skel"></span><span class="skel"></span>
+      </section>
+      <section class="card" id="funds-card" hidden></section>
     </section>
-    <section class="card verdict-card" id="verdict-card" aria-live="polite">
-      <span class="skel" style="width:40%"></span><span class="skel"></span><span class="skel"></span>
+    <section class="tab-panel" id="panel-plan" role="tabpanel" aria-labelledby="tab-plan" hidden>
+      <section class="card" id="plan-card" hidden></section>
     </section>
-    <section class="card" id="funds-card" hidden></section>
-    <section class="card" id="plan-card" hidden></section>
-    <section class="card" id="lumpsum-card" hidden></section>
-    <section class="card" id="method-card">
-      <details class="fold"><summary><h2>How the comparison works</h2></summary><div id="method-body"></div></details>
+    <section class="tab-panel" id="panel-lumpsum" role="tabpanel" aria-labelledby="tab-lumpsum" hidden>
+      <section class="card" id="lumpsum-card" hidden></section>
     </section>
+    <section class="card more-card" id="method-card" aria-label="About this comparison" hidden></section>
     <aside class="card trivia-card" data-trivia="market" aria-label="Stories from the market">
       <span class="skel" style="width:40%"></span><span class="skel"></span><span class="skel"></span>
     </aside>

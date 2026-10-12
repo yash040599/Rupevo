@@ -1,11 +1,16 @@
-// Landing page: links to the rankings and the fund comparison with their latest sync status, and a story from market history.
+// Home: a search over everything on the site, shortcuts, the four sections with their latest
+// sync status, and a story from market history.
 import { ago, dataUrl, esc, istDateTime, loadJSON } from './core.js';
+import { icon } from './icons.js';
+import { attachSearch } from './search.js';
 import { renderShell } from './shell.js';
 import { pageSeed, renderTrivia } from './trivia.js';
 import { composeView, US_LISTS } from './us-lists.js';
 
 renderShell('home', { showCurrency: false });
 document.querySelectorAll('[data-trivia]').forEach((el) => renderTrivia(el, { seed: pageSeed(), pool: el.dataset.trivia || 'market' }));
+document.querySelectorAll('[data-icon]').forEach((el) => { el.innerHTML = icon(el.dataset.icon); });
+attachSearch(document.getElementById('home-search'));
 
 function showMeta(market, snap) {
   const meta = document.querySelector(`[data-meta="${market}"]`);

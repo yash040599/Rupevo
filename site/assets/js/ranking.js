@@ -3,11 +3,13 @@
 // two snapshots (NASDAQ-100 and NYSE top 100) through us-lists.js.
 import {
   DASH, ago, currency, dataUrl, esc, isNum, istDateTime, loadJSON, money, moneyCompact,
-  more, num, openMores, pct, sleep, store, toast, toned, tradingDay,
+  more, num, pct, sleep, store, toast, toned, tradingDay,
 } from './core.js';
 import { renderShell, showFx, syncCurrencyToggle } from './shell.js';
 import { handleRefreshLink, isAdmin, startRefresh } from './admin.js';
+import { icon } from './icons.js';
 import { openRequestModal } from './request.js';
+import { openSheet } from './sheet.js';
 import { pageSeed, renderTrivia } from './trivia.js';
 import {
   composeView, findElsewhere, matchesQuery, quoteLinks, US_LISTS, US_VIEWS, viewFromHash, viewOf,
@@ -25,13 +27,15 @@ const list = (items) => (items?.length
   ? `<ul class="reasons">${items.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>` : '');
 const kv = (pairs) => `<dl class="kv">${pairs
   .map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${v}</dd></div>`).join('')}</dl>`;
-// The first `n` numbers, and the rest under "More numbers" (kept open across re-renders by `key`).
-const kvMore = (pairs, n, key, keep) => kv(pairs.slice(0, n)) + (pairs.length > n
-  ? more(key, `${pairs.length - n} more numbers`, kv(pairs.slice(n)), keep.has(key)) : '');
+// The first `n` numbers, and the rest under "N more numbers".
+const kvMore = (pairs, n, key) => kv(pairs.slice(0, n)) + (pairs.length > n
+  ? more(key, `${pairs.length - n} more numbers`, kv(pairs.slice(n))) : '');
 // Ranking tables show this many rows until "Show all"; "More columns" is remembered per browser.
 const TOP_ROWS = 25;
 const COLUMNS_KEY = 'rupevo-all-columns';
 const allColumns = () => store.get(COLUMNS_KEY) === '1';
+// Phones get a list (one row per stock), wider screens a table.
+const NARROW = window.matchMedia('(max-width: 719px)');
 const trendLabel = (state) => ({ GOLDEN_CROSS: 'Golden cross',
   DEATH_CROSS: 'Death cross' }[state] || DASH);
 const dipCell = (v) => {
@@ -39,21 +43,21 @@ const dipCell = (v) => {
   const cls = v >= 18 ? 'neg' : v >= 10 ? '' : 'muted';
   return `<span class="${cls}"${v >= 18 ? ' style="font-weight:700"' : ''}>${v.toFixed(1)}%</span>`;
 };
-const stockCell = (r, ctx) => `<div class="stock">
-    <button class="sym" type="button" aria-expanded="${ctx.open ? 'true' : 'false'}">${esc(r.symbol)}</button>
+const stockCell = (r) => `<div class="stock">
+    <button class="sym" type="button">${esc(r.symbol)}</button>
     <span class="nm" title="${esc(r.name)}">${esc(r.name)}</span></div>`;
 // US rows name their exchange when both lists are shown together.
+const exTag = (r, ctx) => (ctx.multi && r.exchange ? `<span class="ex-tag ex-${slug(r.exchange)}"
+      title="Listed on the ${esc(r.exchange)}">${esc(r.exchange)}</span>` : '');
 const usStockCell = (r, ctx) => `<div class="stock">
-    <span class="sym-line"><button class="sym" type="button" aria-expanded="${ctx.open ? 'true' : 'false'}">${
-      esc(r.symbol)}</button>${ctx.multi && r.exchange ? `<span class="ex-tag ex-${slug(r.exchange)}"
-      title="Listed on the ${esc(r.exchange)}">${esc(r.exchange)}</span>` : ''}</span>
+    <span class="sym-line"><button class="sym" type="button">${esc(r.symbol)}</button>${exTag(r, ctx)}</span>
     <span class="nm" title="${esc(r.name)}">${esc(r.name)}</span></div>`;
-// Current open state of a card's collapsible section, so re-rendering after a
-// data refresh does not reopen what the reader collapsed.
-const isOpen = (card, fallback) => {
-  const fold = card.querySelector(':scope > details.fold');
-  return fold ? fold.open : fallback;
-};
+const change1m = (r) => (isNum(r.return_1m_pct) ? `<span>${toned(r.return_1m_pct)} <span class="muted">1M</span></span>` : '');
+// Price, the day's move and a few chips: the top of a stock's sheet.
+const quote = (r, chips) => `<div class="quote">
+    <div class="quote-price"><span class="quote-close">${money(r.close)}</span><span class="quote-change">${
+      toned(r.change_1d_pct, 2)} <span class="muted">${r.last_date ? esc(tradingDay(r.last_date)) : 'last close'}</span></span></div>
+    <div class="chip-row">${chips.filter(Boolean).join('')}</div></div>`;
 
 function bars(rows) {
   return `<div class="bars">${rows.map(({ label, value, note, off }) => `
@@ -107,10 +111,32 @@ const INDIA = {
   key: 'india',
   native: 'INR',
   rankedTitle: 'Ranked stocks',
-  rankedHint: 'Technical setups first, then 52-week dips. Click a row for the full breakdown.',
+  rankedHint: 'Technical setups first, then 52-week dips',
   othersTitle: 'Not ranked today',
+  othersHint: 'No qualifying setup, or not enough history',
+  methodHint: 'Setups, technical score and risk, explained',
   searchPlaceholder: 'Search symbol or company',
   filters: [{ key: 'setup_label', all: 'All setups' }, { key: 'sector_label', all: 'All sectors' }],
+  // A row of the phone list.
+  listRow(r) {
+    const dip = r.setup === '52W_DIP';
+    const trail = dip
+      ? `<span class="grade conv-d" title="Below its 52-week high">${isNum(r.below_52w_high_pct) ? `−${r.below_52w_high_pct.toFixed(1)}%` : 'Dip'}</span><span class="muted">from high</span>`
+      : `${r.tech_grade ? gradePill(`conv-${slug(r.tech_grade)}`, r.tech_grade, r.tech_score) : ''}${change1m(r)}`;
+    return `<span class="lr-rank">${r.rank}</span>
+      <span class="lr-main"><span class="lr-title">${esc(r.symbol)}${r.sector_leader ? '<span class="star" title="Sector leader">★</span>' : ''}</span>
+        <span class="lr-sub">${esc(r.name)}</span><span class="lr-sub lr-tag${dip ? ' dip' : ''}">${esc(r.setup_label || '')}</span></span>
+      <span class="lr-trail">${trail}</span>`;
+  },
+  otherRow: (r) => `<span class="lr-main"><span class="lr-title">${esc(r.symbol)}</span><span class="lr-sub">${esc(r.name)}</span>
+      <span class="lr-sub">${esc(r.status_reason || '')}</span></span><span class="lr-trail">${change1m(r)}</span>`,
+  // The quote line at the top of a stock's sheet.
+  sheetTop: (r) => quote(r, [
+    r.setup_label ? `<span class="chip">${esc(r.setup_label)}</span>` : '',
+    r.tech_grade ? `<span class="chip">Tech ${gradePill(`conv-${slug(r.tech_grade)}`, r.tech_grade, r.tech_score)}</span>` : '',
+    r.risk_grade ? `<span class="chip">Risk ${riskPill(r)}</span>` : '',
+    r.sector_label ? `<span class="chip">${esc(r.sector_label)}${r.sector_leader ? ' ★' : ''}</span>` : '',
+  ]),
   columns: [
     { key: 'rank', label: '#', sort: (r) => r.rank, render: (r) => `<span class="rank-num">${r.rank}</span>` },
     { key: 'symbol', label: 'Stock', sort: (r) => r.symbol, render: stockCell },
@@ -141,25 +167,12 @@ const INDIA = {
       ? `${esc(r.reasons[0])}${r.reasons.length > 1 ? ` <span class="muted">+${r.reasons.length - 1} more</span>` : ''}`
       : esc(r.status_reason || '')) },
   ],
-  otherColumns: [
-    { key: 'symbol', label: 'Stock', sort: (r) => r.symbol, render: stockCell },
-    { key: 'sector', label: 'Sector', opt: true, sort: (r) => r.sector_label, render: (r) => esc(r.sector_label) },
-    { key: 'status', label: 'Why not ranked', cls: 'why', sort: (r) => r.status_reason,
-      render: (r) => esc(r.status_reason) },
-    { key: 'close', label: 'Close', align: 'right', desc: true, sort: (r) => r.close, render: (r) => money(r.close) },
-    { key: 'm1', label: '1M', align: 'right', desc: true, sort: (r) => r.return_1m_pct,
-      render: (r) => toned(r.return_1m_pct) },
-    { key: 'dip', label: 'Below 52w high', align: 'right', desc: true, sort: (r) => r.below_52w_high_pct,
-      render: (r) => dipCell(r.below_52w_high_pct) },
-    { key: 'rs', label: 'RS vs Nifty', align: 'right', opt: true, desc: true,
-      sort: (r) => r.rs_vs_benchmark_pct, render: (r) => toned(r.rs_vs_benchmark_pct) },
-  ],
 
   tiles(s) {
     const technical = s.ranked.filter((r) => r.setup !== '52W_DIP').length;
     const dips = s.ranked.length - technical;
     const setups = Object.entries(s.stats.by_setup || {}).sort((a, b) => b[1] - a[1]);
-    const sectors = (s.sector_strength || []).slice(0, 6).map((x) => ({
+    const sectors = (s.sector_strength || []).slice(0, 4).map((x) => ({
       label: x.label, value: x.mean_rs_pct, lead: x.leader,
       tone: x.mean_rs_pct >= 0 ? 'pos' : 'neg', text: toned(x.mean_rs_pct),
       title: `${x.label}: average 60-day relative strength of ${x.stocks} stocks` }));
@@ -169,12 +182,12 @@ const INDIA = {
         `${technical} technical setup${technical === 1 ? '' : 's'} · ${dips} 52-week dip${dips === 1 ? '' : 's'}`),
       tile('Setups found', '', '', `<ul class="tile-list">${setups.map(([k, v]) =>
         `<li><span>${esc(k)}</span><span class="lead">${v}</span></li>`).join('') || '<li class="muted">None today</li>'}</ul>`),
-      tile('Sector strength vs NIFTY 50', '', '', miniBars(sectors)
-        + '<div class="tile-sub">★ Top-3 sectors: their ranked stocks get a +0.5 score bonus</div>'),
+      tile('<span title="★ Top-3 sectors: their ranked stocks get a +0.5 score bonus">Sector strength vs NIFTY 50</span>',
+        '', '', miniBars(sectors)),
     ].join('');
   },
 
-  detail(r, keep = new Set()) {
+  detail(r) {
     const left = [];
     if (r.status === 'ranked') {
       left.push(section('Why it ranks here', list(r.reasons)));
@@ -210,7 +223,7 @@ const INDIA = {
         ['Volatility (90d, ann.)', pct(r.volatility_90d_pct)], ['Max drawdown (1y)', pct(r.max_drawdown_1y_pct)],
         ['Sharpe (1y)', num(r.sharpe_1y, 2)], ['Beta vs NIFTY', num(r.beta, 2)],
         ['Avg daily traded value', moneyCompact(r.avg_turnover)], ['Last trading day', tradingDay(r.last_date)],
-      ], 8, `nums-${r.symbol}`, keep)),
+      ], 8, `nums-${r.symbol}`)),
       `<div class="links">
         <a href="https://www.nseindia.com/get-quotes/equity?symbol=${encodeURIComponent(r.symbol)}" target="_blank" rel="noopener">NSE quote ↗</a>
         <a href="https://finance.yahoo.com/quote/${encodeURIComponent(`${r.symbol}.NS`)}" target="_blank" rel="noopener">Yahoo Finance ↗</a>
@@ -282,13 +295,27 @@ const US = {
   lists: US_LISTS,
   views: US_VIEWS,
   rankedTitle: 'Ranked companies',
-  rankedTitleFor: (s) => (s.multi ? 'Ranked companies · NASDAQ and NYSE' : `Ranked companies · ${s.lists?.[0]?.label || ''}`),
-  rankedHint: 'Strong and Excellent bands first, then by score. Click a row for the full scorecard.',
+  rankedTitleFor: (s) => (s.multi ? 'Ranked companies' : `Ranked companies · ${s.lists?.[0]?.label || ''}`),
+  rankedHint: 'Strong and Excellent bands first, then by score',
   othersTitle: 'Not ranked today',
+  othersHint: 'Not enough data to score',
+  methodHint: 'The six pillars, score bands and risk, explained',
   searchPlaceholder: 'Search ticker or company',
-  searchPlaceholderFor: (s) => (s.multi ? 'Search NASDAQ and NYSE: ticker or company'
-    : `Search the ${s.lists?.[0]?.label || 'list'}: ticker or company`),
+  searchPlaceholderFor: (s) => (s.multi ? 'Search ticker or company'
+    : `Search the ${s.lists?.[0]?.label || 'list'}`),
   filters: [{ key: 'band_label', all: 'All bands', order: BAND_ORDER }, { key: 'sector', all: 'All sectors' }],
+  listRow: (r, ctx) => `<span class="lr-rank">${r.rank}</span>
+      <span class="lr-main"><span class="lr-title">${esc(r.symbol)}${exTag(r, ctx)}</span><span class="lr-sub">${esc(r.name)}</span></span>
+      <span class="lr-trail">${gradePill(`band-${slug(r.band_label)}`, r.band_label, r.score)}${change1m(r)}</span>`,
+  otherRow: (r) => `<span class="lr-main"><span class="lr-title">${esc(r.symbol)}</span><span class="lr-sub">${esc(r.name)}</span>
+      <span class="lr-sub">${esc(r.status_reason || '')}</span></span><span class="lr-trail">${change1m(r)}</span>`,
+  sheetTop: (r) => quote(r, [
+    r.band_label ? `<span class="chip">Score ${gradePill(`band-${slug(r.band_label)}`, r.band_label, r.score)}</span>` : '',
+    r.risk_grade ? `<span class="chip">Risk ${riskPill(r)}</span>` : '',
+    r.valuation ? `<span class="chip">${esc(r.valuation)}</span>` : '',
+    r.sector ? `<span class="chip">${esc(r.sector)}</span>` : '',
+    r.exchange ? `<span class="chip">${esc(r.exchange)}</span>` : '',
+  ]),
   columns: [
     { key: 'rank', label: '#', sort: (r) => r.rank,
       render: (r, ctx) => `<span class="rank-num"${ctx.multi && r.list_rank
@@ -315,12 +342,6 @@ const US = {
       title: 'Share of the model that had data', sort: (r) => r.coverage_pct, render: (r) => pct(r.coverage_pct, 0) },
     { key: 'why', label: 'Pillars', cls: 'why', render: pillarExtremes },
   ],
-  otherColumns: [
-    { key: 'symbol', label: 'Company', sort: (r) => r.symbol, render: usStockCell },
-    { key: 'status', label: 'Why not ranked', cls: 'why', sort: (r) => r.status_reason,
-      render: (r) => esc(r.status_reason) },
-    { key: 'close', label: 'Close', align: 'right', desc: true, sort: (r) => r.close, render: (r) => money(r.close) },
-  ],
 
   tiles(s) {
     const bands = BAND_ORDER.map((b) => [b, s.stats.by_band?.[b] || 0]);
@@ -334,7 +355,7 @@ const US = {
     const sectors = Object.entries(bySector)
       .filter(([, v]) => v.length >= 2)
       .map(([k, v]) => ({ label: k, value: v.reduce((a, b) => a + b, 0) / v.length, n: v.length }))
-      .sort((a, b) => b.value - a.value).slice(0, 6)
+      .sort((a, b) => b.value - a.value).slice(0, 4)
       .map((x) => ({ label: x.label, value: x.value, text: num(x.value, 0), title: `${x.label}: ${x.n} companies` }));
     return [
       benchTile(s.benchmark, money(s.benchmark.close)),
@@ -346,7 +367,7 @@ const US = {
     ].join('');
   },
 
-  detail(r, keep = new Set()) {
+  detail(r) {
     const f = r.fundamentals || {};
     const left = [];
     if (r.status === 'ranked') {
@@ -379,7 +400,7 @@ const US = {
         ['Current ratio', num(f.current_ratio, 2)], ['Beta', num(f.beta, 2)],
         ['Industry', esc(f.industry || DASH)],
         ['Fundamentals as of', f.fetched_at ? tradingDay(f.fetched_at) : DASH],
-      ], 8, `fund-${r.symbol}`, keep)) : '',
+      ], 8, `fund-${r.symbol}`)) : '',
       section('Price and momentum', kvMore([
         ['Close', money(r.close)], ['Day change', toned(r.change_1d_pct, 2)],
         ['Return 1M', toned(r.return_1m_pct)], ['Return 3M', toned(r.return_3m_pct)],
@@ -390,7 +411,7 @@ const US = {
         ['Volatility (90d, ann.)', pct(r.volatility_90d_pct)], ['Max drawdown (1y)', pct(r.max_drawdown_1y_pct)],
         ['Sharpe (1y)', num(r.sharpe_1y, 2)], ['Avg daily traded value', moneyCompact(r.avg_turnover)],
         ['Last trading day', tradingDay(r.last_date)],
-      ], 6, `price-${r.symbol}`, keep)),
+      ], 6, `price-${r.symbol}`)),
       `<div class="links">${quoteLinks(r).map((l) =>
         `<a href="${esc(l.href)}" target="_blank" rel="noopener">${esc(l.label)} ↗</a>`).join('')}</div>`,
     ];
@@ -452,85 +473,74 @@ function compare(a, b) {
   return typeof a === 'string' ? a.localeCompare(b) : a - b;
 }
 
-// `limit`: rows shown until the reader asks for all; not applied while `filtered()` is true (a search).
-// `onRender` gets { shown, matched } after every render, for the count beside the search box.
-function makeTable(host, { columns, rows, detail, empty, sort, filtersFn, context, limit = 0, filtered, onRender }) {
-  const state = { sort: { ...sort }, open: new Set(), all: false };
-  host.innerHTML = `<div class="table-scroll"><table class="rank compact${allColumns() ? ' all-cols' : ''}">
-      <thead><tr>${columns.map((c) => `<th class="${c.align === 'right' ? 'right' : ''}${c.opt ? ' opt' : ''}"
-        ${c.title ? `title="${esc(c.title)}"` : ''}${c.sort ? ` data-key="${c.key}"` : ''}>
-        ${c.sort ? `<button class="sort" type="button">${esc(c.label)}</button>` : esc(c.label)}</th>`).join('')}</tr></thead>
-      <tbody></tbody></table></div>`;
-  const tbody = host.querySelector('tbody');
-  const headers = [...host.querySelectorAll('th[data-key]')];
+// A list of rows on phones (`listRow`), a sortable table on wider screens (`columns`). A row
+// opens `onOpen(row, rowsInOrder)`. `limit`: rows shown until "Show all"; not applied while
+// `filtered()` is true (a search). `onRender` gets { shown, matched } for the count.
+function makeTable(host, { columns, rows, listRow, empty, sort, filtersFn, context, limit = 0, filtered, onRender, onOpen }) {
+  const state = { sort: { ...sort }, all: false, list: [] };
+
+  const sorted = () => {
+    const col = columns.find((c) => c.key === state.sort.key);
+    const list = filtersFn ? rows().filter(filtersFn) : rows();
+    if (!col?.sort) return list;
+    return [...list].sort((a, b) => {
+      const va = col.sort(a);
+      const vb = col.sort(b);
+      if (va === null || va === undefined || vb === null || vb === undefined) return compare(va, vb);
+      return compare(va, vb) * state.sort.dir;
+    });
+  };
 
   const render = () => {
-    const col = columns.find((c) => c.key === state.sort.key);
-    let list = filtersFn ? rows().filter(filtersFn) : rows();
-    if (col?.sort) {
-      list = [...list].sort((a, b) => {
-        const va = col.sort(a);
-        const vb = col.sort(b);
-        const nullA = va === null || va === undefined;
-        const nullB = vb === null || vb === undefined;
-        if (nullA || nullB) return compare(va, vb);
-        return compare(va, vb) * state.sort.dir;
-      });
-    }
-    headers.forEach((th) => th.setAttribute('aria-sort', th.dataset.key === state.sort.key
-      ? (state.sort.dir > 0 ? 'ascending' : 'descending') : 'none'));
-    const ctx = context ? context() : {};
-    const keep = openMores(tbody);
+    const list = sorted();
+    state.list = list;
     const capped = limit > 0 && !state.all && !filtered?.() && list.length > limit;
     const shown = capped ? list.slice(0, limit) : list;
-    tbody.innerHTML = shown.length ? shown.map((r) => {
-      const open = state.open.has(r.symbol);
-      return `<tr class="row${open ? ' open' : ''}" data-symbol="${esc(r.symbol)}">${columns.map((c) =>
-        `<td class="${[c.cls, c.align === 'right' ? 'right' : '', c.opt ? 'opt' : ''].filter(Boolean).join(' ')}">${
-          c.render(r, { ...ctx, open })}</td>`).join('')}</tr>${open ? detailRow(r, keep) : ''}`;
-    }).join('') + (capped ? `<tr class="show-more-row"><td colspan="${columns.length}"><button class="btn alt small"
-        type="button" data-show-all>Show all ${list.length}</button></td></tr>` : '')
-      : `<tr><td colspan="${columns.length}" class="empty">${typeof empty === 'function' ? empty() : empty}</td></tr>`;
-    const result = { shown: shown.length, matched: list.length };
-    onRender?.(result);
-    return result;
+    const ctx = context ? context() : {};
+    const showAll = capped ? `<div class="show-all"><button class="btn alt small" type="button" data-show-all>Show all ${
+      list.length}</button></div>` : '';
+    if (!shown.length) {
+      host.innerHTML = `<p class="empty">${typeof empty === 'function' ? empty() : empty}</p>`;
+    } else if (NARROW.matches) {
+      host.innerHTML = `<ul class="list rank-list">${shown.map((r) => `<li><button class="list-row" type="button"
+        data-symbol="${esc(r.symbol)}">${listRow(r, ctx)}</button></li>`).join('')}</ul>${showAll}`;
+    } else {
+      const sortState = (c) => (c.key === state.sort.key ? (state.sort.dir > 0 ? 'ascending' : 'descending') : 'none');
+      host.innerHTML = `<div class="table-scroll"><table class="rank compact${allColumns() ? ' all-cols' : ''}">
+        <thead><tr>${columns.map((c) => `<th class="${c.align === 'right' ? 'right' : ''}${c.opt ? ' opt' : ''}"
+          ${c.title ? `title="${esc(c.title)}"` : ''}${c.sort ? ` data-key="${c.key}" aria-sort="${sortState(c)}"` : ''}>${
+          c.sort ? `<button class="sort" type="button">${esc(c.label)}</button>` : esc(c.label)}</th>`).join('')}</tr></thead>
+        <tbody>${shown.map((r) => `<tr class="row" data-symbol="${esc(r.symbol)}">${columns.map((c) =>
+          `<td class="${[c.cls, c.align === 'right' ? 'right' : '', c.opt ? 'opt' : ''].filter(Boolean).join(' ')}">${
+            c.render(r, ctx)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>${showAll}`;
+    }
+    onRender?.({ shown: shown.length, matched: list.length });
   };
-  const detailRow = (r, keep) => `<tr class="detail-row"><td colspan="${columns.length}"><div class="detail">${
-    detail(r, keep)}</div></td></tr>`;
 
-  headers.forEach((th) => th.querySelector('button').addEventListener('click', () => {
-    const key = th.dataset.key;
-    const col = columns.find((c) => c.key === key);
-    state.sort = state.sort.key === key ? { key, dir: -state.sort.dir } : { key, dir: col.desc ? -1 : 1 };
-    render();
-  }));
-  tbody.addEventListener('click', (e) => {
+  host.addEventListener('click', (e) => {
     if (e.target.closest('[data-show-all]')) {
       state.all = true;
       render();
       // Keyboard focus moves to the first newly shown row instead of being lost with the button.
-      tbody.querySelectorAll('tr.row')[limit]?.querySelector('button.sym')?.focus({ preventScroll: true });
+      const next = host.querySelectorAll('[data-symbol]')[limit];
+      (next?.querySelector('button.sym') || next)?.focus({ preventScroll: true });
       return;
     }
-    const tr = e.target.closest('tr.row');
-    if (!tr || e.target.closest('a')) return;
-    const sym = tr.dataset.symbol;
-    const row = rows().find((r) => r.symbol === sym);
-    if (!row) return;
-    const btn = tr.querySelector('button.sym');
-    if (state.open.has(sym)) {
-      state.open.delete(sym);
-      tr.classList.remove('open');
-      if (tr.nextElementSibling?.classList.contains('detail-row')) tr.nextElementSibling.remove();
-      btn?.setAttribute('aria-expanded', 'false');
-    } else {
-      state.open.add(sym);
-      tr.classList.add('open');
-      tr.insertAdjacentHTML('afterend', detailRow(row, new Set()));
-      btn?.setAttribute('aria-expanded', 'true');
+    const th = e.target.closest('th[data-key]');
+    if (th) {
+      const key = th.dataset.key;
+      const col = columns.find((c) => c.key === key);
+      state.sort = state.sort.key === key ? { key, dir: -state.sort.dir } : { key, dir: col.desc ? -1 : 1 };
+      render();
+      host.querySelector(`th[data-key="${key}"] button`)?.focus();
+      return;
     }
+    const hit = e.target.closest('[data-symbol]');
+    if (!hit || e.target.closest('a')) return;
+    const row = state.list.find((r) => r.symbol === hit.dataset.symbol);
+    if (row) onOpen(row, state.list);
   });
-  return { render };
+  return { render, list: () => state.list };
 }
 
 // ── Page ──
@@ -545,7 +555,7 @@ export async function start(marketKey) {
   let snap = null;
   const filters = { query: '' };
   let rankedTable = null;
-  let othersTable = null;
+  let shown = null; // the stock open in the sheet, redrawn when the currency switches
 
   renderShell(marketKey, { onAdminRefreshed: () => reload(true) });
   currency.configure(M.native, 0);
@@ -557,10 +567,8 @@ export async function start(marketKey) {
     sync: app.querySelector('#sync-bar'),
     notice: app.querySelector('#notice'),
     tiles: app.querySelector('#tiles'),
-    changes: app.querySelector('#changes'),
     rankedCard: app.querySelector('#ranked-card'),
-    othersCard: app.querySelector('#others-card'),
-    method: app.querySelector('#method-body'),
+    moreCard: app.querySelector('#more-card'),
   };
 
   async function loadLists(bust) {
@@ -613,14 +621,14 @@ export async function start(marketKey) {
     // Lists refreshed at different times (one failed to refresh) each say when.
     const times = (snap.lists || []).map((l) => new Date(l.generated_at).getTime());
     const apart = times.length > 1 && Math.max(...times) - Math.min(...times) > 3600000;
-    const perList = apart ? ` · ${snap.lists.map((l) => `${esc(l.label)} synced ${esc(ago(l.generated_at))}`).join(', ')}` : '';
+    const perList = apart ? ` · ${snap.lists.map((l) => `${esc(l.label)} ${esc(ago(l.generated_at))}`).join(', ')}` : '';
     els.sync.innerHTML = `
-      <span class="chip ${ageDays > 4 ? 'warn' : 'pos'}"><span class="dot"></span>Last synced ${esc(istDateTime(snap.generated_at))}</span>
-      <span class="sync-meta">${esc(ago(snap.generated_at))} · prices through ${esc(tradingDay(snap.data_through))} · ${esc(snap.data_source?.prices || '')}${perList}</span>
-      <span class="spacer"></span>
-      <span class="sync-actions">${isAdmin()
-        ? '<span class="chip info" title="Admin mode is on in this browser">Admin</span><button class="btn" id="analyse-btn" type="button">Analyse now</button>'
-        : '<button class="btn alt" id="request-btn" type="button" title="Ask the maintainer to refresh this ranking">Request refresh</button>'}</span>`;
+      <span class="sync-dot${ageDays > 4 ? ' warn' : ''}" aria-hidden="true"></span>
+      <span class="sync-meta" title="Last synced ${esc(istDateTime(snap.generated_at))} · ${esc(snap.data_source?.prices || '')}">Updated ${
+        esc(ago(snap.generated_at))}<span class="sync-extra"> · prices to ${esc(tradingDay(snap.data_through))}${perList}</span></span>
+      ${isAdmin()
+        ? '<span class="chip info" title="Admin mode is on in this browser">Admin</span><button class="text-btn" id="analyse-btn" type="button">Analyse now</button>'
+        : '<button class="text-btn" id="request-btn" type="button" title="Ask the maintainer to refresh this ranking">Request refresh</button>'}`;
     els.sync.querySelector('#analyse-btn')?.addEventListener('click',
       () => startRefresh(marketKey, { onDone: () => reload(true) }));
     els.sync.querySelector('#request-btn')?.addEventListener('click', () => openRequestModal({
@@ -634,19 +642,101 @@ export async function start(marketKey) {
     const notes = [];
     if (snap.partial) notes.push('<div class="banner warn">This is a partial test snapshot, not the full ranking.</div>');
     if (!snap.fx?.usd_inr) notes.push('<div class="banner">Currency conversion is unavailable for this snapshot.</div>');
-    const shown = M.views ? viewOf(snap.view).exchanges : null;
+    const visible = M.views ? viewOf(snap.view).exchanges : null;
     for (const { label, exchange } of missing) {
-      if (shown && !shown.includes(exchange)) continue;
+      if (visible && !visible.includes(exchange)) continue;
       notes.push(`<div class="banner warn">The ${esc(label || 'ranking')} list could not be loaded right now, so it is
         left out. Reload the page in a minute.</div>`);
     }
     els.notice.innerHTML = notes.join('');
   }
 
-  function renderChanges() {
-    const c = snap.changes;
-    if (!c) { els.changes.hidden = true; return; }
-    els.changes.hidden = false;
+  // Searching one exchange for a company listed on the other says where it is.
+  function emptyRanked() {
+    const elsewhere = M.views ? findElsewhere(loaded, snap.view, filters.query) : [];
+    if (!elsewhere.length) return 'No matches — clear the search or filters.';
+    const names = elsewhere.slice(0, 3).map((h) => `<strong>${esc(h.symbol)}</strong> (${esc(h.name)})`).join(', ');
+    const where = [...new Set(elsewhere.map((h) => h.label))].join(' and ');
+    return `No matches in the ${esc(snap.lists?.[0]?.label || 'list')}. ${names}${elsewhere.length > 3 ? ' and more' : ''}
+      ${elsewhere.length === 1 ? 'is' : 'are'} in the ${esc(where)}.
+      <button class="btn alt small" type="button" data-view="all">Search all US</button>`;
+  }
+
+  function buildRanked() {
+    const filterOptions = M.filters.map((f) => {
+      const values = [...new Set(snap.ranked.map((r) => r[f.key]).filter(Boolean))];
+      values.sort(f.order ? (a, b) => f.order.indexOf(a) - f.order.indexOf(b) : undefined);
+      if (filters[f.key] && !values.includes(filters[f.key])) filters[f.key] = '';
+      return `<select class="chip-select${filters[f.key] ? ' on' : ''}" data-filter="${f.key}" aria-label="${esc(f.all)}"><option value="">${
+        esc(f.all)}</option>${values.map((v) => `<option value="${esc(v)}"${filters[f.key] === v ? ' selected' : ''}>${esc(v)}</option>`).join('')}</select>`;
+    }).join('');
+    const title = M.rankedTitleFor ? M.rankedTitleFor(snap) : M.rankedTitle;
+    const placeholder = M.searchPlaceholderFor ? M.searchPlaceholderFor(snap) : M.searchPlaceholder;
+    els.rankedCard.innerHTML = `
+      <div class="card-head"><h2>${esc(title)} <span class="count-pill">${snap.ranked.length}</span></h2>
+        <span class="hint">${esc(M.rankedHint)}</span></div>
+      <div class="toolbar">
+        <label class="search-field compact">${icon('search', { size: 20 })}<input type="search" id="q"
+          placeholder="${esc(placeholder)}" aria-label="${esc(placeholder)}" value="${esc(filters.query)}"></label>
+        <div class="chip-row filters">${filterOptions}
+          <button class="chip cols-toggle" type="button" id="cols-btn" aria-pressed="${allColumns()}"
+            title="Show or hide the extra columns of numbers">More columns</button></div>
+        <span class="count" id="count"></span>
+      </div>
+      <div id="ranked-table"></div>`;
+    const match = (r) => matchesQuery(r, filters.query)
+      && M.filters.every((f) => !filters[f.key] || r[f.key] === filters[f.key]);
+    const count = els.rankedCard.querySelector('#count');
+    rankedTable = makeTable(els.rankedCard.querySelector('#ranked-table'), {
+      columns: M.columns, rows: () => snap.ranked, listRow: M.listRow, filtersFn: match,
+      sort: { key: 'rank', dir: 1 }, empty: emptyRanked, context: () => ({ multi: Boolean(snap.multi) }),
+      // A typed search shows every match, so the stock looked for is never behind "Show all".
+      limit: TOP_ROWS, filtered: () => Boolean(filters.query.trim()),
+      onRender: ({ shown: n, matched }) => {
+        const total = snap.ranked.length;
+        count.textContent = n === total ? `${total} shown`
+          : n < matched && matched < total ? `Showing ${n} of ${matched} matches`
+            : `Showing ${n} of ${total}`;
+      },
+      onOpen: (row, rowsInOrder) => openStock(row, rowsInOrder),
+    });
+    els.rankedCard.querySelector('#q').addEventListener('input', (e) => { filters.query = e.target.value; rankedTable.render(); });
+    els.rankedCard.querySelectorAll('select[data-filter]').forEach((sel) => sel.addEventListener('change', () => {
+      filters[sel.dataset.filter] = sel.value;
+      sel.classList.toggle('on', Boolean(sel.value));
+      rankedTable.render();
+    }));
+    els.rankedCard.querySelector('#cols-btn').addEventListener('click', (e) => {
+      const on = !allColumns();
+      store.set(COLUMNS_KEY, on ? '1' : '0');
+      e.currentTarget.setAttribute('aria-pressed', String(on));
+      app.querySelectorAll('table.rank').forEach((table) => table.classList.toggle('all-cols', on));
+    });
+    rankedTable.render();
+  }
+
+  // ── Sheets: a stock's details, what changed, stocks not ranked, how the ranking works ──
+  const stockSub = (r) => (r.rank ? `#${r.rank}${snap.multi && r.list_rank ? ` · #${r.list_rank} in the ${esc(r.list)}` : ''} · ${esc(r.name)}`
+    : `Not ranked · ${esc(r.name)}`);
+
+  function openStock(row, rowsInOrder, { back = null } = {}) {
+    const order = rowsInOrder?.includes(row) ? rowsInOrder : [row];
+    const show = (i) => {
+      const r = order[i];
+      shown = { symbol: r.symbol, order, back };
+      openSheet({
+        title: r.symbol, sub: stockSub(r),
+        body: `${M.sheetTop(r)}<div class="detail">${M.detail(r)}</div>`,
+        onPrev: i > 0 ? () => show(i - 1) : null,
+        onNext: i < order.length - 1 ? () => show(i + 1) : null,
+        onBack: back,
+        onClose: () => { shown = null; dropParam('stock'); },
+      });
+    };
+    show(order.indexOf(row));
+  }
+
+  function changesHtml(c) {
     // With both US lists shown, each rank is the company's rank in its own list.
     const at = (d, n) => `${snap.multi && d.exchange ? `${esc(d.exchange)} ` : ''}#${n}`;
     const item = (d, right) => `<li><span class="sym">${esc(d.symbol)}</span><span class="muted small">${right}</span></li>`;
@@ -668,97 +758,73 @@ export async function start(marketKey) {
       groups.push(`<div><h3>Band changes</h3><ul>${c.band_changes.slice(0, 12).map((d) =>
         item(d, `${esc(d.previous)} → ${esc(d.now)}`)).join('')}</ul></div>`);
     }
-    const since = c.compared_to?.data_through ? ` vs. prices of ${esc(tradingDay(c.compared_to.data_through))}` : '';
-    els.changes.innerHTML = `<details class="fold"${isOpen(els.changes, false) ? ' open' : ''}>
-      <summary><h2>What changed</h2>
-        ${c.compared_to ? `<span class="hint">${esc(c.summary)}${since}</span>` : ''}</summary>
-      ${groups.length ? `<div class="changes">${groups.join('')}</div>`
-        : `<p class="muted" style="margin:0">${c.compared_to ? 'Nothing moved enough to report since the previous refresh.' : esc(c.summary)}</p>`}
-      </details>`;
+    return groups.length ? `<div class="changes">${groups.join('')}</div>`
+      : `<p class="muted">${c.compared_to ? 'Nothing moved enough to report since the previous refresh.' : esc(c.summary)}</p>`;
   }
 
-  // Searching one exchange for a company listed on the other says where it is.
-  function emptyRanked() {
-    const elsewhere = M.views ? findElsewhere(loaded, snap.view, filters.query) : [];
-    if (!elsewhere.length) return 'No matches — clear the search or filters.';
-    const names = elsewhere.slice(0, 3).map((h) => `<strong>${esc(h.symbol)}</strong> (${esc(h.name)})`).join(', ');
-    const where = [...new Set(elsewhere.map((h) => h.label))].join(' and ');
-    return `No matches in the ${esc(snap.lists?.[0]?.label || 'list')}. ${names}${elsewhere.length > 3 ? ' and more' : ''}
-      ${elsewhere.length === 1 ? 'is' : 'are'} in the ${esc(where)}.
-      <button class="btn alt small" type="button" data-view="all">Search all US</button>`;
+  function openOthers() {
+    const box = document.createElement('div');
+    box.innerHTML = `<ul class="list">${snap.others.map((r) => `<li><button class="list-row" type="button"
+      data-symbol="${esc(r.symbol)}">${M.otherRow(r)}</button></li>`).join('')}</ul>`;
+    box.addEventListener('click', (e) => {
+      const hit = e.target.closest('[data-symbol]');
+      const r = hit && snap.others.find((x) => x.symbol === hit.dataset.symbol);
+      if (r) openStock(r, snap.others, { back: openOthers });
+    });
+    openSheet({ title: `${M.othersTitle} (${snap.others.length})`, sub: esc(M.othersHint), body: box });
   }
 
-  function buildRanked() {
-    const filterOptions = M.filters.map((f) => {
-      const values = [...new Set(snap.ranked.map((r) => r[f.key]).filter(Boolean))];
-      values.sort(f.order ? (a, b) => f.order.indexOf(a) - f.order.indexOf(b) : undefined);
-      if (filters[f.key] && !values.includes(filters[f.key])) filters[f.key] = '';
-      return `<select data-filter="${f.key}" aria-label="${esc(f.all)}"><option value="">${esc(f.all)}</option>${
-        values.map((v) => `<option value="${esc(v)}"${filters[f.key] === v ? ' selected' : ''}>${esc(v)}</option>`).join('')}</select>`;
-    }).join('');
-    const title = M.rankedTitleFor ? M.rankedTitleFor(snap) : M.rankedTitle;
-    const placeholder = M.searchPlaceholderFor ? M.searchPlaceholderFor(snap) : M.searchPlaceholder;
-    els.rankedCard.innerHTML = `<details class="fold"${isOpen(els.rankedCard, true) ? ' open' : ''}>
-      <summary><h2>${esc(title)} (${snap.ranked.length})</h2>
-        <span class="hint">${esc(M.rankedHint)}</span></summary>
-      <div class="toolbar">
-        <input type="search" id="q" placeholder="${esc(placeholder)}" aria-label="${esc(placeholder)}" value="${esc(filters.query)}">
-        ${filterOptions}
-        <button class="btn alt small" type="button" id="cols-btn" aria-pressed="${allColumns()}"
-          title="Show or hide the extra columns of numbers">More columns</button>
-        <span class="count" id="count"></span>
-      </div>
-      <div id="ranked-table"></div></details>`;
-    const match = (r) => matchesQuery(r, filters.query)
-      && M.filters.every((f) => !filters[f.key] || r[f.key] === filters[f.key]);
-    const count = els.rankedCard.querySelector('#count');
-    rankedTable = makeTable(els.rankedCard.querySelector('#ranked-table'), {
-      columns: M.columns, rows: () => snap.ranked, detail: M.detail, filtersFn: match,
-      sort: { key: 'rank', dir: 1 }, empty: emptyRanked, context: () => ({ multi: Boolean(snap.multi) }),
-      // A typed search shows every match, so the stock looked for is never behind "Show all".
-      limit: TOP_ROWS, filtered: () => Boolean(filters.query.trim()),
-      onRender: ({ shown, matched }) => {
-        const total = snap.ranked.length;
-        count.textContent = shown === total ? `${total} shown`
-          : shown < matched && matched < total ? `Showing ${shown} of ${matched} matches`
-            : `Showing ${shown} of ${total}`;
-      },
-    });
-    const refresh = () => rankedTable.render();
-    els.rankedCard.querySelector('#q').addEventListener('input', (e) => { filters.query = e.target.value; refresh(); });
-    els.rankedCard.querySelectorAll('select[data-filter]').forEach((sel) => sel.addEventListener('change', () => {
-      filters[sel.dataset.filter] = sel.value;
-      refresh();
-    }));
-    els.rankedCard.querySelector('#cols-btn').addEventListener('click', (e) => {
-      const on = !allColumns();
-      store.set(COLUMNS_KEY, on ? '1' : '0');
-      e.currentTarget.setAttribute('aria-pressed', String(on));
-      app.querySelectorAll('table.rank').forEach((table) => table.classList.toggle('all-cols', on));
-    });
-    rankedTable.refresh = refresh;
-    refresh();
+  const SHEETS = {
+    changes: () => {
+      const c = snap.changes;
+      const since = c.compared_to?.data_through ? ` · vs prices of ${tradingDay(c.compared_to.data_through)}` : '';
+      openSheet({ title: 'What changed', sub: esc(`${c.summary || ''}${since}`), body: changesHtml(c) });
+    },
+    others: openOthers,
+    method: () => openSheet({ title: 'How this ranking works', body: M.method(snap) }),
+  };
+
+  function renderMore() {
+    const rows = [];
+    if (snap.changes) rows.push(['changes', 'history', 'What changed', snap.changes.summary || 'Since the previous refresh']);
+    if (snap.others?.length) rows.push(['others', 'minus', `${M.othersTitle} (${snap.others.length})`, M.othersHint]);
+    rows.push(['method', 'help', 'How this ranking works', M.methodHint]);
+    els.moreCard.hidden = false;
+    els.moreCard.innerHTML = `<ul class="list nav-list">${rows.map(([key, ic, title, sub]) => `<li><button class="list-row"
+      type="button" data-sheet="${key}"><span class="lr-icon">${icon(ic)}</span><span class="lr-main"><span class="lr-title">${
+      esc(title)}</span><span class="lr-sub">${esc(sub)}</span></span><span class="lr-chev">${icon('chevron-right')}</span></button></li>`).join('')}</ul>`;
   }
 
-  function buildOthers() {
-    if (!snap.others?.length) { els.othersCard.hidden = true; othersTable = null; return; }
-    els.othersCard.hidden = false;
-    els.othersCard.innerHTML = `<details class="fold"${isOpen(els.othersCard, false) ? ' open' : ''}>
-        <summary><h2>${esc(M.othersTitle)} (${snap.others.length})</h2>
-        <span class="hint">No qualifying setup or not enough history</span></summary>
-        <div id="others-table"></div></details>`;
-    othersTable = makeTable(els.othersCard.querySelector('#others-table'), {
-      columns: M.otherColumns, rows: () => snap.others, detail: M.detail,
-      sort: { key: 'symbol', dir: 1 }, empty: 'Every stock is ranked today.',
-      context: () => ({ multi: Boolean(snap.multi) }),
-    });
-    othersTable.render();
+  // ?stock=SYMBOL (a shared link or the site search) opens that stock's sheet.
+  function dropParam(name) {
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has(name)) return;
+    url.searchParams.delete(name);
+    window.history.replaceState(window.history.state, '', url);
+  }
+
+  function openBySymbol(symbol) {
+    const find = () => snap?.ranked.find((r) => r.symbol === symbol) || snap?.others?.find((r) => r.symbol === symbol);
+    let row = find();
+    if (!row && M.views && view !== 'all') {
+      setView('all');
+      row = find();
+    }
+    if (!row) {
+      toast(`${symbol} is not in this list.`);
+      dropParam('stock');
+      return;
+    }
+    openStock(row, snap.ranked.includes(row) ? rankedTable.list() : snap.others);
   }
 
   function renderMoney() {
     els.tiles.innerHTML = M.tiles(snap);
-    rankedTable?.refresh();
-    othersTable?.render();
+    rankedTable?.render();
+    if (shown) {
+      const row = shown.order.find((r) => r.symbol === shown.symbol);
+      if (row) openStock(row, shown.order, { back: shown.back });
+    }
   }
 
   function renderAll() {
@@ -768,11 +834,9 @@ export async function start(marketKey) {
     renderViews();
     renderSync();
     renderNotice();
-    renderChanges();
     buildRanked();
-    buildOthers();
+    renderMore();
     els.tiles.innerHTML = M.tiles(snap);
-    els.method.innerHTML = M.method(snap);
     app.setAttribute('aria-busy', 'false');
   }
 
@@ -797,9 +861,15 @@ export async function start(marketKey) {
   }
 
   currency.onChange(() => { syncCurrencyToggle(); if (snap) renderMoney(); });
+  NARROW.addEventListener('change', () => rankedTable?.render());
   window.addEventListener('rupevo:admin-change', renderSync);
   setInterval(renderSync, 60000);
   app.addEventListener('click', (e) => {
+    const sheetBtn = e.target.closest('button[data-sheet]');
+    if (sheetBtn && snap) {
+      SHEETS[sheetBtn.dataset.sheet]?.();
+      return;
+    }
     const btn = e.target.closest('button[data-view]');
     if (!btn || btn.disabled || !snap) return;
     e.preventDefault();
@@ -813,6 +883,14 @@ export async function start(marketKey) {
   window.addEventListener('hashchange', () => {
     if (M.views && snap && viewFromHash(window.location.hash) !== snap.view) setView(viewFromHash(window.location.hash));
   });
+  // The site search shows a stock of this market right here.
+  window.addEventListener('rupevo:select', (e) => {
+    const it = e.detail;
+    if (snap && it?.kind === 'stock' && it.market === marketKey) {
+      e.preventDefault();
+      openBySymbol(it.sym);
+    }
+  });
 
   try {
     const { ok, failed } = await loadLists(false);
@@ -821,6 +899,8 @@ export async function start(marketKey) {
     missing = failed.map((f) => f.list);
     snap = compose();
     renderAll();
+    const wanted = new URLSearchParams(window.location.search).get('stock');
+    if (wanted) openBySymbol(wanted);
   } catch (err) {
     app.setAttribute('aria-busy', 'false');
     els.notice.innerHTML = `<div class="banner error">The ranking data could not be loaded (${esc(err.message)}).

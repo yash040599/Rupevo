@@ -18,25 +18,20 @@
 <body>
   <header id="site-nav"></header>
   <main id="app" class="wrap" aria-busy="true">
-    <section class="hero">
-      <div class="eyebrow">United States · NASDAQ and NYSE</div>
-      <h1>US Stock Ranking</h1>
-      <p class="lede">The NASDAQ-100 and the NYSE's 100 largest US companies, scored on six long-term pillars from
-        prices and reported fundamentals. Click a company for its scorecard.</p>
+    <section class="page-head">
+      <h1>US stock ranking</h1>
+      <p class="lede">The NASDAQ-100 and the NYSE's 100 largest companies, scored for the long term. Tap a company for
+        its scorecard.</p>
       <div class="view-switch" id="views" role="group" aria-label="Exchange"></div>
-      <div class="sync-bar" id="sync-bar"><span class="skel" style="width:320px"></span></div>
+      <div class="sync-bar" id="sync-bar"><span class="skel" style="width:260px"></span></div>
     </section>
     <noscript><div class="banner warn">This page needs JavaScript to display the ranking.</div></noscript>
     <div id="notice"></div>
-    <div class="tiles" id="tiles"></div>
-    <section class="card" id="changes" hidden></section>
+    <section class="tiles" id="tiles" aria-label="Market summary"></section>
     <section class="card" id="ranked-card">
-      <span class="skel"></span><span class="skel"></span><span class="skel"></span><span class="skel"></span>
+      <span class="skel" style="width:40%"></span><span class="skel"></span><span class="skel"></span><span class="skel"></span>
     </section>
-    <section class="card" id="others-card" hidden></section>
-    <section class="card" id="method-card">
-      <details class="fold"><summary><h2>How this ranking works</h2></summary><div id="method-body"></div></details>
-    </section>
+    <section class="card more-card" id="more-card" aria-label="More about this ranking" hidden></section>
     <aside class="card trivia-card" data-trivia="market" aria-label="Stories from the market">
       <span class="skel" style="width:40%"></span><span class="skel"></span><span class="skel"></span>
     </aside>

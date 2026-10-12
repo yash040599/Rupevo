@@ -17,39 +17,46 @@
   <header id="site-nav"></header>
   <main id="app" class="wrap">
     <section class="home-hero">
-      <div class="eyebrow">Rupevo</div>
-      <h1>Market rankings, <span class="grad">explained</span>.</h1>
-      <p>Stock rankings, mutual fund comparisons and tax tools for Indian investors, with the reasons behind every
-        score. Free, no login.</p>
+      <h1 class="home-logo"><span class="brand-mark" aria-hidden="true">R</span>Rupevo</h1>
+      <p class="home-tag">Stock rankings, fund comparisons and tax tools for Indian investors, with the reasons behind
+        every score.</p>
+      <form class="search-field hero-search" id="home-search" role="search" autocomplete="off">
+        <span class="hc-search" data-icon="search"></span>
+        <input type="search" placeholder="Search stocks, funds and tools" aria-label="Search stocks, funds and tools"
+          enterkeyhint="search">
+      </form>
+      <nav class="chip-row home-chips" aria-label="Shortcuts">
+        <a class="chip" href="india/">Nifty 100</a>
+        <a class="chip" href="us/">US stocks</a>
+        <a class="chip" href="mf/">Mutual funds</a>
+        <a class="chip" href="mf/#plan">SIP split</a>
+        <a class="chip" href="tax/rsu/">RSU tax</a>
+      </nav>
     </section>
     <div class="home-cards">
       <a class="card home-card" href="india/">
-        <div class="eyebrow">India · NSE</div>
-        <h2>Nifty 100 Ranking</h2>
-        <p>India's 100 largest companies, ranked on their price trends, with a risk grade for each.</p>
+        <span class="hc-icon" data-icon="india"></span>
+        <h2>Nifty 100 ranking</h2>
+        <p>India's 100 largest companies, ranked on their price trends.</p>
         <div class="meta" data-meta="india"><span class="skel" style="width:70%"></span></div>
-        <span class="go">Open the ranking →</span>
       </a>
       <a class="card home-card" href="us/">
-        <div class="eyebrow">United States · NASDAQ and NYSE</div>
-        <h2>US Stock Ranking</h2>
+        <span class="hc-icon" data-icon="us"></span>
+        <h2>US stock ranking</h2>
         <p>The NASDAQ-100 and the NYSE's 100 largest companies, scored for the long term.</p>
         <div class="meta" data-meta="us"><span class="skel" style="width:70%"></span></div>
-        <span class="go">Open the ranking →</span>
       </a>
       <a class="card home-card" href="mf/">
-        <div class="eyebrow">India · Mutual funds</div>
-        <h2>Mutual Fund Comparison</h2>
-        <p>Which fund house's fund to pick, how to split a SIP at your age, and a check for lump sums.</p>
+        <span class="hc-icon" data-icon="funds"></span>
+        <h2>Mutual fund comparison</h2>
+        <p>The best fund in each group, a SIP split by age and a lump-sum check.</p>
         <div class="meta" data-meta="mf"><span class="skel" style="width:70%"></span></div>
-        <span class="go">Compare funds →</span>
       </a>
       <a class="card home-card" href="tax/">
-        <div class="eyebrow">Tax tools · India</div>
+        <span class="hc-icon" data-icon="tax"></span>
         <h2>RSU taxation</h2>
-        <p>Hold RSUs of a foreign employer? Step-by-step help with your ITR.</p>
-        <div class="meta">Fidelity · Microsoft and Oracle: Schedule FA, dividends and capital gains</div>
-        <span class="go">Open tax tools →</span>
+        <p>Hold RSUs of a foreign employer? What your ITR needs, step by step.</p>
+        <div class="meta">Fidelity · Microsoft and Oracle</div>
       </a>
     </div>
     <aside class="card trivia-card" data-trivia="market" aria-label="Stories from the market">

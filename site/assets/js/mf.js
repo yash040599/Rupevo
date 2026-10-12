@@ -1,12 +1,14 @@
-// Mutual fund comparison page. Renders data/mf.json (pipeline/mf.py): groups of direct-plan funds
-// ranked against their peers with the reasons, the SIP split by age and risk (mf-plan.js) and the
-// lump-sum valuation check.
+// Mutual fund comparison page. Renders data/mf.json (pipeline/mf.py) in three tabs: funds
+// compared within their group (the top fund and how it was chosen, every fund one tap away in a
+// sheet), the SIP split by age and risk (mf-plan.js) and the lump-sum valuation check.
 import {
   DASH, ago, dataUrl, esc, isNum, istDateTime, loadJSON, more, openMores, signedPct, sleep, store, toast, tradingDay,
 } from './core.js';
 import { renderShell } from './shell.js';
 import { handleRefreshLink, isAdmin, startRefresh } from './admin.js';
+import { icon } from './icons.js';
 import { openRequestModal } from './request.js';
+import { openSheet } from './sheet.js';
 import { pageSeed, renderTrivia } from './trivia.js';
 import {
   AGE_BANDS, RISK_LEVELS, allocation, equityShare, findInOtherGroups, groupFromHash, lagOf, matchesFund,
@@ -15,6 +17,7 @@ import {
 
 const PLAN_KEY = 'rupevo-mf-plan';
 const ASSUMED_INDEX_RETURN = 12;
+const TABS = ['compare', 'plan', 'lumpsum'];
 const COMPONENTS = {
   index: [['tracking', 'Gap to the index', 50], ['steadiness', 'Tracking error', 20],
     ['cost', 'Expense ratio', 20], ['size', 'Fund size', 10]],
@@ -33,6 +36,8 @@ const ZONES = [
   ['mid', 'Around usual', 'Either works; spreading it over 3 to 6 months is a common middle path.'],
   ['high', 'More expensive than usual', 'Spread a lump sum over 6 to 12 months.'],
 ];
+// Phones get a list of funds, wider screens a table.
+const NARROW = window.matchMedia('(max-width: 719px)');
 
 // ── Formatting ──
 const signed = (v, digits) => `${v < 0 ? '−' : ''}${Math.abs(v).toFixed(digits)}%`;
@@ -80,15 +85,17 @@ const app = document.getElementById('app');
 const els = {
   sync: app.querySelector('#sync-bar'),
   notice: app.querySelector('#notice'),
+  tabs: app.querySelector('#mf-tabs'),
+  panels: Object.fromEntries(TABS.map((t) => [t, app.querySelector(`#panel-${t}`)])),
   nav: app.querySelector('#group-nav'),
   verdict: app.querySelector('#verdict-card'),
   funds: app.querySelector('#funds-card'),
   plan: app.querySelector('#plan-card'),
   lumpsum: app.querySelector('#lumpsum-card'),
-  method: app.querySelector('#method-body'),
+  method: app.querySelector('#method-card'),
 };
 const state = {
-  snap: null, group: null, query: '', open: new Set(), sort: { key: 'rank', dir: 1 },
+  snap: null, group: null, tab: 'compare', query: '', rows: [], sort: { key: 'rank', dir: 1 }, lastGroup: {},
   plan: { age: 'u30', risk: 'balanced', amount: 10000 }, calc: { amount: 10000, years: 15 },
 };
 try {
@@ -105,36 +112,51 @@ const valuationOf = (g) => state.snap.valuation?.indices?.find((v) => v.key === 
 renderShell('mf', { showCurrency: false, onAdminRefreshed: () => reload(true) });
 document.querySelectorAll('[data-trivia]').forEach((el) => renderTrivia(el, { seed: pageSeed(), pool: el.dataset.trivia || 'market' }));
 
-// `short`: the zone alone, for rows that already name the index and its P/E.
+// `short`: the zone alone, for rows that already name the index and its P/E. As a button, it
+// opens the index's row on the Lump sum tab.
 function zoneChip(ix, asButton = false, { short = false } = {}) {
   if (!ix?.zone) return '';
   const inner = short ? `<span class="dot"></span>${esc(ix.zone_label)}`
     : `<span class="dot"></span>${esc(ix.name)} P/E ${isNum(ix.pe) ? ix.pe.toFixed(1) : DASH}: ${esc(ix.zone_label)}`;
   return asButton
-    ? `<button class="chip ${ZONE_CHIP[ix.zone]} chip-btn" type="button" data-scroll="val-${esc(ix.key)}"
-        title="See the lump-sum check below">${inner}</button>`
+    ? `<button class="chip ${ZONE_CHIP[ix.zone]} chip-btn" type="button" data-zone="${esc(ix.key)}"
+        title="See the lump-sum check">${inner}</button>`
     : `<span class="chip ${ZONE_CHIP[ix.zone]}">${inner}</span>`;
 }
 
 function groupLink(key, label) {
   const g = groupByKey(key);
   if (!g) return '';
-  return `<button class="linkish small" type="button" data-group="${esc(key)}" data-scroll="verdict-card">${
+  return `<button class="linkish small" type="button" data-group="${esc(key)}" data-goto="compare">${
     esc(label || g.short)} ${g.kind === 'index' ? 'index funds' : 'funds'} →</button>`;
 }
 
-// ── Sync bar and notices ──
+function setHash(hash) {
+  if (window.location.hash !== `#${hash}`) {
+    window.history.replaceState(window.history.state, '', `${window.location.pathname}${window.location.search}#${hash}`);
+  }
+}
+
+function dropParam(name) {
+  const url = new URL(window.location.href);
+  if (!url.searchParams.has(name)) return;
+  url.searchParams.delete(name);
+  window.history.replaceState(window.history.state, '', url);
+}
+
+// ── Update line and notices ──
 function renderSync() {
   const snap = state.snap;
   if (!snap) return;
   const ageDays = (Date.now() - new Date(snap.generated_at).getTime()) / 86400000;
   els.sync.innerHTML = `
-    <span class="chip ${ageDays > 9 ? 'warn' : 'pos'}"><span class="dot"></span>Last synced ${esc(istDateTime(snap.generated_at))}</span>
-    <span class="sync-meta">${esc(ago(snap.generated_at))} · NAVs and returns through ${esc(tradingDay(snap.data_through))} · AMFI data</span>
-    <span class="spacer"></span>
-    <span class="sync-actions">${isAdmin()
-      ? '<span class="chip info" title="Admin mode is on in this browser">Admin</span><button class="btn" id="analyse-btn" type="button">Analyse now</button>'
-      : '<button class="btn alt" id="request-btn" type="button" title="Ask the maintainer to refresh this comparison">Request refresh</button>'}</span>`;
+    <span class="sync-dot${ageDays > 9 ? ' warn' : ''}" aria-hidden="true"></span>
+    <span class="sync-meta" title="Last synced ${esc(istDateTime(snap.generated_at))} · NAVs and returns through ${
+      esc(tradingDay(snap.data_through))} · AMFI data">Updated ${esc(ago(snap.generated_at))}<span class="sync-extra"> · ${snap.stats.funds} funds from ${
+      snap.stats.amcs} fund houses</span></span>
+    ${isAdmin()
+      ? '<span class="chip info" title="Admin mode is on in this browser">Admin</span><button class="text-btn" id="analyse-btn" type="button">Analyse now</button>'
+      : '<button class="text-btn" id="request-btn" type="button" title="Ask the maintainer to refresh this comparison">Request refresh</button>'}`;
   els.sync.querySelector('#analyse-btn')?.addEventListener('click', () => startRefresh('mf', { onDone: () => reload(true) }));
   els.sync.querySelector('#request-btn')?.addEventListener('click', () => openRequestModal({
     market: 'mf', title: 'Mutual Fund Comparison', generatedAt: snap.generated_at,
@@ -148,28 +170,45 @@ function renderNotice() {
   els.notice.innerHTML = notes.join('');
 }
 
-// ── Group switch (buttons; a grouped dropdown on phones) ──
-function renderNav() {
-  const kinds = [['index', 'Index funds'], ['active', 'Active funds']];
-  const row = (kind, title) => {
-    const groups = state.snap.groups.filter((g) => g.kind === kind);
-    if (!groups.length) return '';
-    return `<div class="group-row"><span class="group-kind">${title}</span>
-      <div class="view-switch" role="group" aria-label="${title}">${groups.map((g) => `
-        <button class="view-btn" type="button" data-group="${esc(g.key)}" aria-pressed="${g.key === state.group}"
-          title="${esc(g.label)}: ${g.stats.ranked} of ${g.stats.funds} ranked">${esc(g.short)}</button>`).join('')}</div></div>`;
-  };
-  const options = kinds.map(([kind, title]) => `<optgroup label="${title}">${state.snap.groups
-    .filter((g) => g.kind === kind).map((g) => `<option value="${esc(g.key)}"${g.key === state.group ? ' selected' : ''}>${
-      esc(g.short)}</option>`).join('')}</optgroup>`).join('');
-  els.nav.innerHTML = `<div class="card-head"><h2>Pick a type of fund</h2>
-      <span class="hint">Index funds copy an index at low cost; active funds pay a manager to pick shares.</span></div>
-    <label class="field group-select">Fund group<select id="group-select">${options}</select></label>
-    ${kinds.map(([kind, title]) => row(kind, title)).join('')}`;
-  els.nav.querySelector('#group-select').addEventListener('change', (e) => selectGroup(e.target.value));
+// ── Tabs: Compare funds · SIP split · Lump sum (also #compare, #plan, #lumpsum in the URL) ──
+function selectTab(name, { hash = false, scroll = false } = {}) {
+  if (!TABS.includes(name)) return;
+  state.tab = name;
+  els.tabs.querySelectorAll('[role="tab"]').forEach((tab) => {
+    const on = tab.dataset.tab === name;
+    tab.setAttribute('aria-selected', String(on));
+    tab.tabIndex = on ? 0 : -1;
+  });
+  for (const key of TABS) els.panels[key].hidden = key !== name;
+  if (hash) setHash(name === 'compare' ? state.group : name);
+  if (scroll) {
+    // Bring the top of the tab's content under the sticky tabs if the page is scrolled past it.
+    const offset = els.tabs.getBoundingClientRect().bottom;
+    const top = els.panels[name].getBoundingClientRect().top;
+    if (top < offset) window.scrollTo({ top: window.scrollY + top - offset - 8 });
+  }
 }
 
-// ── Verdict: the top-ranked fund up front; how the decision was made one click away ──
+// ── Group switch: index or active funds, then the group as a chip ──
+function renderNav() {
+  const g = current();
+  const kinds = [['index', 'Index funds'], ['active', 'Active funds']].filter(([k]) => state.snap.groups.some((x) => x.kind === k));
+  const groups = state.snap.groups.filter((x) => x.kind === g.kind);
+  els.nav.innerHTML = `
+    <div class="view-switch kind-switch" role="group" aria-label="Type of fund">${kinds.map(([k, label]) =>
+      `<button class="view-btn" type="button" data-kind="${k}" aria-pressed="${k === g.kind}">${label}</button>`).join('')}</div>
+    <div class="chip-row scroll group-chips" role="group" aria-label="${g.kind === 'index' ? 'Index the funds track' : 'Fund category'}">${
+      groups.map((x) => `<button class="chip" type="button" data-group="${esc(x.key)}" aria-pressed="${x.key === state.group}"
+        title="${esc(x.label)}: ${x.stats.ranked} of ${x.stats.funds} ranked">${esc(x.short)}</button>`).join('')}</div>`;
+  // Scroll the chip row (only it, not the page) so the chosen group is in view.
+  const row = els.nav.querySelector('.group-chips');
+  const chip = row.querySelector('[aria-pressed="true"]');
+  if (chip && row.scrollWidth > row.clientWidth) {
+    row.scrollLeft = Math.max(0, chip.offsetLeft - (row.clientWidth - chip.offsetWidth) / 2);
+  }
+}
+
+// ── Verdict: the top-ranked fund up front; how the decision was made one tap away ──
 function renderVerdict() {
   const g = current();
   const ranked = g.funds.filter((f) => f.rank);
@@ -177,9 +216,7 @@ function renderVerdict() {
   const val = valuationOf(g);
   const keep = openMores(els.verdict);
   const head = `<div class="verdict-head">
-      <div><div class="eyebrow">${g.kind === 'index' ? 'Index funds' : 'Active funds'}${g.benchmark
-        ? ` · ${g.kind === 'index' ? 'tracking' : 'benchmark'} ${esc(g.benchmark)}` : ''}</div>
-        <h2 class="verdict-title">${esc(g.label)}</h2>
+      <div><h2 class="verdict-title">${esc(g.label)}</h2>
         <p class="verdict-about">${esc(g.about)}</p></div>
       ${zoneChip(val, true)}
     </div>`;
@@ -190,26 +227,29 @@ function renderVerdict() {
     return;
   }
   const how = g.kind === 'index'
-    ? `All ${g.stats.funds} funds here hold the same shares as the index, so what separates them is how faithfully
-      and how cheaply they copy it. Each is scored out of 100: the gap between its return and the index's over 1 and
-      3 years (50%), how steadily it tracks day to day (20%), its expense ratio (20%) and its size (10%).`
+    ? `All ${g.stats.funds} funds here hold the same shares as the index${g.benchmark ? ` (${esc(g.benchmark)})` : ''}, so
+      what separates them is how faithfully and how cheaply they copy it. Each is scored out of 100: the gap between its
+      return and the index's over 1 and 3 years (50%), how steadily it tracks day to day (20%), its expense ratio (20%)
+      and its size (10%).`
     : `These funds follow the same SEBI rules, but each manager picks different shares. The ${g.stats.ranked} with
       at least 5 years of history are scored out of 100 against each other: how often their 3-year return beat the
       category median at month-ends over the last 5 years (30%), 3- and 5-year returns (20%), return per unit of
-      risk (20%), the worst fall in 5 years (15%) and the expense ratio (15%).`;
-  const runners = ranked.slice(1, 3).map((f) => `<button class="linkish" type="button" data-open="${f.code}">#${
-    f.rank} ${esc(f.name)}</button> <span class="muted">${f.score.toFixed(1)}</span>`).join(' · ');
+      risk (20%), the worst fall in 5 years (15%) and the expense ratio (15%).${g.benchmark ? ` Benchmark: ${esc(g.benchmark)}.` : ''}`;
+  const runners = ranked.slice(1, 3).map((f) => `<li><button class="list-row" type="button" data-open="${f.code}">
+      <span class="lr-rank">${f.rank}</span><span class="lr-main"><span class="lr-title fund-name">${esc(f.name)}</span>
+      <span class="lr-sub">${esc(f.amc)}</span></span><span class="lr-trail">${scoreCell(f)}</span></button></li>`).join('');
   els.verdict.innerHTML = `${head}
-    <div class="verdict-top">
-      <div class="verdict-rank">#1</div>
-      <div><div class="verdict-label">Top ranked of ${ranked.length}</div>
-        <div class="verdict-name">${esc(top.name)}</div>
-        <div class="small muted">${esc(top.amc)} · score ${top.score.toFixed(1)} out of 100</div></div>
-      <button class="btn alt small verdict-open" type="button" data-open="${top.code}">Full breakdown</button>
-    </div>
+    <button class="top-pick" type="button" data-open="${top.code}">
+      <span class="top-rank">#1</span>
+      <span class="lr-main"><span class="top-label">Top ranked of ${ranked.length}</span>
+        <span class="top-name">${esc(top.name)}</span>
+        <span class="lr-sub">${esc(top.amc)} · score ${top.score.toFixed(1)} out of 100</span></span>
+      <span class="lr-chev">${icon('chevron-right')}</span>
+    </button>
     ${top.notes?.length ? list(top.notes, 'reasons notes') : ''}
     <div class="facts">${g.kind === 'index' ? indexFacts(g, top) : activeFacts(g, top)}</div>
-    ${runners ? `<p class="runners">Runners-up: ${runners}</p>` : ''}
+    ${runners ? `<div class="runners"><h3 class="runners-title">Runners-up</h3><ul class="list">${runners}</ul></div>` : ''}
+    <div class="verdict-actions"><button class="btn tonal" type="button" data-see-all>See all ${g.funds.length} funds</button></div>
     <div class="more-list">
       ${top.reasons?.length ? more('why', `Why ${esc(top.name)} comes first`, list(top.reasons), keep.has('why')) : ''}
       ${more('how', 'How these funds are compared', `<p>${how}</p>
@@ -306,14 +346,18 @@ function indexCheck(g, keep) {
   return more('check', 'Index check: is an active fund worth it here?', `<p>${check} ${beat}</p>`, keep.has('check'));
 }
 
-// ── Funds table ──
+// ── All funds in the group: a list on phones, a table on wider screens; each opens a sheet ──
 const rankCell = (f) => (f.rank ? `<span class="rank-num">${f.rank}</span>` : `<span class="muted">${DASH}</span>`);
-const fundCell = (f, open) => `<div class="stock fund-cell">
-    <button class="sym" type="button" aria-expanded="${open ? 'true' : 'false'}">${esc(f.name)}</button>
-    <span class="nm">${esc(f.amc)}${f.notes?.length ? ` · <span class="warn-text" title="${esc(f.notes.join(' '))}">note</span>` : ''}</span></div>`;
+const noteFlag = (f) => (f.notes?.length ? ` · <span class="warn-text" title="${esc(f.notes.join(' '))}">note</span>` : '');
+const fundCell = (f) => `<div class="stock fund-cell">
+    <button class="sym" type="button">${esc(f.name)}</button>
+    <span class="nm">${esc(f.amc)}${noteFlag(f)}</span></div>`;
 const scoreCell = (f) => (isNum(f.score)
   ? `<span class="grade ${scoreClass(f.score)}" title="Score ${f.score.toFixed(1)} out of 100">${Math.round(f.score)}</span>`
   : `<span class="chip" title="${esc(f.status_reason || '')}">${esc(STATUS_LABEL[f.status] || 'Not ranked')}</span>`);
+const fundRow = (f) => `<span class="lr-rank">${f.rank || DASH}</span>
+    <span class="lr-main"><span class="lr-title fund-name">${esc(f.name)}</span><span class="lr-sub">${esc(f.amc)}${noteFlag(f)}</span></span>
+    <span class="lr-trail">${scoreCell(f)}</span>`;
 const absOrNull = (v) => (isNum(v) ? Math.abs(v) : null);
 
 const COLUMNS = {
@@ -368,7 +412,7 @@ function sortedFunds(g, columns) {
   });
 }
 
-function detail(f, g, keep = new Set()) {
+function detail(f, g) {
   const left = [section(f.rank ? 'Why it ranks here' : 'Why it is not ranked',
     `${f.status_reason ? `<p class="muted" style="margin:0 0 8px">${esc(f.status_reason)}</p>` : ''}${list(f.reasons)}`)];
   if (f.notes?.length) left.push(section('Worth knowing', list(f.notes)));
@@ -400,38 +444,68 @@ function detail(f, g, keep = new Set()) {
   const right = [
     section(`Score breakdown${isNum(f.score) ? ` · ${f.score.toFixed(1)}` : ''}`,
       bars(COMPONENTS[g.kind].map(([k, label, w]) => ({ label: `${label} (${w}%)`, value: f.components?.[k] })))),
-    section('Key numbers', kv(key) + more(`nums-${f.code}`, 'More numbers', kv(rest), keep.has(`nums-${f.code}`))),
+    section('Key numbers', kv(key) + more(`nums-${f.code}`, 'More numbers', kv(rest))),
   ];
   return `<div>${left.join('')}</div><div>${right.join('')}</div>`;
 }
 
+// The top of a fund's sheet: its score and rank, and a few chips.
+const fundTop = (f, g) => `<div class="quote">
+    <div class="quote-price"><span class="quote-close">${isNum(f.score) ? f.score.toFixed(1) : DASH}<span
+      class="quote-unit"> / 100</span></span><span class="quote-change">${f.rank ? `Rank ${f.rank} of ${g.stats.ranked}`
+      : esc(STATUS_LABEL[f.status] || 'Not ranked')}</span></div>
+    <div class="chip-row"><span class="chip">${g.kind === 'index' ? 'Index fund' : 'Active fund'} · ${esc(g.short)}</span>
+      <span class="chip">Expense ${pct2(f.ter)}</span>${f.riskometer ? `<span class="chip">${esc(f.riskometer)} risk</span>` : ''}</div>
+  </div>`;
+
+function openFund(code) {
+  const g = state.snap.groups.find((gr) => gr.funds.some((f) => f.code === code));
+  if (!g) {
+    toast('That fund is not in the comparison.');
+    dropParam('fund');
+    return;
+  }
+  if (g.key !== state.group) selectGroup(g.key);
+  const order = state.rows.some((f) => f.code === code) ? state.rows : g.funds.filter((f) => f.code === code);
+  const show = (i) => {
+    const f = order[i];
+    openSheet({
+      title: f.name,
+      sub: esc(`${f.amc} · ${g.label}`),
+      body: `${fundTop(f, g)}<div class="detail">${detail(f, g)}</div>`,
+      onPrev: i > 0 ? () => show(i - 1) : null,
+      onNext: i < order.length - 1 ? () => show(i + 1) : null,
+      onClose: () => dropParam('fund'),
+    });
+  };
+  show(order.findIndex((f) => f.code === code));
+}
+
 function renderFunds() {
   const g = current();
-  const columns = COLUMNS[g.kind];
   els.funds.hidden = false;
   els.funds.innerHTML = `<details class="fold"${isOpen(els.funds, false) ? ' open' : ''}>
-    <summary><h2>All ${esc(g.label)} (${g.funds.length})</h2>
-      <span class="hint">Sort, search, and click a fund for its full breakdown</span></summary>
+    <summary><h2>All ${esc(g.label)} <span class="count-pill">${g.funds.length}</span></h2>
+      <span class="hint">Tap a fund for its full breakdown</span></summary>
     <div class="toolbar">
-      <input type="search" id="fund-q" placeholder="Search fund or fund house" aria-label="Search fund or fund house"
-        value="${esc(state.query)}">
+      <label class="search-field compact">${icon('search', { size: 20 })}<input type="search" id="fund-q"
+        placeholder="Search fund or fund house" aria-label="Search fund or fund house" value="${esc(state.query)}"></label>
       <span class="count" id="fund-count"></span>
     </div>
-    <div class="table-scroll"><table class="rank">
-      <thead><tr>${columns.map((c) => `<th class="${[c.right ? 'right' : '', c.opt ? 'opt' : ''].join(' ').trim()}"
-        ${c.title ? `title="${esc(c.title)}"` : ''} data-key="${c.key}"><button class="sort" type="button">${esc(c.label)}</button></th>`).join('')}</tr></thead>
-      <tbody></tbody></table></div>
+    <div id="fund-rows"></div>
     <div id="elsewhere"></div></details>`;
   els.funds.querySelector('#fund-q').addEventListener('input', (e) => { state.query = e.target.value; renderRows(); });
-  els.funds.querySelectorAll('th[data-key]').forEach((th) => th.querySelector('button').addEventListener('click', () => {
-    const col = columns.find((c) => c.key === th.dataset.key);
-    state.sort = state.sort.key === col.key ? { key: col.key, dir: -state.sort.dir } : { key: col.key, dir: col.desc ? -1 : 1 };
-    renderRows();
-  }));
-  els.funds.querySelector('tbody').addEventListener('click', (e) => {
-    const tr = e.target.closest('tr.row');
-    if (!tr || e.target.closest('a')) return;
-    toggleFund(Number(tr.dataset.code));
+  els.funds.querySelector('#fund-rows').addEventListener('click', (e) => {
+    const th = e.target.closest('th[data-key]');
+    if (th) {
+      const col = COLUMNS[current().kind].find((c) => c.key === th.dataset.key);
+      state.sort = state.sort.key === col.key ? { key: col.key, dir: -state.sort.dir } : { key: col.key, dir: col.desc ? -1 : 1 };
+      renderRows();
+      els.funds.querySelector(`th[data-key="${col.key}"] button`)?.focus();
+      return;
+    }
+    const hit = e.target.closest('[data-code]');
+    if (hit && !e.target.closest('a')) openFund(Number(hit.dataset.code));
   });
   renderRows();
 }
@@ -440,83 +514,36 @@ function renderRows() {
   const g = current();
   const columns = COLUMNS[g.kind];
   const rows = sortedFunds(g, columns);
-  const tbody = els.funds.querySelector('tbody');
-  const keep = openMores(tbody);
-  els.funds.querySelectorAll('th[data-key]').forEach((th) => th.setAttribute('aria-sort', th.dataset.key === state.sort.key
-    ? (state.sort.dir > 0 ? 'ascending' : 'descending') : 'none'));
-  tbody.innerHTML = rows.length ? rows.map((f) => {
-    const open = state.open.has(f.code);
-    return `<tr class="row${open ? ' open' : ''}${f.rank ? '' : ' unranked'}" data-code="${f.code}">${columns.map((c) =>
-      `<td class="${[c.cls, c.right ? 'right' : '', c.opt ? 'opt' : ''].filter(Boolean).join(' ')}">${c.render(f, open)}</td>`).join('')}</tr>${
-      open ? `<tr class="detail-row"><td colspan="${columns.length}"><div class="detail">${detail(f, g, keep)}</div></td></tr>` : ''}`;
-  }).join('') : `<tr><td colspan="${columns.length}" class="empty">No fund here matches “${esc(state.query)}”.</td></tr>`;
+  state.rows = rows;
+  const host = els.funds.querySelector('#fund-rows');
+  if (!rows.length) {
+    host.innerHTML = `<p class="empty">No fund here matches “${esc(state.query)}”.</p>`;
+  } else if (NARROW.matches) {
+    host.innerHTML = `<ul class="list fund-list">${rows.map((f) => `<li><button class="list-row${f.rank ? '' : ' unranked'}"
+      type="button" data-code="${f.code}">${fundRow(f)}</button></li>`).join('')}</ul>`;
+  } else {
+    const sortState = (c) => (c.key === state.sort.key ? (state.sort.dir > 0 ? 'ascending' : 'descending') : 'none');
+    host.innerHTML = `<div class="table-scroll"><table class="rank compact">
+      <thead><tr>${columns.map((c) => `<th class="${[c.right ? 'right' : '', c.opt ? 'opt' : ''].join(' ').trim()}"
+        ${c.title ? `title="${esc(c.title)}"` : ''} data-key="${c.key}" aria-sort="${sortState(c)}"><button class="sort"
+        type="button">${esc(c.label)}</button></th>`).join('')}</tr></thead>
+      <tbody>${rows.map((f) => `<tr class="row${f.rank ? '' : ' unranked'}" data-code="${f.code}">${columns.map((c) =>
+        `<td class="${[c.cls, c.right ? 'right' : '', c.opt ? 'opt' : ''].filter(Boolean).join(' ')}">${c.render(f)}</td>`).join('')}</tr>`).join('')}</tbody>
+      </table></div>`;
+  }
   els.funds.querySelector('#fund-count').textContent = rows.length === g.funds.length
     ? `${rows.length} funds` : `Showing ${rows.length} of ${g.funds.length}`;
   const elsewhere = rows.length ? [] : findInOtherGroups(state.snap.groups, g.key, state.query).slice(0, 6);
   els.funds.querySelector('#elsewhere').innerHTML = elsewhere.length
-    ? `<p class="small" style="margin:8px 0 4px">Found in other groups:</p><div class="footer-row">${elsewhere.map(({ group, fund }) =>
-      `<button class="btn alt small" type="button" data-group="${esc(group.key)}" data-open="${fund.code}">${
+    ? `<p class="small" style="margin:8px 0 6px">Found in other groups:</p><div class="chip-row">${elsewhere.map(({ group, fund }) =>
+      `<button class="chip" type="button" data-group="${esc(group.key)}" data-open="${fund.code}">${
         esc(fund.name)} · ${esc(group.short)}${fund.rank ? ` #${fund.rank}` : ''}</button>`).join('')}</div>` : '';
 }
 
-function toggleFund(code, forceOpen = false) {
-  if (state.open.has(code) && !forceOpen) state.open.delete(code); else state.open.add(code);
-  renderRows();
-}
-
-// The funds table starts collapsed; opening a fund from elsewhere on the page unfolds it.
-function openFundsFold() {
+function showAllFunds() {
   const fold = els.funds.querySelector(':scope > details.fold');
   if (fold) fold.open = true;
-}
-
-// ── Intro: live numbers and the quick links' one-line previews ──
-function renderIntro() {
-  const s = state.snap;
-  const stats = document.getElementById('mf-stats');
-  if (stats) {
-    stats.innerHTML = `<strong>${s.stats.funds}</strong> direct plans · <strong>${s.stats.amcs}</strong> fund houses ·
-      <strong>${s.stats.groups}</strong> groups · <a href="#how" data-jump="how">How the comparison works</a>`;
-  }
-  const teaser = (key, html) => {
-    const el = app.querySelector(`[data-teaser="${key}"]`);
-    if (el) el.innerHTML = html;
-  };
-  const top = groupByKey('nifty50')?.funds.find((f) => f.rank === 1);
-  teaser('compare', top ? `Top-ranked Nifty 50 index fund now: <strong>${esc(top.name)}</strong>` : '');
-  const { age, risk } = state.plan;
-  const equity = equityShare(age, risk);
-  const ageLabel = AGE_BANDS.find((b) => b.key === age)?.label || '';
-  const riskLabel = (RISK_LEVELS.find((r) => r.key === risk)?.label || '').toLowerCase();
-  teaser('plan', `${esc(ageLabel)}, ${esc(riskLabel)}: <strong>${equity}% in equity funds</strong>, ${100 - equity}% in debt`);
-  const zones = ['nifty50', 'midcap150', 'smallcap250']
-    .map((key) => s.valuation?.indices?.find((ix) => ix.key === key)).filter((ix) => ix?.zone);
-  teaser('lumpsum', zones.map((ix) => `<span class="chip ${ZONE_CHIP[ix.zone]}"><span class="dot"></span>${
-    esc(ix.name)}: ${esc(ix.zone_label.toLowerCase())}</span>`).join(''));
-}
-
-// ── Sections the quick links jump to; also shareable as #compare, #plan, #lumpsum and #how ──
-const SECTIONS = { compare: 'group-nav', plan: 'plan-card', lumpsum: 'lumpsum-card', how: 'method-card' };
-const sectionFromHash = () => {
-  const key = window.location.hash.replace(/^#/, '').toLowerCase();
-  return SECTIONS[key] ? key : null;
-};
-
-function jumpTo(section, { smooth = true } = {}) {
-  const el = document.getElementById(SECTIONS[section]);
-  if (!el || el.hidden) return;
-  const fold = el.querySelector(':scope > details.fold');
-  if (fold) fold.open = true;
-  el.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' });
-  const hash = `#${section}`;
-  if (window.location.hash !== hash) window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}${hash}`);
-}
-
-// Opens every fold around `el` (a section, or a row inside "more indices") and scrolls to it.
-function reveal(el) {
-  if (!el) return;
-  for (let d = el.closest('details'); d; d = d.parentElement?.closest('details')) d.open = true;
-  el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  els.funds.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // ── SIP split by age and risk ──
@@ -533,8 +560,8 @@ function renderPlan() {
   const large = groupByKey('largecap')?.stats.median_drawdown;
   const keep = openMores(els.plan);
   els.plan.hidden = false;
-  els.plan.innerHTML = `<details class="fold"${isOpen(els.plan, true) ? ' open' : ''}>
-    <summary><h2>SIP split by age and risk</h2><span class="hint">A rule-of-thumb starting point, by fund category</span></summary>
+  els.plan.innerHTML = `<div class="card-head"><h2>SIP split by age and risk</h2>
+      <span class="hint">A rule-of-thumb starting point, by fund category</span></div>
     <div class="plan-grid">
       <div class="plan-controls">
         <div><div class="seg-label">Your age</div><div class="view-switch seg" role="group" aria-label="Your age">${seg('age', AGE_BANDS, age)}</div>
@@ -571,7 +598,7 @@ function renderPlan() {
           back to your split.</li>
       </ol>`, keep.has('split'))}</div>
     <p class="small muted" style="margin:10px 0 0">A general rule of thumb for illustration, not advice for your
-      situation: it does not know your goals, income, loans, emergency fund or existing investments.</p></details>`;
+      situation: it does not know your goals, income, loans, emergency fund or existing investments.</p>`;
   els.plan.querySelector('#plan-amount').addEventListener('change', (e) => {
     state.plan.amount = Math.max(0, Math.round(Number(e.target.value) || 0));
     savePlan();
@@ -613,9 +640,8 @@ function renderLumpSum() {
       ${linked.length ? `<div class="val-links small">${linked.map((g) => groupLink(g.key)).join(' ')}</div>` : ''}
     </div>`;
   };
-  els.lumpsum.innerHTML = `<details class="fold"${isOpen(els.lumpsum, true) ? ' open' : ''}>
-    <summary><h2>Lump sum check: are markets cheap or expensive?</h2>
-      <span class="hint">Index P/E against its own history${v.as_of ? ` · ${esc(tradingDay(v.as_of))}` : ''}</span></summary>
+  els.lumpsum.innerHTML = `<div class="card-head"><h2>Are markets cheap or expensive?</h2>
+      <span class="hint">Each index's P/E against its own history${v.as_of ? ` · ${esc(tradingDay(v.as_of))}` : ''}</span></div>
     <dl class="zone-legend" aria-label="Rule of thumb for a lump sum">
       ${ZONES.map(([zone, label, rule]) => `<dt><span class="chip ${ZONE_CHIP[zone]}"><span
         class="dot"></span>${esc(label)}</span></dt><dd>${esc(rule)}</dd>`).join('')}
@@ -637,15 +663,14 @@ function renderLumpSum() {
         “more expensive than usual” higher than at least 70%. P/E is a rough gauge: profits can change quickly, and cheap
         can get cheaper. The Sensex group uses the Nifty 50 reading. Factor indices (momentum, low volatility, alpha) are
         left out: they swap most of their stocks at each rebalance, so their P/E history says little.</p>`, keep.has('pe'))}
-    </div>
-  </details>`;
+    </div>`;
 }
 
-// ── How it works ──
-function renderMethod() {
+// ── How it works (a sheet) ──
+function methodHtml() {
   const s = state.snap;
   const m = s.model || {};
-  els.method.innerHTML = `<div class="prose">
+  return `<div class="prose">
     <p>The comparison covers ${s.stats.funds} direct-plan equity funds from ${s.stats.amcs} fund houses in
       ${s.stats.groups} groups, using AMFI data up to ${esc(tradingDay(s.data_through))}. Only direct plans (growth
       option) are compared: they pay no distributor commission, so they cost less than regular plans of the same fund.
@@ -703,6 +728,16 @@ function renderMethod() {
   </div>`;
 }
 
+const openMethod = () => openSheet({ title: 'How the comparison works', body: methodHtml() });
+
+function renderMethodCard() {
+  els.method.hidden = false;
+  els.method.innerHTML = `<ul class="list nav-list"><li><button class="list-row" type="button" data-method>
+    <span class="lr-icon">${icon('help')}</span><span class="lr-main"><span class="lr-title">How the comparison works</span>
+    <span class="lr-sub">Which funds are compared, how they are scored, and what this is not</span></span>
+    <span class="lr-chev">${icon('chevron-right')}</span></button></li></ul>`;
+}
+
 // ── Wiring ──
 function renderGroup() {
   renderNav();
@@ -713,82 +748,130 @@ function renderGroup() {
 function renderAll() {
   renderSync();
   renderNotice();
-  renderIntro();
   renderGroup();
   renderPlan();
   renderLumpSum();
-  renderMethod();
+  renderMethodCard();
   app.setAttribute('aria-busy', 'false');
 }
 
-function selectGroup(key, { openCode = null, scroll = null } = {}) {
+function selectGroup(key, { openCode = null } = {}) {
   if (!groupByKey(key)) return;
   if (key !== state.group) {
     state.group = key;
-    state.open.clear();
+    state.lastGroup[groupByKey(key).kind] = key;
     state.sort = { key: 'rank', dir: 1 };
-    if (openCode === null) state.query = '';
-  }
-  if (openCode !== null) {
     state.query = '';
-    state.open.add(openCode);
   }
-  const hash = `#${key}`;
-  if (window.location.hash !== hash) window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}${hash}`);
   renderGroup();
-  if (openCode !== null) openFundsFold();
-  if (scroll) document.getElementById(scroll)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  selectTab('compare');
+  setHash(key);
+  if (openCode !== null) openFund(openCode);
 }
 
+// A hash names a tab (#compare, #plan, #lumpsum), the method (#how) or a group (#nifty50).
+function route() {
+  const key = window.location.hash.replace(/^#/, '').toLowerCase();
+  if (TABS.includes(key)) {
+    selectTab(key);
+  } else if (key === 'how') {
+    selectTab('compare');
+    openMethod();
+  } else if (groupByKey(key)) {
+    if (key !== state.group) selectGroup(key);
+    else selectTab('compare');
+  } else {
+    selectTab(state.tab);
+  }
+}
+
+els.tabs.addEventListener('keydown', (e) => {
+  if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+  const i = TABS.indexOf(state.tab);
+  const next = TABS[(i + (e.key === 'ArrowRight' ? 1 : TABS.length - 1)) % TABS.length];
+  selectTab(next, { hash: true });
+  els.tabs.querySelector(`[data-tab="${next}"]`).focus();
+});
+
 app.addEventListener('click', (e) => {
-  const jump = e.target.closest('a[data-jump]');
-  if (jump && state.snap) {
+  const tab = e.target.closest('[role="tab"][data-tab]');
+  if (tab) {
     e.preventDefault();
-    jumpTo(jump.dataset.jump);
+    if (state.snap) selectTab(tab.dataset.tab, { hash: true, scroll: true });
+    return;
+  }
+  if (!state.snap) return;
+  const kindBtn = e.target.closest('button[data-kind]');
+  if (kindBtn) {
+    const kind = kindBtn.dataset.kind;
+    if (kind !== current().kind) {
+      selectGroup(state.lastGroup[kind] || state.snap.groups.find((g) => g.kind === kind).key);
+      els.nav.querySelector(`[data-kind="${kind}"]`)?.focus();
+    }
     return;
   }
   const groupBtn = e.target.closest('button[data-group]');
-  if (groupBtn && state.snap) {
-    e.preventDefault();
+  if (groupBtn) {
     const code = groupBtn.dataset.open ? Number(groupBtn.dataset.open) : null;
-    selectGroup(groupBtn.dataset.group, { openCode: code, scroll: groupBtn.dataset.scroll || (code !== null ? 'funds-card' : null) });
+    selectGroup(groupBtn.dataset.group, { openCode: code });
+    if (groupBtn.dataset.goto) selectTab('compare', { scroll: true });
+    else els.nav.querySelector(`[data-group="${groupBtn.dataset.group}"]`)?.focus({ preventScroll: true });
     return;
   }
   const openBtn = e.target.closest('button[data-open]');
-  if (openBtn && state.snap) {
-    state.query = '';
-    renderFunds();
-    openFundsFold();
-    toggleFund(Number(openBtn.dataset.open), true);
-    document.getElementById('funds-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  if (openBtn) {
+    openFund(Number(openBtn.dataset.open));
     return;
   }
-  const scrollBtn = e.target.closest('button[data-scroll]');
-  if (scrollBtn) {
-    reveal(document.getElementById(scrollBtn.dataset.scroll));
+  if (e.target.closest('button[data-see-all]')) {
+    showAllFunds();
+    return;
+  }
+  const zoneBtn = e.target.closest('button[data-zone]');
+  if (zoneBtn) {
+    selectTab('lumpsum', { hash: true });
+    const row = document.getElementById(`val-${zoneBtn.dataset.zone}`);
+    if (row) {
+      for (let d = row.closest('details'); d; d = d.parentElement?.closest('details')) d.open = true;
+      row.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    return;
+  }
+  if (e.target.closest('button[data-method]')) {
+    openMethod();
     return;
   }
   const planBtn = e.target.closest('button[data-plan]');
-  if (planBtn && state.snap) {
+  if (planBtn) {
     state.plan[planBtn.dataset.plan] = planBtn.dataset.value;
     savePlan();
     renderPlan();
-    renderIntro();
+    els.plan.querySelector(`[data-plan="${planBtn.dataset.plan}"][data-value="${planBtn.dataset.value}"]`)?.focus();
   }
 });
 
-window.addEventListener('hashchange', () => {
-  if (!state.snap) return;
-  const section = sectionFromHash();
-  if (section) {
-    jumpTo(section);
-    return;
-  }
-  const key = groupFromHash(window.location.hash, state.snap.groups, state.group);
-  if (key !== state.group) selectGroup(key);
-});
+window.addEventListener('hashchange', () => { if (state.snap) route(); });
+NARROW.addEventListener('change', () => { if (state.snap) renderRows(); });
 window.addEventListener('rupevo:admin-change', renderSync);
 setInterval(renderSync, 60000);
+// The site search shows a fund, a group or a tab of this page right here.
+window.addEventListener('rupevo:select', (e) => {
+  const it = e.detail;
+  if (!state.snap || !it) return;
+  if (it.kind === 'fund') {
+    e.preventDefault();
+    openFund(it.code);
+  } else if (it.kind === 'group') {
+    e.preventDefault();
+    selectGroup(it.group);
+    window.scrollTo({ top: 0 });
+  } else if (it.kind === 'page' && it.href.startsWith('mf/')) {
+    e.preventDefault();
+    const key = it.href.split('#')[1];
+    selectTab(TABS.includes(key) ? key : 'compare', { hash: true });
+    window.scrollTo({ top: 0 });
+  }
+});
 
 async function reload(waitForNew) {
   const before = state.snap?.generated_at;
@@ -799,6 +882,7 @@ async function reload(waitForNew) {
         state.snap = snap;
         if (!groupByKey(state.group)) state.group = groupFromHash(window.location.hash, snap.groups);
         renderAll();
+        selectTab(state.tab);
         return true;
       }
     } catch { /* retry below */ }
@@ -811,10 +895,12 @@ async function reload(waitForNew) {
 try {
   state.snap = await loadJSON(dataUrl('mf'));
   state.group = groupFromHash(window.location.hash, state.snap.groups);
+  state.lastGroup[current().kind] = state.group;
   renderAll();
-  // A shared link to a section (#plan, #lumpsum, ...) lands on it once the page is drawn.
-  const section = sectionFromHash();
-  if (section) jumpTo(section, { smooth: false });
+  route();
+  // ?fund=CODE (a shared link or the site search) opens that fund's sheet.
+  const fund = new URLSearchParams(window.location.search).get('fund');
+  if (fund) openFund(Number(fund));
 } catch (err) {
   app.setAttribute('aria-busy', 'false');
   els.notice.innerHTML = `<div class="banner error">The fund data could not be loaded (${esc(err.message)}).
