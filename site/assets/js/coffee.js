@@ -57,9 +57,7 @@ function phoneBody(id, payee) {
           and pick it from your photos.</p>
         <div>${saveQr('small')}</div>
       </div>
-    </div>
-    <p class="small muted">Why no “pay now” button? UPI apps reject payment links to personal UPI IDs to stop
-      fraud, so the payment has to start in your app. ${PRIVACY}</p>`;
+    </div>`;
 }
 
 /**
