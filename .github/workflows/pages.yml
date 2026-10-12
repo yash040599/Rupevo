@@ -1,4 +1,7 @@
-# Publishes site/ to GitHub Pages.
+# Publishes site/ to GitHub Pages. The deployed copy is stamped first
+# (scripts/stamp_site.py): versioned asset URLs, so a browser never combines
+# cached old modules with new ones, and preload hints, so each page fetches
+# its modules in parallel. site/ itself stays build-free.
 #
 # Runs on pushes that touch the site, by hand, and as a reusable step at the
 # end of "Refresh market data" (data commits made with GITHUB_TOKEN do not
@@ -8,7 +11,7 @@ name: Deploy site
 on:
   push:
     branches: [main]
-    paths: ["site/**", ".github/workflows/pages.yml"]
+    paths: ["site/**", "scripts/stamp_site.py", ".github/workflows/pages.yml"]
   workflow_dispatch:
   workflow_call:
 
@@ -32,9 +35,11 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: ${{ github.ref }}
+      - name: Stamp asset versions and preload hints
+        run: python3 scripts/stamp_site.py site _site
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
         with:
-          path: site
+          path: _site
       - id: deployment
         uses: actions/deploy-pages@v5

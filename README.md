@@ -59,7 +59,13 @@ and ← / → step through the rest.
 ```
 
 * **`site/`** is a dependency-free static website (HTML, CSS, ES modules).
-  It only reads `site/data/*.json`; there is no server.
+  It only reads `site/data/*.json`; there is no server. The deploy job
+  publishes a stamped copy ([scripts/stamp_site.py](scripts/stamp_site.py)):
+  every script, stylesheet and module import gets `?v=<hash of the code>`, so
+  after a deploy a browser never combines its cached old modules with new
+  ones (GitHub Pages lets browsers cache each file for 10 minutes), and each
+  page lists its whole module graph as `modulepreload` hints so the modules
+  download in parallel. The data pages also preload their JSON.
 * **`pipeline/`** is the Python job that builds those snapshots. The scoring
   engine is pure arithmetic copied from `ai-portfolio-manager`
   (indicators, swing signals, conviction/risk grading, US long-term
@@ -262,6 +268,7 @@ pipeline/
 scripts/
   make_upi_qr.py   regenerates the "Buy me a coffee" UPI QR image
   make_sample_export.py  writes the synthetic Fidelity exports in tests/fixtures/
+  stamp_site.py    deploy-time copy of site/ with versioned asset URLs and preload hints
 site/
   index.html, india/, us/, mf/, 404.html
   tax/             Tax tools → rsu/ → fidelity/ → msft/, orcl/ (tabs: foreign assets, selling shares, dividends)
@@ -281,8 +288,8 @@ site/
   data/                   published snapshots (written by the pipeline);
                           data/tax/ holds the tax tools' reference data
 tests/             engine, snapshot, universe, parser, publication-safety,
-                   tax-data, mutual fund (offline, with fake AMFI/NSE data)
-                   and site-structure (links, assets, QR) tests;
+                   tax-data, mutual fund (offline, with fake AMFI/NSE data),
+                   site-structure (links, assets, QR) and deploy-stamping tests;
                    tests/js/ holds Node tests for the financial-year maths,
                    the trivia content, the Fidelity parser, the Schedule FA, dividend and capital
                    gains engines, the US list views, the SIP split and phone detection;

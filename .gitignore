@@ -11,6 +11,9 @@ venv/
 # persisted in CI through actions/cache, never committed.
 .cache/
 
+# The stamped copy of site/ that the deploy workflow publishes.
+_site/
+
 # Local secrets / editor noise
 .env
 .env.*
