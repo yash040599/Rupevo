@@ -1,6 +1,6 @@
-"""Mutual fund comparison: direct-plan equity funds ranked against their peers.
+"""Mutual fund comparison: direct-plan equity, gold and silver funds ranked against their peers.
 
-Published to site/data/mf.json for the Mutual Funds page. Two kinds of group:
+Published to site/data/mf.json for the Mutual Funds page. Three kinds of group:
 
 * Index funds that track the same index (Nifty 50, Nifty Next 50, ...). They
   own the same shares, so what separates them is how closely and how cheaply
@@ -13,6 +13,18 @@ Published to site/data/mf.json for the Mutual Funds page. Two kinds of group:
   the last five years) 30%, 3- and 5-year returns 20%, return per unit of
   volatility 20%, the worst fall in five years 15%, expense ratio 15%. Each
   category also says where a low-cost index fund would rank on the same rules.
+* Metal funds: fund of funds that hold a gold or silver ETF (how a mutual fund
+  investor owns the metal), and other metal funds. Gold funds and silver funds
+  each follow one price, so like index funds they are scored on fixed scales:
+  the gap to the metal over 1 and 3 years 80% (on a wider scale: they pay the
+  ETF's fee and their own), fund size 20%. Gold is measured against AMFI's Gold
+  Index, the benchmark the funds report. AMFI publishes no return for the price
+  of silver, so silver funds are measured against silver ETFs (the median of
+  their NAV returns). Expense ratios are shown but not scored: fund houses
+  report a fund of funds' ratio with or without its ETF's fee, and the gap
+  already includes every cost. Funds that hold a mix of gold and silver, or
+  mining shares abroad, are listed without a rank: their returns differ by mix
+  or strategy.
 
 Only direct plans (growth option) are compared: they pay no distributor
 commission. ETFs are left out (no direct plan; bought on the exchange), and so
@@ -39,25 +51,26 @@ from pipeline.clock import iso, now_ist
 from pipeline.engine import mf_scoring as ms
 from pipeline.log import Logger
 from pipeline.providers.amfi import (
-    EQUITY, INDEX_FUNDS_AND_ETFS, OTHER, Amfi, MfApi, MfDataError, NseIndices,
+    EQUITY, FUND_OF_FUNDS, INDEX_FUNDS_AND_ETFS, OTHER, Amfi, MfApi, MfDataError, NseIndices,
 )
 from pipeline.snapshot import SCHEMA_VERSION, SnapshotError, rnd
 
 MARKET = "mf"
 TITLE = "Mutual Fund Comparison"
 MIN_ACTIVE_YEARS = 5
-SMALL_FUND_CRORE = {"index": 100.0, "active": 500.0}
+SMALL_FUND_CRORE = {"index": 100.0, "active": 500.0, "metal": 100.0}
 STALE_NAV_DAYS = 10
 MAX_HISTORY_FAILURE_SHARE = 0.2
 MAX_GROUP_FAILURE_SHARE = 0.34
 MIN_RANKED = 150
+MIN_REFERENCE_ETFS = 3
 CACHE_HOURS = 18
 
 
 @dataclass(frozen=True)
 class Group:
     key: str
-    kind: str                       # "index" or "active"
+    kind: str                       # "index", "active" or "metal"
     label: str
     short: str
     about: str
@@ -65,6 +78,10 @@ class Group:
     subcategory: int | None = None  # active groups: AMFI equity sub-category
     valuation: str | None = None    # mf_valuation index key for the lump-sum check
     compare_with: str | None = None  # active groups: index group for the index check
+    reference: str | None = None    # metal groups that are ranked: "benchmark" (AMFI's) or "silver_etfs"
+    measure: str | None = None      # ...what the gap is measured against, in a sentence
+    measure_short: str | None = None  # ...and in a heading ("Gap to gold")
+    unranked: str | None = None     # metal groups listed without a rank: why
 
 
 INDEX_GROUPS = (
@@ -139,7 +156,28 @@ ACTIVE_GROUPS = (
           subcategory=8, valuation="nifty500", compare_with="nifty500"),
 )
 
-GROUPS = INDEX_GROUPS + ACTIVE_GROUPS
+# Metal funds, all fund of funds (AMFI's FoF list), placed by name (`metal_group_by_name`).
+METAL_GROUPS = (
+    Group("gold", "metal", "Gold funds", "Gold",
+          "Funds that hold a gold ETF, so they follow the price of gold in India: no locker, purity checks "
+          "or making charges.", reference="benchmark", measure="the price of gold", measure_short="gold"),
+    Group("silver", "metal", "Silver funds", "Silver",
+          "Funds that hold a silver ETF, so they follow the price of silver in India.",
+          reference="silver_etfs", measure="silver ETFs", measure_short="silver ETFs"),
+    Group("goldsilver", "metal", "Gold and silver funds", "Gold + silver",
+          "Funds that hold both gold and silver ETFs, each in its own mix.",
+          unranked="Each fund holds its own mix of gold and silver, so their returns differ mostly by the mix, "
+                   "not by how well they are run."),
+    Group("metalshares", "metal", "Nifty Metal funds", "Metal shares",
+          "Shares of India's metal and mining companies (the Nifty Metal index), held through an ETF.",
+          reference="benchmark", measure="the Nifty Metal index", measure_short="the index"),
+    Group("globalmining", "metal", "Global mining funds", "Global mining",
+          "Shares of mining and metal companies abroad, through a fund run overseas.",
+          unranked="Each invests abroad in its own way (gold miners, diversified miners, or metal and energy "
+                   "companies), so they are not like for like."),
+)
+
+GROUPS = INDEX_GROUPS + ACTIVE_GROUPS + METAL_GROUPS
 GROUP_BY_KEY = {g.key: g for g in GROUPS}
 
 
@@ -151,10 +189,14 @@ _STOP = {"fund", "the", "scheme", "plan", "direct", "growth", "option", "an", "o
 
 def name_key(name: str) -> str:
     """Comparable form of a scheme name: 'UTI - Flexi Cap Fund.' and
-    'UTI Flexi Cap Fund' both become 'uti flexicap'."""
+    'UTI Flexi Cap Fund' both become 'uti flexicap'. 'Fund of Fund(s)' becomes
+    'fof', so 'HDFC Gold ETF Fund of Fund' matches 'HDFC Gold ETF FoF' but not
+    'HDFC Gold ETF' (the ETF it holds)."""
     s = (name or "").lower()
+    s = re.sub(r"\(\s*fof\s*\)", " fof ", s)
     s = re.sub(r"\([^)]*\)", " ", s)
     s = re.sub(r"\b(formerly|erstwhile)\b.*$", " ", s)
+    s = re.sub(r"\bfunds?\s+of\s+funds?\b", " fof ", s)
     s = s.replace("&", " and ")
     s = re.sub(r"([a-z])(\d)", r"\1 \2", s)
     s = re.sub(r"(\d)([a-z])", r"\1 \2", s)
@@ -225,12 +267,12 @@ def crore(value: float) -> str:
     return f"₹{indian_number(value)} crore"
 
 
-def _gap(td: float, period: str) -> str:
+def _gap(td: float, period: str, noun: str = "the index") -> str:
     if td < 0:
-        return f"trailed the index by {abs(td):.2f}% {period}"
+        return f"trailed {noun} by {abs(td):.2f}% {period}"
     if td > 0:
-        return f"was ahead of the index by {td:.2f}% {period}"
-    return f"matched the index {period}"
+        return f"was ahead of {noun} by {td:.2f}% {period}"
+    return f"matched {noun} {period}"
 
 
 # ── Small caches for repeated local runs ────────────────────────
@@ -282,15 +324,20 @@ def _is_index_fund(record: dict) -> bool:
     return not re.search(r"\betf\b|exchange traded|fund of fund|\bfof\b|elss|tax saver", name)
 
 
-class SchemeIndex:
-    """Direct-plan growth schemes from NAVAll.txt, looked up by name."""
+EQUITY_CATEGORIES = ("equity", "index")
+FOF_CATEGORIES = ("fof", "fund of funds")  # 'Other Scheme - FoF Domestic', 'Fund of Funds Scheme (Domestic)'
 
-    def __init__(self, schemes: list[dict]) -> None:
+
+class SchemeIndex:
+    """Direct-plan growth schemes from NAVAll.txt in some categories (equity and index funds,
+    or `FOF_CATEGORIES` for metal funds), looked up by name."""
+
+    def __init__(self, schemes: list[dict], categories: tuple[str, ...] = EQUITY_CATEGORIES) -> None:
         self.by_key: dict[str, list[dict]] = {}
         self.unlabelled: dict[str, list[dict]] = {}
         for s in schemes:
             cat = s["category"].lower()
-            if not s["nav"] or ("equity" not in cat and "index" not in cat):
+            if not s["nav"] or not any(c in cat for c in categories):
                 continue
             if s["direct"] and s["growth"]:
                 self.by_key.setdefault(name_key(s["name"]), []).append(s)
@@ -334,6 +381,7 @@ class NameLookup:
 
 PERIODS = (("1y", "1Year"), ("3y", "3Year"), ("5y", "5Year"), ("10y", "10Year"))
 MAX_REGROUP_GAP = 1.5
+_ETF_CATEGORY = re.compile(r"\betfs?\b", re.I)  # 'Other Scheme - Gold ETF', 'Exchange Traded Funds (ETFs) - ...'
 
 
 def index_group_by_name(name: str) -> Group | None:
@@ -387,6 +435,43 @@ def index_reference(entries: list[tuple[dict, str | None]]) -> dict[str, float |
     return ref
 
 
+def metal_group_by_name(name: str) -> Group | None:
+    """The metal group of a fund of funds, from its name; None for any other fund of funds."""
+    words = set(name_key(name).split())
+    if words & {"mining", "miners"} or {"metal", "energy"} <= words:
+        return GROUP_BY_KEY["globalmining"]
+    if "metal" in words:
+        return GROUP_BY_KEY["metalshares"] if "nifty" in words else None
+    if {"gold", "silver"} <= words:
+        return GROUP_BY_KEY["goldsilver"]
+    if "gold" in words:
+        return GROUP_BY_KEY["gold"]
+    if "silver" in words:
+        return GROUP_BY_KEY["silver"]
+    return None
+
+
+def etf_reference(records: list[dict], metal: str) -> dict[str, float | None]:
+    """A metal's return per period, read from its ETFs in AMFI's index fund and ETF data: the
+    median of their NAV returns (an ETF's single plan is reported as the regular plan). Used for
+    silver, whose price return AMFI does not publish; needs MIN_REFERENCE_ETFS ETFs a period."""
+    def is_etf(name: str) -> bool:
+        return (bool(re.search(rf"\b{metal}\b", name, re.I)) and bool(re.search(r"\betf\b|exchange traded", name, re.I))
+                and not re.search(r"funds?\s+of\s+funds?|\bfof\b", name, re.I))
+    etfs = [r for r in records if is_etf(r.get("schemeName") or "")]
+    ref: dict[str, float | None] = {}
+    for period, field in PERIODS:
+        values = []
+        for r in etfs:
+            value = r.get(f"return{field}Regular")
+            if not isinstance(value, (int, float)):
+                value = r.get(f"return{field}Direct")
+            if isinstance(value, (int, float)):
+                values.append(value)
+        ref[period] = ms.median(values) if len(values) >= MIN_REFERENCE_ETFS else None
+    return ref
+
+
 # ── Scoring ─────────────────────────────────────────────────────
 
 def _mean(values) -> float | None:
@@ -399,27 +484,48 @@ def _gap_score(td: float | None) -> float | None:
     return ms.tracking_score(-abs(td)) if td is not None else None
 
 
-def score_index(funds: list[dict]) -> None:
-    """Fixed-scale scores for index funds with at least a 1-year return.
+def _metal_gap_score(td: float | None) -> float | None:
+    return ms.metal_tracking_score(-abs(td)) if td is not None else None
 
-    Tracking averages the 1- and 3-year gap scores. A fund with only a 1-year record is
+
+def _tracking_scores(funds: list[dict], gap_score) -> dict[int, float | None]:
+    """Tracking averages the 1- and 3-year gap scores. A fund with only a 1-year record is
     pulled halfway toward the group's typical 1-year score: one year can flatter by luck."""
-    typical = ms.median(_gap_score((f.get("tracking_difference") or {}).get("1y"))
+    typical = ms.median(gap_score((f.get("tracking_difference") or {}).get("1y"))
                         for f in funds if f["status"] == "ranked")
+    out: dict[int, float | None] = {}
     for f in funds:
         td = f.get("tracking_difference") or {}
-        one, three = _gap_score(td.get("1y")), _gap_score(td.get("3y"))
+        one, three = gap_score(td.get("1y")), gap_score(td.get("3y"))
         if one is not None and three is not None:
-            tracking = (one + three) / 2
+            out[f["code"]] = (one + three) / 2
         elif one is not None:
-            tracking = (one + typical) / 2 if typical is not None else one
+            out[f["code"]] = (one + typical) / 2 if typical is not None else one
         else:
-            tracking = three
-        components = {"tracking": tracking, "steadiness": ms.steadiness_score(f.get("tracking_error")),
+            out[f["code"]] = three
+    return out
+
+
+def score_index(funds: list[dict]) -> None:
+    """Fixed-scale scores for index funds with at least a 1-year return."""
+    tracking = _tracking_scores(funds, _gap_score)
+    for f in funds:
+        components = {"tracking": tracking[f["code"]], "steadiness": ms.steadiness_score(f.get("tracking_error")),
                       "cost": ms.cost_score(f.get("ter")), "size": ms.size_score(f.get("aum_cr"))}
         f["components"] = {k: rnd(v, 1) for k, v in components.items()}
         if f["status"] == "ranked":
             score, _ = ms.weighted_score(components, ms.INDEX_WEIGHTS)
+            f["score"] = rnd(score, 1)
+
+
+def score_metal(funds: list[dict]) -> None:
+    """Fixed-scale scores for gold and silver funds: the gap to the metal and fund size."""
+    tracking = _tracking_scores(funds, _metal_gap_score)
+    for f in funds:
+        components = {"tracking": tracking[f["code"]], "size": ms.size_score(f.get("aum_cr"))}
+        f["components"] = {k: rnd(v, 1) for k, v in components.items()}
+        if f["status"] == "ranked":
+            score, _ = ms.weighted_score(components, ms.METAL_WEIGHTS)
             f["score"] = rnd(score, 1)
 
 
@@ -528,20 +634,29 @@ def _median_of(funds: list[dict], getter) -> float | None:
     return ms.median(getter(f) for f in funds)
 
 
-def _index_reasons(f: dict, stats: dict) -> None:
-    td = f.get("tracking_difference") or {}
+def _gap_reason(td: dict, stats: dict, noun: str = "the index") -> str | None:
+    """'Trailed the index by 0.20% a year over 3 years and 0.10% over the last year, against a
+    typical gap of 0.25% in this group.'"""
     parts = [(td[p], label) for p, label in (("3y", "a year over 3 years"), ("1y", "over the last year"))
              if td.get(p) is not None]
-    if parts:
-        (first, first_label), rest = parts[0], parts[1:]
-        text = _gap(first, first_label)
-        for value, label in rest:
-            same_way = value != 0 and (value < 0) == (first < 0)
-            text += f" and {abs(value):.2f}% {label}" if same_way else f"; it {_gap(value, label)}"
-        typical = stats.get("median_gap_3y") if td.get("3y") is not None else stats.get("median_gap_1y")
-        if typical is not None:
-            text += f", against a typical gap of {typical:.2f}% in this group"
-        f["reasons"].append(text[0].upper() + text[1:] + ".")
+    if not parts:
+        return None
+    (first, first_label), rest = parts[0], parts[1:]
+    text = _gap(first, first_label, noun)
+    for value, label in rest:
+        same_way = value != 0 and (value < 0) == (first < 0)
+        text += f" and {abs(value):.2f}% {label}" if same_way else f"; it {_gap(value, label, noun)}"
+    typical = stats.get("median_gap_3y") if td.get("3y") is not None else stats.get("median_gap_1y")
+    if typical is not None:
+        text += f", against a typical gap of {typical:.2f}% in this group"
+    return text[0].upper() + text[1:] + "."
+
+
+def _index_reasons(f: dict, stats: dict) -> None:
+    td = f.get("tracking_difference") or {}
+    gap = _gap_reason(td, stats)
+    if gap:
+        f["reasons"].append(gap)
     if f.get("tracking_error") is not None:
         f["reasons"].append(f"Tracking error {f['tracking_error']:.2f}%: how far its daily returns stray from "
                             f"the index (median {stats.get('median_te') or 0:.2f}%).")
@@ -582,15 +697,53 @@ def _active_reasons(f: dict, stats: dict) -> None:
         f["reasons"].append(f"{verb} its benchmark ({f['benchmark']}) by {abs(gap):.1f}% a year over 5 years.")
 
 
+def _metal_reasons(f: dict, stats: dict, group: Group) -> None:
+    td = f.get("tracking_difference") or {}
+    gap = _gap_reason(td, stats, group.measure or "the index")
+    if gap:
+        f["reasons"].append(gap)
+    if f.get("ter") is not None:
+        f["reasons"].append(f"Expense ratio {f['ter']:.2f}% a year as its fund house reports it (median "
+                            f"{stats.get('median_ter') or 0:.2f}%); not part of the score, as the gap includes "
+                            f"every cost.")
+    if f.get("aum_cr"):
+        f["reasons"].append(f"Manages {crore(f['aum_cr'])}.")
+    if td.get("3y") is None and td.get("1y") is not None:
+        f["notes"].append("One year of record: its gap score is pulled halfway toward the group's "
+                          "typical fund until it has three.")
+
+
+def _listed_reasons(f: dict) -> None:
+    """The facts shown for a fund listed without a rank."""
+    returns = f["returns"]
+    parts = [text for value, text in (
+        (returns.get("1y"), f"{returns.get('1y') or 0:.1f}% over the last year"),
+        (returns.get("3y"), f"{returns.get('3y') or 0:.1f}% a year over 3 years"),
+        (returns.get("5y"), f"{returns.get('5y') or 0:.1f}% a year over 5 years"),
+    ) if value is not None]
+    if parts:
+        f["reasons"].append("Returned " + (", ".join(parts[:-1]) + " and " + parts[-1] if len(parts) > 1
+                                           else parts[0]) + ".")
+    if f.get("benchmark"):
+        f["reasons"].append(f"Benchmark: {f['benchmark']}.")
+    if f.get("ter") is not None:
+        f["reasons"].append(f"Expense ratio {f['ter']:.2f}% a year as its fund house reports it.")
+    if f.get("aum_cr"):
+        f["reasons"].append(f"Manages {crore(f['aum_cr'])}.")
+
+
 def _common_notes(f: dict, kind: str) -> None:
     if f.get("aum_cr") is not None and f["aum_cr"] < SMALL_FUND_CRORE[kind]:
         f["notes"].append(f"Small fund: {crore(f['aum_cr'])} in assets.")
     if f.get("ter") is None:
-        f["notes"].append("Expense ratio could not be downloaded from AMFI this time; scored without it."
-                          if f.get("ter_failed") else "Expense ratio not found in AMFI's data; scored without it.")
+        missing = ("Expense ratio could not be downloaded from AMFI this time" if f.get("ter_failed")
+                   else "Expense ratio not found in AMFI's data")
+        f["notes"].append(f"{missing}." if kind == "metal" else f"{missing}; scored without it.")
 
 
-def build_index_group(group: Group, funds: list[dict], reference: dict | None = None) -> dict:
+def _mark_untracked(funds: list[dict], unmeasured: str | None = None) -> None:
+    """Funds without a 1- or 3-year gap cannot be ranked yet. `unmeasured`: the reason when
+    the group's reference could not be measured at all."""
     for f in funds:
         if f["status"] != "ranked":
             continue
@@ -599,20 +752,29 @@ def build_index_group(group: Group, funds: list[dict], reference: dict | None = 
             young = (f.get("years") or 0) < 1.0
             f["status"] = "too_new" if young else "no_tracking"
             f["status_reason"] = ("Less than a year old: the comparison starts once AMFI publishes a 1-year return."
-                                  if young else "AMFI has not published a 1-year return for this fund.")
-    score_index(funds)
-    ranked = [f for f in funds if f["status"] == "ranked"]
+                                  if young else unmeasured or "AMFI has not published a 1-year return for this fund.")
 
+
+def _gap_stats(ranked: list[dict]) -> dict:
     def td(f, period):
         return (f.get("tracking_difference") or {}).get(period)
 
-    stats = {
-        "funds": len(funds), "ranked": len(ranked),
-        "index_return": {p: rnd(v) for p, v in (reference or {}).items()},
+    return {
         "median_td_1y": rnd(_median_of(ranked, lambda f: td(f, "1y"))),
         "median_td_3y": rnd(_median_of(ranked, lambda f: td(f, "3y"))),
         "median_gap_1y": rnd(_median_of(ranked, lambda f: abs(td(f, "1y")) if td(f, "1y") is not None else None)),
         "median_gap_3y": rnd(_median_of(ranked, lambda f: abs(td(f, "3y")) if td(f, "3y") is not None else None)),
+    }
+
+
+def build_index_group(group: Group, funds: list[dict], reference: dict | None = None) -> dict:
+    _mark_untracked(funds)
+    score_index(funds)
+    ranked = [f for f in funds if f["status"] == "ranked"]
+    stats = {
+        "funds": len(funds), "ranked": len(ranked),
+        "index_return": {p: rnd(v) for p, v in (reference or {}).items()},
+        **_gap_stats(ranked),
         "median_te": rnd(_median_of(ranked, lambda f: f.get("tracking_error"))),
         "median_ter": rnd(_median_of(ranked, lambda f: f.get("ter"))),
     }
@@ -620,6 +782,36 @@ def build_index_group(group: Group, funds: list[dict], reference: dict | None = 
         _index_reasons(f, stats)
         _common_notes(f, "index")
     ordered = _rank(funds, lambda f: (-(f["components"].get("tracking") or 0), f.get("ter") or 9))
+    return {"stats": stats, "funds": ordered}
+
+
+def build_metal_group(group: Group, funds: list[dict], reference: dict | None = None) -> dict:
+    """Metal funds. A group whose funds follow one price is scored against it like an index
+    group; the others (a mix of metals, mining shares abroad) are listed largest first."""
+    if group.unranked:
+        for f in funds:
+            if f["status"] == "ranked":
+                f["status"], f["status_reason"] = "not_compared", group.unranked
+            _listed_reasons(f)
+            _common_notes(f, "metal")
+        stats = {"funds": len(funds), "ranked": 0,
+                 "median_return_1y": rnd(_median_of(funds, lambda f: f["returns"].get("1y"))),
+                 "median_ter": rnd(_median_of(funds, lambda f: f.get("ter")))}
+        return {"stats": stats, "funds": sorted(funds, key=lambda f: (-(f.get("aum_cr") or 0), f["name"]))}
+    measured = any(v is not None for v in (reference or {}).values())
+    _mark_untracked(funds, None if measured else f"The return of {group.measure} could not be measured this time.")
+    score_metal(funds)
+    ranked = [f for f in funds if f["status"] == "ranked"]
+    stats = {
+        "funds": len(funds), "ranked": len(ranked),
+        "reference_return": {p: rnd(v) for p, v in (reference or {}).items()},
+        **_gap_stats(ranked),
+        "median_ter": rnd(_median_of(ranked, lambda f: f.get("ter"))),
+    }
+    for f in funds:
+        _metal_reasons(f, stats, group)
+        _common_notes(f, "metal")
+    ordered = _rank(funds, lambda f: (-(f["components"].get("tracking") or 0), -(f.get("aum_cr") or 0)))
     return {"stats": stats, "funds": ordered}
 
 
@@ -689,6 +881,7 @@ def build(amfi, mfapi, nse, log: Logger | None = None, *, previous: dict | None 
 
     schemes = amfi.nav_all()
     scheme_index = SchemeIndex(schemes)
+    fof_index = SchemeIndex(schemes, FOF_CATEGORIES)
     nav_date = max(s["date"] for s in schemes if s["date"] and s["direct"])
     as_of = amfi.performance_date(min(nav_date, today))
     log.info(f"{len(schemes)} open-ended schemes; performance and NAVs as of {as_of}")
@@ -698,11 +891,12 @@ def build(amfi, mfapi, nse, log: Logger | None = None, *, previous: dict | None 
     records: dict[str, list[tuple[dict, str | None]]] = {}
     failed_groups = 0
     try:
-        index_records = [r for r in amfi.performance(OTHER, INDEX_FUNDS_AND_ETFS, as_of) if _is_index_fund(r)]
+        index_and_etfs = amfi.performance(OTHER, INDEX_FUNDS_AND_ETFS, as_of)
     except MfDataError as exc:
-        index_records = []
+        index_and_etfs = []
         failed_groups += len(INDEX_GROUPS)
         errors.append({"source": "AMFI fund performance (index funds)", "error": str(exc)[:200]})
+    index_records = [r for r in index_and_etfs if _is_index_fund(r)]
     index_groups, skipped = assign_index_records(index_records)
     records.update(index_groups)
     if skipped:
@@ -717,6 +911,24 @@ def build(amfi, mfapi, nse, log: Logger | None = None, *, previous: dict | None 
             records[g.key] = []
             failed_groups += 1
             errors.append({"source": f"AMFI fund performance ({g.label})", "error": str(exc)[:200]})
+    # Metal funds: the gold, silver and other metal funds among AMFI's fund of funds.
+    for g in METAL_GROUPS:
+        records[g.key] = []
+    try:
+        fof_records = [r for r in amfi.performance(OTHER, FUND_OF_FUNDS, as_of) if r.get("navDirect") is not None]
+    except MfDataError as exc:
+        fof_records = []
+        failed_groups += len(METAL_GROUPS)
+        errors.append({"source": "AMFI fund performance (fund of funds)", "error": str(exc)[:200]})
+    for rec in fof_records:
+        group = metal_group_by_name(rec.get("schemeName") or "")
+        if group:
+            records[group.key].append((rec, None))
+    for g in METAL_GROUPS:
+        if g.reference == "benchmark":
+            references[g.key] = index_reference(records[g.key])
+        elif g.reference == "silver_etfs":
+            references[g.key] = etf_reference(index_and_etfs, "silver")
     if failed_groups > MAX_GROUP_FAILURE_SHARE * len(GROUPS):
         raise SnapshotError(f"AMFI fund performance failed for {failed_groups} of {len(GROUPS)} groups")
 
@@ -725,10 +937,11 @@ def build(amfi, mfapi, nse, log: Logger | None = None, *, previous: dict | None 
     for g in GROUPS:
         rows = records[g.key][:limit] if limit else records[g.key]
         benchmark_names = Counter((r.get("benchmark") or "").strip() for r, moved in rows if not moved)
+        lookup = fof_index if g.kind == "metal" else scheme_index
         funds = []
         seen = set()
         for rec, moved_from in rows:
-            scheme = scheme_index.find(rec.get("schemeName") or "", rec.get("navDirect"))
+            scheme = lookup.find(rec.get("schemeName") or "", rec.get("navDirect"))
             if not scheme:
                 unmatched.append(rec.get("schemeName"))
                 continue
@@ -736,7 +949,7 @@ def build(amfi, mfapi, nse, log: Logger | None = None, *, previous: dict | None 
                 continue
             seen.add(scheme["code"])
             fund = {**_base_fund(g, rec, scheme, as_of), "group": g.key}
-            if g.kind == "index":
+            if g.kind == "index" or g.reference:
                 _index_tracking(fund, rec, references[g.key])
                 if moved_from:
                     fund["benchmark"] = benchmark_names.most_common(1)[0][0] if benchmark_names else None
@@ -793,6 +1006,10 @@ def build(amfi, mfapi, nse, log: Logger | None = None, *, previous: dict | None 
         proxy, proxy_windows = _proxy(index_results.get(g.compare_with), series_by_code, as_of)
         groups_out.append(_group_json(g, build_active_group(g, funds, windows, proxy, proxy_windows)))
 
+    for g in METAL_GROUPS:
+        if funds_by_group[g.key]:
+            groups_out.append(_group_json(g, build_metal_group(g, funds_by_group[g.key], references.get(g.key))))
+
     valuation, valuation_errors = mf_valuation.build(nse, previous, today, log)
     errors += valuation_errors
 
@@ -813,6 +1030,8 @@ def build(amfi, mfapi, nse, log: Logger | None = None, *, previous: dict | None 
             "nav_history": "AMFI NAV history via mfapi.in",
             "expense_ratio": "AMFI total expense ratios",
             "tracking": "AMFI returns (tracking difference) and AMFI tracking error",
+            "metals": "AMFI fund performance of fund of funds; the price of gold is AMFI's Gold Index, "
+                      "silver is measured against silver ETFs",
             "valuation": valuation["source"],
         },
         "as_of": {
@@ -823,6 +1042,7 @@ def build(amfi, mfapi, nse, log: Logger | None = None, *, previous: dict | None 
         },
         "partial": bool(limit),
         "model": {"index_weights": ms.INDEX_WEIGHTS, "active_weights": ms.ACTIVE_WEIGHTS,
+                  "metal_weights": ms.METAL_WEIGHTS, "metal_gap_worst": ms.METAL_GAP_WORST,
                   "rolling_years": ms.ROLLING_YEARS, "lookback_months": ms.ROLLING_LOOKBACK_MONTHS,
                   "min_windows": ms.MIN_ROLLING_WINDOWS, "min_active_years": MIN_ACTIVE_YEARS,
                   "small_fund_crore": SMALL_FUND_CRORE},
@@ -839,10 +1059,14 @@ def _group_json(g: Group, result: dict) -> dict:
     benchmarks = Counter(f["benchmark"] for f in result["funds"] if f.get("benchmark"))
     out = {"key": g.key, "kind": g.kind, "label": g.label, "short": g.short, "about": g.about,
            "benchmark": benchmarks.most_common(1)[0][0] if benchmarks else None,
-           "valuation": g.valuation, "compare_with": g.compare_with,
+           "valuation": g.valuation, "compare_with": g.compare_with, "compared": not g.unranked,
            "stats": result["stats"], "funds": result["funds"]}
     if g.kind == "active":
         out["index_check"] = result.get("index_check")
+    if g.kind == "metal":
+        out["unranked_reason"] = g.unranked
+        out["measure"] = ({"name": g.measure, "short": g.measure_short, "basis": g.reference}
+                          if g.reference else None)
     return out
 
 
@@ -866,7 +1090,8 @@ def _proxy(index_result: dict | None, series_by_code: dict, as_of: datetime.date
 
 def _attach_ter(amfi, funds: list[dict], schemes: list[dict], today: datetime.date, cache: DiskCache,
                 errors: list[dict], log: Logger, previous: dict | None = None) -> None:
-    """Latest direct-plan expense ratio of each fund, from its fund house's TER rows.
+    """Latest direct-plan expense ratio of each fund, from its fund house's TER rows (ETF rows
+    left out: no compared fund is an ETF, and a gold fund's name is close to its ETF's).
 
     When AMFI cannot be reached for a fund house, its funds keep the expense ratio of the
     previous snapshot (with its date) rather than being scored without one; a fund with
@@ -900,7 +1125,8 @@ def _attach_ter(amfi, funds: list[dict], schemes: list[dict], today: datetime.da
                 log.warning(f"TER for fund house {amc_id}: {exc}")
                 continue
             cache.put(name, rows)
-        lookup = NameLookup([r for r in rows if r.get("ter_direct")], "name")
+        priced = [r for r in rows if r.get("ter_direct") and not _ETF_CATEGORY.search(r.get("category") or "")]
+        lookup = NameLookup(priced, "name")
         for f in members:
             row = lookup.find(f["name"], 0.7)
             if row:

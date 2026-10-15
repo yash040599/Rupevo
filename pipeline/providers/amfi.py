@@ -40,6 +40,7 @@ OPEN_ENDED = 1
 EQUITY = 1
 OTHER = 5
 INDEX_FUNDS_AND_ETFS = 38
+FUND_OF_FUNDS = 39  # domestic and overseas fund of funds, gold and silver funds among them
 
 RETRYABLE_STATUS = {429, 500, 502, 503, 504}
 MIN_NAV_ROWS = 1000

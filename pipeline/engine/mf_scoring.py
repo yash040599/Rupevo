@@ -4,7 +4,8 @@ No network and no I/O. A NAV history is a list of (date, nav) pairs, oldest
 first; returns are in percent.
 
 Index funds that track the same index are scored on fixed scales (so a group
-where every fund lags its index badly scores low across the board).
+where every fund lags its index badly scores low across the board), and so are
+gold and silver funds against the metal's price, on a wider scale.
 Actively managed funds are scored as percentiles within their category.
 """
 
@@ -17,6 +18,11 @@ import statistics
 
 INDEX_WEIGHTS = {"tracking": 50, "steadiness": 20, "cost": 20, "size": 10}
 ACTIVE_WEIGHTS = {"consistency": 30, "returns": 20, "risk_adjusted": 20, "downside": 15, "cost": 15}
+# Gold and silver funds: no tracking error is published for a fund of funds, and expense ratios
+# are reported with or without the ETF's own fee, so the gap to the metal (which includes every
+# cost) carries the score.
+METAL_WEIGHTS = {"tracking": 80, "size": 20}
+METAL_GAP_WORST = 3.0
 
 ROLLING_YEARS = 3
 ROLLING_LOOKBACK_MONTHS = 60
@@ -177,6 +183,12 @@ def scale(value: float | None, worst: float, best: float) -> float | None:
 def tracking_score(tracking_difference: float | None) -> float | None:
     """Lagging the index by 1% a year or more scores 0; matching it scores 100."""
     return scale(tracking_difference, -1.0, 0.0)
+
+
+def metal_tracking_score(tracking_difference: float | None) -> float | None:
+    """A gold or silver fund holds an ETF, so it pays two layers of fees: lagging the metal by
+    3% a year or more scores 0; matching it scores 100."""
+    return scale(tracking_difference, -METAL_GAP_WORST, 0.0)
 
 
 def steadiness_score(tracking_error: float | None) -> float | None:

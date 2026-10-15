@@ -5,9 +5,9 @@ publishes rules-based rankings of the **Indian Nifty 100** and of **US stocks**
 (the NASDAQ-100 and the NYSE's 100 largest US companies), refreshed from
 end-of-day prices, with every score broken down so readers can see *why* a
 stock ranks where it does; a **comparison of direct-plan mutual funds** within
-their group (which fund house's Nifty 50 fund, which mid-cap fund), with the
-reasons; and step-by-step **tax tools** for Indian investors, starting with
-foreign RSUs.
+their group (which fund house's Nifty 50 fund, which mid-cap fund, which gold
+fund), with the reasons; and step-by-step **tax tools** for Indian investors,
+starting with foreign RSUs.
 
 Live site: **https://yash040599.github.io/Rupevo/**
 
@@ -15,7 +15,7 @@ Live site: **https://yash040599.github.io/Rupevo/**
 |---|---|---|
 | [Nifty 100 Ranking](site/india/index.html) | Technical setups, technical score (A–D), risk grade, 52-week dips, sector strength | Migrated from the ai-portfolio-manager swing scanner |
 | [US Stock Ranking](site/us/index.html) | Six-pillar long-term scorecard (quality, valuation vs sector, growth, momentum, balance sheet, risk) for two lists: the **NASDAQ-100** and the **NYSE top 100** (the 100 largest US companies listed on the NYSE, e.g. Oracle, Uber, JPMorgan). A switch shows **All US** (both lists ranked together), **NASDAQ-100** or **NYSE top 100**; search covers the lists in view, and searching one exchange for a company on the other says where it is | Migrated from the ai-portfolio-manager US long-term scorer |
-| [Mutual Fund Comparison](site/mf/index.html) | Every direct-plan equity fund ranked within its group: **14 index-fund groups** (Nifty 50, Sensex, Next 50, Nifty 100, Nifty 100 and Nifty 50 Equal Weight, LargeMidcap 250, Midcap 150, Smallcap 250, Nifty 500, Total Market, Momentum 30, Low Vol 30, Alpha Low-Vol 30) and **9 active categories** (large, large & mid, flexi, multi, mid, small cap, focused, value, ELSS). Each group opens with the top-ranked fund, its key numbers against the typical fund and the runners-up; *why it comes first*, *how the funds are compared* and, for index groups, what the tracking gap is worth on a SIP (for active groups, where a low-cost index fund would rank on the same rules) are a click away. Two more tabs: a **SIP split by age and risk** (by fund category) and a **lump-sum check** (each index's P/E against its own history) | `pipeline/mf.py` (see *The mutual fund comparison*) |
+| [Mutual Fund Comparison](site/mf/index.html) | Every direct-plan equity fund ranked within its group: **14 index-fund groups** (Nifty 50, Sensex, Next 50, Nifty 100, Nifty 100 and Nifty 50 Equal Weight, LargeMidcap 250, Midcap 150, Smallcap 250, Nifty 500, Total Market, Momentum 30, Low Vol 30, Alpha Low-Vol 30) and **9 active categories** (large, large & mid, flexi, multi, mid, small cap, focused, value, ELSS), plus **metal funds**: gold and silver funds (fund of funds holding a gold or silver ETF) ranked against the metal's price, Nifty Metal funds ranked once they have a 1-year record, and gold-and-silver and global mining funds listed without a rank. Each group opens with the top-ranked fund, its key numbers against the typical fund and the runners-up; *why it comes first*, *how the funds are compared* and, for index groups, what the tracking gap is worth on a SIP (for active groups, where a low-cost index fund would rank on the same rules) are a click away. Two more tabs: a **SIP split by age and risk** (by fund category) and a **lump-sum check** (each index's P/E against its own history) | `pipeline/mf.py` (see *The mutual fund comparison*) |
 | [Tax tools](site/tax/index.html) | RSU taxation → broker (Fidelity) → company (**Microsoft, Oracle**). Load Fidelity's *View open lots* CSV (shares held) and, if you sold any, *View closed lots* (Previously held shares); the company page has three tabs: **Foreign assets** (Schedule FA Table A2 for the Fidelity account and A3 with one row per RSU vest and ESPP purchase, including lots sold during the year with their proceeds, plus the Schedule AL cost), **Selling shares** (capital gains under India's 24-month rule: Schedule CG A5/B8, gains by date of sale, and the Schedule FSI row) and **Dividends** (the payments the shares received in the financial year, Schedule OS with its quarterly breakup, Schedule FSI, Schedule TR and the Form 67 fields with its deadline, plus the company's dividend history). Sold shares change Schedule FA and the dividends too, so those tabs ask for both exports unless nothing was ever sold. Visitors can request another company. Every tax page has an interactive "how far through the financial year are we" slider (advance-tax and ITR dates marked) and a "Did you know?" card mixing tax facts with stories from market history | Runs in the browser: the user's files are never uploaded. Uses published SBI TT buying rates, closes and dividends (`site/data/tax/`, refreshed weekly) |
 
 Every page has the same app shell: a top bar with the site search, a light/dark
@@ -345,6 +345,24 @@ tests/             engine, snapshot, universe, parser, publication-safety,
   volatility 20%, the worst fall in 5 years 15%, expense ratio 15%. The best
   index fund of the matching index group (with 5 years of history) is scored
   on the same rules to say where it would rank (*index check*).
+* **Metal funds** come from AMFI's *Fund of Funds* sub-category (domestic and
+  overseas), placed by name (`metal_group_by_name`): gold, silver, gold and
+  silver, Nifty Metal, and global mining. They are matched to `NAVAll.txt`
+  among fund-of-funds schemes only, and `name_key` turns "Fund of Fund(s)"
+  into `fof`, so a gold fund never takes the expense ratio of the gold ETF it
+  holds (ETF rows are also left out of the expense-ratio lookup). Gold and
+  silver funds follow one price each, so they are scored like index funds on
+  fixed scales: the gap to the metal either way, averaged over 1 and 3 years
+  (80%; 0% scores 100, 3% or more 0, as these funds pay the ETF's fee and
+  their own), and size (20%). Gold is measured against AMFI's Gold Index (the
+  benchmark the funds report); AMFI publishes no return for the price of
+  silver, so silver funds are measured against the median NAV return of
+  silver ETFs (`etf_reference`). Expense ratios are shown but not scored:
+  fund houses report a fund of funds' ratio with or without the ETF's fee.
+  Nifty Metal funds are measured against the Nifty Metal index once they have
+  a 1-year return. Gold-and-silver funds (each its own mix) and global mining
+  funds (each its own strategy abroad) are listed largest first, with their
+  returns, without a rank.
 * **Valuation check** ([pipeline/mf_valuation.py](pipeline/mf_valuation.py)):
   each index's P/E from NSE's daily index file against its own month-end P/E
   since April 2021 (NSE has computed P/E from consolidated profits since
@@ -355,9 +373,9 @@ tests/             engine, snapshot, universe, parser, publication-safety,
   here*. The SIP split by age and risk is plain rules in
   [site/assets/js/mf-plan.js](site/assets/js/mf-plan.js) (`SPLITS`), tested
   in `tests/js/mf-plan.test.mjs`.
-* The page has three tabs: **Compare funds** (index or active funds, then the
-  group as a row of chips; the top fund, the runners-up and every fund, each
-  opening in a sheet), **SIP split** and **Lump sum**. The lump-sum check
+* The page has three tabs: **Compare funds** (index funds, active funds or
+  metals, then the group as a row of chips; the top fund, the runners-up and
+  every fund, each opening in a sheet), **SIP split** and **Lump sum**. The lump-sum check
   states the rule of thumb once and shows the Nifty 50, Midcap 150 and
   Smallcap 250, with the other indices, the research and the method a click
   away. Tabs, groups and funds can be shared as direct links: `mf/#compare`,
@@ -370,6 +388,8 @@ To add a group, add a `Group` to `INDEX_GROUPS` (its `benchmark` as
 `ACTIVE_GROUPS` (AMFI's equity sub-category: 1 large, 2 large & mid, 3 flexi,
 4 multi, 5 mid, 6 small, 7 value, 8 ELSS, 9 contra, 10 dividend yield,
 11 focused), with a `valuation` key from `mf_valuation.INDICES` if it has one.
+A metal group goes in `METAL_GROUPS` (with a `reference` to be ranked, or an
+`unranked` reason to be listed) and in `metal_group_by_name`.
 
 ### Adding a tax guide page
 

@@ -18,12 +18,20 @@ import {
 const PLAN_KEY = 'rupevo-mf-plan';
 const ASSUMED_INDEX_RETURN = 12;
 const TABS = ['compare', 'plan', 'lumpsum'];
+const KINDS = [['index', 'Index funds'], ['active', 'Active funds'], ['metal', 'Metals']];
+const KIND_ONE = { index: 'Index fund', active: 'Active fund', metal: 'Metal fund' };
 const COMPONENTS = {
   index: [['tracking', 'Gap to the index', 50], ['steadiness', 'Tracking error', 20],
     ['cost', 'Expense ratio', 20], ['size', 'Fund size', 10]],
   active: [['consistency', 'Consistency', 30], ['returns', '3- and 5-year returns', 20],
     ['risk_adjusted', 'Return per unit of risk', 20], ['downside', 'Worst fall', 15], ['cost', 'Expense ratio', 15]],
+  metal: [['tracking', 'Gap to the metal', 80], ['size', 'Fund size', 20]],
 };
+// Metal groups say what their gap is measured against: "Gap to gold", "Gap to silver ETFs".
+const componentsOf = (g) => COMPONENTS[g.kind].map(([k, label, w]) =>
+  [k, k === 'tracking' && g.measure?.short ? `Gap to ${g.measure.short}` : label, w]);
+const isRanked = (g) => g.compared !== false;
+const measureOf = (g) => g.measure?.name || 'the index';
 const STATUS_LABEL = { too_new: 'Too new', no_history: 'No data', no_tracking: 'No data', no_score: 'No score', stale: 'Stale' };
 const VALUATION_ORDER = ['nifty50', 'nifty100', 'next50', 'nifty500', 'totalmarket', 'largemid250', 'midcap150',
   'smallcap250', 'nifty100ew', 'nifty50ew'];
@@ -62,6 +70,8 @@ const isOpen = (card, fallback) => {
 };
 const td = (f, period) => f.tracking_difference?.[period];
 const gapCell = (v) => (isNum(v) ? `<span class="${Math.abs(v) <= 0.2 ? 'pos' : Math.abs(v) >= 0.6 ? 'neg' : ''}">${gapPct(v)}</span>` : DASH);
+// Gold and silver funds hold an ETF and pay two layers of fees, so their gaps run wider.
+const metalGapCell = (v) => (isNum(v) ? `<span class="${Math.abs(v) <= 1 ? 'pos' : Math.abs(v) >= 2 ? 'neg' : ''}">${gapPct(v)}</span>` : DASH);
 
 function bars(rows) {
   return `<div class="bars">${rows.map(({ label, value }) => `
@@ -192,14 +202,16 @@ function selectTab(name, { hash = false, scroll = false } = {}) {
 // ── Group switch: index or active funds, then the group as a chip ──
 function renderNav() {
   const g = current();
-  const kinds = [['index', 'Index funds'], ['active', 'Active funds']].filter(([k]) => state.snap.groups.some((x) => x.kind === k));
+  const kinds = KINDS.filter(([k]) => state.snap.groups.some((x) => x.kind === k));
   const groups = state.snap.groups.filter((x) => x.kind === g.kind);
+  const chipsLabel = { index: 'Index the funds track', active: 'Fund category', metal: 'Metal' }[g.kind];
   els.nav.innerHTML = `
     <div class="view-switch kind-switch" role="group" aria-label="Type of fund">${kinds.map(([k, label]) =>
       `<button class="view-btn" type="button" data-kind="${k}" aria-pressed="${k === g.kind}">${label}</button>`).join('')}</div>
-    <div class="chip-row scroll group-chips" role="group" aria-label="${g.kind === 'index' ? 'Index the funds track' : 'Fund category'}">${
+    <div class="chip-row scroll group-chips" role="group" aria-label="${chipsLabel}">${
       groups.map((x) => `<button class="chip" type="button" data-group="${esc(x.key)}" aria-pressed="${x.key === state.group}"
-        title="${esc(x.label)}: ${x.stats.ranked} of ${x.stats.funds} ranked">${esc(x.short)}</button>`).join('')}</div>`;
+        title="${esc(x.label)}: ${isRanked(x) ? `${x.stats.ranked} of ${x.stats.funds} ranked` : `${x.stats.funds} funds, not ranked`}">${
+        esc(x.short)}</button>`).join('')}</div>`;
   // Scroll the chip row (only it, not the page) so the chosen group is in view.
   const row = els.nav.querySelector('.group-chips');
   const chip = row.querySelector('[aria-pressed="true"]');
@@ -221,9 +233,13 @@ function renderVerdict() {
       ${zoneChip(val, true)}
     </div>`;
   if (!top) {
-    els.verdict.innerHTML = `${head}<p class="muted">None of these funds can be ranked yet:
-      ${g.kind === 'index' ? 'index funds are compared once they have a 1-year record.'
-        : 'active funds are compared once they have 5 years of history.'}</p>`;
+    const why = !isRanked(g) ? `<strong>Not ranked.</strong> ${esc(g.unranked_reason || '')}`
+      : `None of these funds can be ranked yet: ${g.kind === 'active'
+        ? 'active funds are compared once they have 5 years of history.'
+        : 'they are compared once they have a 1-year record.'}`;
+    els.verdict.innerHTML = `${head}<p class="banner">${why}</p>${listedFunds(g)}
+      <p class="small muted">Tap a fund for its numbers. Check the scheme documents, exit load and taxes before
+        investing.</p>`;
     return;
   }
   const how = g.kind === 'index'
@@ -231,7 +247,13 @@ function renderVerdict() {
       what separates them is how faithfully and how cheaply they copy it. Each is scored out of 100: the gap between its
       return and the index's over 1 and 3 years (50%), how steadily it tracks day to day (20%), its expense ratio (20%)
       and its size (10%).`
-    : `These funds follow the same SEBI rules, but each manager picks different shares. The ${g.stats.ranked} with
+    : g.kind === 'metal'
+      ? `All ${g.stats.funds} funds here follow ${esc(measureOf(g))}, so what separates them is how much of its return
+      reaches you after costs. Each is scored out of 100: the gap between its return and ${esc(measureOf(g))} over 1 and
+      3 years (80%) and its size (20%). Expense ratios are shown but not scored: fund houses report them with or
+      without the fee of the ETF the fund holds, and the gap already includes every cost.${g.measure?.basis === 'silver_etfs'
+    ? ' AMFI publishes no return for the price of silver, so silver funds are measured against the silver ETFs themselves (their median return).' : ''}`
+      : `These funds follow the same SEBI rules, but each manager picks different shares. The ${g.stats.ranked} with
       at least 5 years of history are scored out of 100 against each other: how often their 3-year return beat the
       category median at month-ends over the last 5 years (30%), 3- and 5-year returns (20%), return per unit of
       risk (20%), the worst fall in 5 years (15%) and the expense ratio (15%).${g.benchmark ? ` Benchmark: ${esc(g.benchmark)}.` : ''}`;
@@ -247,7 +269,7 @@ function renderVerdict() {
       <span class="lr-chev">${icon('chevron-right')}</span>
     </button>
     ${top.notes?.length ? list(top.notes, 'reasons notes') : ''}
-    <div class="facts">${g.kind === 'index' ? indexFacts(g, top) : activeFacts(g, top)}</div>
+    <div class="facts">${g.kind === 'index' ? indexFacts(g, top) : g.kind === 'metal' ? metalFacts(g, top) : activeFacts(g, top)}</div>
     ${runners ? `<div class="runners"><h3 class="runners-title">Runners-up</h3><ul class="list">${runners}</ul></div>` : ''}
     <div class="verdict-actions"><button class="btn tonal" type="button" data-see-all>See all ${g.funds.length} funds</button></div>
     <div class="more-list">
@@ -255,7 +277,7 @@ function renderVerdict() {
       ${more('how', 'How these funds are compared', `<p>${how}</p>
         <p>Scores move as returns, costs and fund sizes change.</p>`, keep.has('how'))}
       ${g.kind === 'index' ? more('gap', 'What the gap to the index is worth on a SIP', gapCalc(), keep.has('gap'))
-        : indexCheck(g, keep)}
+        : g.kind === 'active' ? indexCheck(g, keep) : ''}
     </div>
     <p class="small muted">Rank 1 is where these rules land on the latest data, not a promise. Check the scheme
       documents, exit load and taxes before investing.</p>`;
@@ -287,6 +309,33 @@ function activeFacts(g, top) {
     fact('Worst fall, 5 years', fall(top.max_drawdown), `median fund ${fall(s.median_drawdown)}`),
     fact('Expense ratio', pct2(top.ter), `a year · median ${pct2(s.median_ter)}`),
   ].join('');
+}
+
+function metalFacts(g, top) {
+  const s = g.stats;
+  const three = isNum(td(top, '3y'));
+  const own = three ? td(top, '3y') : td(top, '1y');
+  const short = esc(g.measure?.short || 'the metal');
+  return [
+    fact(`Gap to ${short}`, isNum(own) ? `${Math.abs(own).toFixed(2)}%` : DASH,
+      `${three ? 'a year over 3 years' : 'over 1 year'} · typical fund ${pct2(three ? s.median_gap_3y : s.median_gap_1y)}`),
+    fact('1-year return', pct1(top.returns['1y']), `${short} ${pct1(s.reference_return?.['1y'])}`),
+    fact('Fund size', crore(top.aum_cr), 'assets under management'),
+    fact('Expense ratio', pct2(top.ter), `as reported · median ${pct2(s.median_ter)}`),
+  ].join('');
+}
+
+// A group without a ranking (or with no fund ranked yet): every fund with its key numbers.
+function listedFunds(g) {
+  const meta = (f) => [esc(f.amc), isNum(f.aum_cr) ? crore(f.aum_cr) : '', isNum(f.ter) ? `expense ${pct2(f.ter)}` : '']
+    .filter(Boolean).join(' · ');
+  const trail = (f) => (isNum(f.returns['1y'])
+    ? `<span class="num">${pct1(f.returns['1y'])}</span><span class="muted">1 year</span>`
+    : `<span class="muted">${(f.years ?? 0) < 1 ? 'New' : DASH}</span>`);
+  return `<ul class="list fund-list">${g.funds.map((f) => `<li><button class="list-row" type="button" data-open="${f.code}">
+      <span class="lr-main"><span class="lr-title fund-name">${esc(f.name)}</span><span class="lr-sub">${meta(f)}</span></span>
+      <span class="lr-trail">${trail(f)}</span>
+    </button></li>`).join('')}</ul>`;
 }
 
 function gapCalc() {
@@ -390,6 +439,20 @@ const COLUMNS = {
     { key: 'ter', label: 'Expense', right: true, title: 'Expense ratio, a year (direct plan)', sort: (f) => f.ter, render: (f) => pct2(f.ter) },
     { key: 'aum', label: 'Size', right: true, opt: true, desc: true, sort: (f) => f.aum_cr, render: (f) => crore(f.aum_cr) },
   ],
+  metal: [
+    { key: 'rank', label: '#', sort: (f) => f.rank, render: rankCell },
+    { key: 'name', label: 'Fund', cls: 'fund', sort: (f) => f.name, render: fundCell },
+    { key: 'score', label: 'Score', desc: true, title: 'Score out of 100', sort: (f) => f.score, render: scoreCell },
+    { key: 'gap1', label: 'Gap 1Y', right: true, title: '1-year return minus the metal’s (smaller is better)',
+      sort: (f) => absOrNull(td(f, '1y')), render: (f) => metalGapCell(td(f, '1y')) },
+    { key: 'gap3', label: 'Gap 3Y', right: true, title: 'The same, a year, over 3 years',
+      sort: (f) => absOrNull(td(f, '3y')), render: (f) => metalGapCell(td(f, '3y')) },
+    { key: 'r1', label: '1Y', right: true, desc: true, opt: true, title: '1-year return (direct plan)',
+      sort: (f) => f.returns['1y'], render: (f) => pct1(f.returns['1y']) },
+    { key: 'ter', label: 'Expense', right: true, opt: true, title: 'Expense ratio as the fund house reports it (not scored)',
+      sort: (f) => f.ter, render: (f) => pct2(f.ter) },
+    { key: 'aum', label: 'Size', right: true, desc: true, sort: (f) => f.aum_cr, render: (f) => crore(f.aum_cr) },
+  ],
 };
 
 function compare(a, b) {
@@ -416,17 +479,21 @@ function detail(f, g) {
   const left = [section(f.rank ? 'Why it ranks here' : 'Why it is not ranked',
     `${f.status_reason ? `<p class="muted" style="margin:0 0 8px">${esc(f.status_reason)}</p>` : ''}${list(f.reasons)}`)];
   if (f.notes?.length) left.push(section('Worth knowing', list(f.notes)));
-  const ret = (p) => `${pct1(f.returns[p])} <span class="muted">vs ${pct1(f.benchmark_returns?.[p])}</span>`;
+  // Against the index (index funds), the metal (metal funds) or the fund's benchmark (active funds).
+  const ret = (p) => `${pct1(f.returns[p])}${isNum(f.benchmark_returns?.[p])
+    ? ` <span class="muted">vs ${pct1(f.benchmark_returns[p])}</span>` : ''}`;
   // The numbers most readers want first; the rest fold under "More numbers".
   const key = [
     ['Return 1 year', ret('1y')], ['Return 3 years, a year', ret('3y')], ['Return 5 years, a year', ret('5y')],
   ];
   const rest = [['Return 10 years, a year', ret('10y')]];
-  if (g.kind === 'index') {
+  if (g.kind === 'index' || (g.kind === 'metal' && isRanked(g))) {
     key.push(['Gap 1 year', gapPct(td(f, '1y'))], ['Gap 3 years, a year', gapPct(td(f, '3y'))]);
-    rest.push(['Gap 5 years, a year', gapPct(td(f, '5y'))],
-      ['Tracking error', `${pct2(f.tracking_error)}${f.tracking_error_as_of ? ` <span class="muted">(${esc(tradingDay(f.tracking_error_as_of))})</span>` : ''}`]);
-  } else {
+    rest.push(['Gap 5 years, a year', gapPct(td(f, '5y'))]);
+  }
+  if (g.kind === 'index') {
+    rest.push(['Tracking error', `${pct2(f.tracking_error)}${f.tracking_error_as_of ? ` <span class="muted">(${esc(tradingDay(f.tracking_error_as_of))})</span>` : ''}`]);
+  } else if (g.kind === 'active') {
     key.push(['Consistency', f.consistency?.of ? `${f.consistency.beat} of ${f.consistency.of} (${pct1(f.consistency.pct)})` : DASH],
       ['Worst fall, 5 years', fall(f.max_drawdown)]);
     rest.push(['Volatility, 5 years', pct1(f.volatility)],
@@ -442,19 +509,20 @@ function detail(f, g) {
     ['AMFI scheme code', esc(String(f.code))], ['ISIN', esc(f.isin || DASH)],
   );
   const right = [
-    section(`Score breakdown${isNum(f.score) ? ` · ${f.score.toFixed(1)}` : ''}`,
-      bars(COMPONENTS[g.kind].map(([k, label, w]) => ({ label: `${label} (${w}%)`, value: f.components?.[k] })))),
+    isRanked(g) ? section(`Score breakdown${isNum(f.score) ? ` · ${f.score.toFixed(1)}` : ''}`,
+      bars(componentsOf(g).map(([k, label, w]) => ({ label: `${label} (${w}%)`, value: f.components?.[k] })))) : '',
     section('Key numbers', kv(key) + more(`nums-${f.code}`, 'More numbers', kv(rest))),
   ];
   return `<div>${left.join('')}</div><div>${right.join('')}</div>`;
 }
 
-// The top of a fund's sheet: its score and rank, and a few chips.
+// The top of a fund's sheet: its score and rank (a listed fund: its 1-year return), and a few chips.
 const fundTop = (f, g) => `<div class="quote">
-    <div class="quote-price"><span class="quote-close">${isNum(f.score) ? f.score.toFixed(1) : DASH}<span
-      class="quote-unit"> / 100</span></span><span class="quote-change">${f.rank ? `Rank ${f.rank} of ${g.stats.ranked}`
-      : esc(STATUS_LABEL[f.status] || 'Not ranked')}</span></div>
-    <div class="chip-row"><span class="chip">${g.kind === 'index' ? 'Index fund' : 'Active fund'} · ${esc(g.short)}</span>
+    <div class="quote-price">${isRanked(g)
+    ? `<span class="quote-close">${isNum(f.score) ? f.score.toFixed(1) : DASH}<span class="quote-unit"> / 100</span></span>`
+    : `<span class="quote-close">${pct1(f.returns['1y'])}<span class="quote-unit"> in 1 year</span></span>`}<span
+      class="quote-change">${f.rank ? `Rank ${f.rank} of ${g.stats.ranked}` : esc(STATUS_LABEL[f.status] || 'Not ranked')}</span></div>
+    <div class="chip-row"><span class="chip">${KIND_ONE[g.kind] || 'Fund'} · ${esc(g.short)}</span>
       <span class="chip">Expense ${pct2(f.ter)}</span>${f.riskometer ? `<span class="chip">${esc(f.riskometer)} risk</span>` : ''}</div>
   </div>`;
 
@@ -483,6 +551,13 @@ function openFund(code) {
 
 function renderFunds() {
   const g = current();
+  // With nothing ranked, the verdict already lists every fund (in the order the sheet steps through).
+  if (!g.funds.some((f) => f.rank)) {
+    els.funds.hidden = true;
+    els.funds.innerHTML = '';
+    state.rows = g.funds;
+    return;
+  }
   els.funds.hidden = false;
   els.funds.innerHTML = `<details class="fold"${isOpen(els.funds, false) ? ' open' : ''}>
     <summary><h2>All ${esc(g.label)} <span class="count-pill">${g.funds.length}</span></h2>
@@ -511,11 +586,12 @@ function renderFunds() {
 }
 
 function renderRows() {
+  const host = els.funds.querySelector('#fund-rows');
+  if (!host) return;
   const g = current();
   const columns = COLUMNS[g.kind];
   const rows = sortedFunds(g, columns);
   state.rows = rows;
-  const host = els.funds.querySelector('#fund-rows');
   if (!rows.length) {
     host.innerHTML = `<p class="empty">No fund here matches “${esc(state.query)}”.</p>`;
   } else if (NARROW.matches) {
@@ -671,11 +747,11 @@ function methodHtml() {
   const s = state.snap;
   const m = s.model || {};
   return `<div class="prose">
-    <p>The comparison covers ${s.stats.funds} direct-plan equity funds from ${s.stats.amcs} fund houses in
-      ${s.stats.groups} groups, using AMFI data up to ${esc(tradingDay(s.data_through))}. Only direct plans (growth
-      option) are compared: they pay no distributor commission, so they cost less than regular plans of the same fund.
-      ETFs are left out (they have no direct plan and are bought on the stock exchange), as are index funds with an
-      ELSS lock-in.</p>
+    <p>The comparison covers ${s.stats.funds} direct-plan funds (equity funds, and gold, silver and other metal funds)
+      from ${s.stats.amcs} fund houses in ${s.stats.groups} groups, using AMFI data up to ${esc(tradingDay(s.data_through))}.
+      Only direct plans (growth option) are compared: they pay no distributor commission, so they cost less than regular
+      plans of the same fund. ETFs are left out (they have no direct plan and are bought on the stock exchange), as are
+      index funds with an ELSS lock-in.</p>
     <h3>Index funds: same index, so cost and accuracy decide</h3>
     <p>Funds that track the same index hold the same shares. A fund is placed in a group by the index in its name
       (AMFI's benchmark label is occasionally wrong), and is scored on fixed scales so that a group where every fund is
@@ -713,11 +789,31 @@ function methodHtml() {
     <p>A fund needs ${m.min_active_years ?? 5} years of history (at least ${m.min_windows ?? 24} rolling periods) to be
       ranked; younger funds are listed with their numbers but no rank. Each category also shows where a low-cost index
       fund would rank on the same rules, and how many funds beat their benchmark over 5 years.</p>
+    <h3>Gold and silver funds: same metal, so costs decide</h3>
+    <p>A gold or silver fund is a fund of funds: it holds its fund house's gold or silver ETF, so you can own the metal
+      through a mutual fund, without a demat account. Funds that follow the same metal are compared like index funds,
+      on fixed scales:</p>
+    <div class="table-scroll"><table>
+      <tr><th>Part</th><th>Weight</th><th>What it measures</th><th>Scale</th></tr>
+      <tr><td>Gap to the metal</td><td>${m.metal_weights?.tracking ?? 80}%</td><td>The fund's return minus the metal's over
+        1 year and, a year, over 3 years. Gold: AMFI's Gold Index, the benchmark the funds report. Silver: AMFI publishes
+        no return for the price of silver, so the yardstick is the median return of silver ETFs themselves. As with index
+        funds, a gap either way counts, and a fund with only a 1-year record is pulled halfway toward the group's typical
+        fund.</td><td>0% scores 100, ${m.metal_gap_worst ?? 3}% or more scores 0: these funds pay the ETF's fee and their
+        own</td></tr>
+      <tr><td>Fund size</td><td>${m.metal_weights?.size ?? 20}%</td><td>Assets under management.</td><td>₹10 crore scores 0,
+        ₹10,000 crore or more 100</td></tr>
+    </table></div>
+    <p>Expense ratios are shown but not scored: fund houses report a fund of funds' ratio with or without the fee of the
+      ETF it holds, so the figures are not like for like, and the gap already includes every cost. Funds that hold a mix
+      of gold and silver, and funds of mining companies abroad, are listed with their numbers but not ranked: their
+      returns differ by mix or strategy. Nifty Metal funds (shares of Indian metal companies) are compared against the
+      Nifty Metal index once they have a 1-year record.</p>
     <h3>Notes</h3>
     <ul>
       <li>A missing input never scores zero: that part is dropped and the others re-weighted.</li>
-      <li>Small funds (under ₹${m.small_fund_crore?.index ?? 100} crore for index funds, ₹${m.small_fund_crore?.active ?? 500}
-        crore for active funds) are flagged.</li>
+      <li>Small funds (under ₹${m.small_fund_crore?.index ?? 100} crore for index, gold and silver funds,
+        ₹${m.small_fund_crore?.active ?? 500} crore for active funds) are flagged.</li>
       <li>Sources: AMFI's scheme list, fund performance data, expense ratios and tracking error; NAV history from
         mfapi.in (a free mirror of AMFI's NAVs); index P/E from NSE. Refreshed automatically every Saturday.</li>
     </ul>

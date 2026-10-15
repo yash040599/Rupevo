@@ -25,6 +25,8 @@ const mf = {
       funds: [fund(4, 'Motilal Oswal Nifty 500 Index Fund', 'Motilal Oswal', 1)] },
     { key: 'flexi', label: 'Flexi cap funds', short: 'Flexi cap', kind: 'active',
       funds: [fund(5, 'Parag Parikh Flexi Cap Fund', 'PPFAS', 1), fund(6, 'Old Fund', 'X', null)] },
+    { key: 'gold', label: 'Gold funds', short: 'Gold', kind: 'metal',
+      funds: [fund(7, 'SBI Gold Fund', 'SBI', 1)] },
   ],
 };
 const items = buildIndex({ india, us: [{ snap: nasdaq, label: 'NASDAQ-100' }], mf });
@@ -46,6 +48,7 @@ test('the index holds pages, stocks of both markets, groups and funds with their
   assert.equal(aapl.href, 'us/?stock=AAPL');
   assert.equal(aapl.badge, 'NASDAQ');
   assert.equal(items.find((it) => it.kind === 'group' && it.group === 'flexi').href, 'mf/#flexi');
+  assert.equal(items.find((it) => it.kind === 'group' && it.group === 'gold').sub, 'Metal funds · 1 direct plans');
   const ppfas = items.find((it) => it.code === 5);
   assert.equal(ppfas.href, 'mf/?fund=5#flexi');
   assert.equal(ppfas.meta, '#1 of 1');

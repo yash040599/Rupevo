@@ -41,8 +41,8 @@ export function buildIndex({ india = null, us = [], mf = null } = {}) {
   for (const g of mf?.groups || []) {
     const ranked = g.funds.filter((f) => f.rank).length;
     items.push({
-      kind: 'group', title: g.label, sub: `${g.kind === 'index' ? 'Index funds' : 'Active funds'} · ${g.funds.length} direct plans`,
-      href: `mf/#${g.key}`, group: g.key, key: norm(`${g.label} ${g.short} ${g.kind === 'index' ? 'index' : 'active'} funds`),
+      kind: 'group', title: g.label, sub: `${KIND_LABEL[g.kind] || 'Funds'} · ${g.funds.length} direct plans`,
+      href: `mf/#${g.key}`, group: g.key, key: norm(`${g.label} ${g.short} ${g.kind} funds`),
     });
     for (const f of g.funds) {
       items.push({
@@ -54,6 +54,8 @@ export function buildIndex({ india = null, us = [], mf = null } = {}) {
   }
   return items;
 }
+
+const KIND_LABEL = { index: 'Index funds', active: 'Active funds', metal: 'Metal funds' };
 
 const CAPS = { page: 4, group: 4, stock: 8, fund: 8 };
 

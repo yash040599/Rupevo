@@ -107,7 +107,7 @@ class PublishedFundsTest(unittest.TestCase):
         self.assertTrue(snap["groups"])
         for group in snap["groups"]:
             with self.subTest(group=group["key"]):
-                self.assertIn(group["kind"], ("index", "active"))
+                self.assertIn(group["kind"], ("index", "active", "metal"))
                 ranks = [f["rank"] for f in group["funds"] if f["rank"] is not None]
                 self.assertEqual(ranks, list(range(1, len(ranks) + 1)), "ranked funds come first, in order")
                 self.assertEqual(group["stats"]["ranked"], len(ranks))

@@ -99,6 +99,38 @@ class NameMatchingTest(unittest.TestCase):
                          "sundaram nifty 100 equal weight")
         self.assertEqual(mf.name_key("Nippon India Index Fund - Nifty 50 Plan"), "nippon india nifty 50")
 
+    def test_fund_of_funds_names(self):
+        self.assertEqual(mf.name_key("HDFC Gold ETF Fund of Fund"), "hdfc gold etf fof")
+        self.assertEqual(mf.name_key("HDFC Gold ETF FoF"), mf.name_key("HDFC Gold ETF Fund of Fund"))
+        self.assertNotEqual(mf.name_key("HDFC Gold ETF"), mf.name_key("HDFC Gold ETF FoF"), "the ETF it holds")
+        self.assertEqual(mf.name_key("Baroda BNP Paribas Gold ETF Fund of Funds"), "baroda bnp paribas gold etf fof")
+        self.assertEqual(mf.name_key("ICICI Prudential Regular Gold Savings Fund (FOF)"),
+                         "icici prudential gold savings fof")
+
+    def test_metal_group_from_name(self):
+        cases = {"SBI Gold Fund": "gold", "Nippon India Gold Savings Fund": "gold", "Zerodha Silver ETF FoF": "silver",
+                 "Mirae Asset Gold Silver Passive FoF": "goldsilver",
+                 "Edelweiss Gold and Silver ETF FOF": "goldsilver",
+                 "HDFC Nifty Metal ETF FOF": "metalshares",
+                 "DSP World Gold Mining Overseas Equity Omni FoF": "globalmining",
+                 "DSP World Mining Overseas Equity Omni FoF": "globalmining",
+                 "ICICI Prudential Strategic Metal and Energy Equity Fund of Fund": "globalmining"}
+        for name, key in cases.items():
+            self.assertEqual(mf.metal_group_by_name(name).key, key, name)
+        for other in ("Kotak Multi Asset Omni FoF", "Golden Harvest FoF", "DSP World Energy FoF"):
+            self.assertIsNone(mf.metal_group_by_name(other), other)
+
+    def test_silver_return_from_silver_etfs(self):
+        def rec(name, one, three=None, direct=False):
+            plan = "Direct" if direct else "Regular"
+            return {"schemeName": name, f"return1Year{plan}": one, f"return3Year{plan}": three}
+        records = [rec("A Silver ETF", 27.0, 44.0), rec("B Silver Exchange Traded Fund", 28.0, 45.0),
+                   rec("C Silver ETF", 27.5, None, direct=True), rec("D Silver ETF FoF", 10.0, 10.0),
+                   rec("E Gold ETF", 19.0, 36.0), rec("F Silver ETF Fund of Fund", 10.0)]
+        ref = mf.etf_reference(records, "silver")
+        self.assertEqual(ref["1y"], 27.5, "fund of funds and gold ETFs are left out")
+        self.assertIsNone(ref["3y"], "two ETFs are not enough")
+
     def test_benchmark_key(self):
         self.assertEqual(mf.benchmark_key("Nifty200 Momentum 30 TRI"), "nifty 200 momentum 30")
         self.assertEqual(mf.benchmark_key("NIFTY 100 Equal Weighted TRI"), "nifty 100 equal weight")
@@ -236,14 +268,29 @@ class ScoringMathsTest(unittest.TestCase):
         self.assertEqual(by[3], (90 + 80) / 2, "a 1-year record is pulled halfway to the typical fund")
         self.assertLess(by[4], by[1])
 
+    def test_metal_scores_use_a_wider_scale_and_no_expense_ratio(self):
+        self.assertEqual(ms.metal_tracking_score(-1.5), 50.0)
+        self.assertEqual(ms.metal_tracking_score(-4.0), 0.0)
+        funds = [{"code": 1, "status": "ranked", "aum_cr": 1000.0, "ter": 0.9,
+                  "tracking_difference": {"1y": -1.0, "3y": -1.0}},
+                 {"code": 2, "status": "ranked", "aum_cr": 1000.0, "ter": 0.1,
+                  "tracking_difference": {"1y": 1.0, "3y": -2.0}}]
+        mf.score_metal(funds)
+        self.assertEqual(set(funds[0]["components"]), set(ms.METAL_WEIGHTS))
+        self.assertEqual(funds[0]["components"]["tracking"], 66.7)
+        self.assertEqual(funds[1]["components"]["tracking"], 50.0, "ahead of the metal counts like behind it")
+        self.assertGreater(funds[0]["score"], funds[1]["score"], "the expense ratio is not scored")
+
 
 class FakeAmfi:
-    """AMFI with three active large-cap funds, a young one, and Nifty 50 index funds."""
+    """AMFI with three active large-cap funds, a young one, Nifty 50 index funds, and gold, silver and
+    gold-and-silver fund of funds (with silver ETFs, which measure the price of silver)."""
 
     def __init__(self, as_of):
         self.as_of = as_of
         self.calls = []
         mk = self._scheme
+        fof, fof_new = "Other Scheme - FoF Domestic", "Fund of Funds Scheme (Domestic) - Fund of Funds Scheme (Domestic)"
         self.schemes = [mk(2001, "Alpha Large Cap Fund", "Alpha", "Equity Scheme - Large Cap Fund"),
                         mk(2002, "Beta Large Cap Fund", "Beta", "Equity Scheme - Large Cap Fund"),
                         mk(2003, "Gamma Large Cap Fund", "Gamma", "Equity Scheme - Large Cap Fund"),
@@ -251,7 +298,16 @@ class FakeAmfi:
                         mk(1001, "Alpha Nifty 50 Index Fund", "Alpha", "Other Scheme - Index Funds"),
                         mk(1002, "Beta Nifty 50 Index Fund", "Beta", "Other Scheme - Index Funds"),
                         mk(1003, "Gamma Nifty 50 Index Fund", "Gamma", "Other Scheme - Index Funds"),
-                        mk(1004, "Delta Nifty 50 Index Fund", "Delta", "Other Scheme - Index Funds")]
+                        mk(1004, "Delta Nifty 50 Index Fund", "Delta", "Other Scheme - Index Funds"),
+                        mk(3001, "Alpha Gold Fund", "Alpha", fof),
+                        mk(3002, "Beta Gold ETF Fund of Fund", "Beta", fof),
+                        mk(3003, "Gamma Gold ETF FoF", "Gamma", fof_new),
+                        mk(3011, "Alpha Silver ETF Fund of Fund", "Alpha", fof),
+                        mk(3012, "Beta Silver ETF FOF", "Beta", fof),
+                        mk(3021, "Delta Gold and Silver Passive FoF", "Delta", fof),
+                        mk(3022, "Gamma Gold Silver Passive FOF", "Gamma", fof_new),
+                        mk(3031, "Alpha Multi Asset Allocation FoF", "Alpha", fof),
+                        mk(4001, "Alpha Gold ETF", "Alpha", "Other Scheme - Gold ETF")]
 
     @staticmethod
     def _scheme(code, name, amc, category):
@@ -285,7 +341,30 @@ class FakeAmfi:
                     r("Delta Nifty 50 Index Fund", "Nifty 500 TRI", 300, {"1Year": -9.2, "3Year": None, "5Year": None, "10Year": None},
                       (-4.0, 9.5, 8.7, None)),
                     {**r("Alpha Nifty 50 ETF", "Nifty 50 TRI", 9000, {"1Year": -9.0, "3Year": 6.0, "5Year": 6.2, "10Year": None}, bench),
-                     "navDirect": None}]
+                     "navDirect": None},
+                    *self._silver_etfs()]
+        if (category, subcategory) == (5, 39):
+            r = self._record
+            gold, none = (19.12, 36.22, 25.46, None), (None, None, None, None)
+            rows = [
+                r("Alpha Gold Fund", "Gold Index", 5000, {"1Year": 17.8, "3Year": 34.6, "5Year": 24.3, "10Year": None}, gold),
+                r("Beta Gold ETF Fund of Fund", "Gold Index", 800, {"1Year": 18.4, "3Year": None, "5Year": None, "10Year": None}, gold),
+                r("Gamma Gold ETF FoF", "Domestic price of physical gold", 25, {"1Year": None, "3Year": None, "5Year": None, "10Year": None}, none),
+                r("Alpha Silver ETF FoF", "Domestic Prices of physical Silver", 1200,
+                  {"1Year": 26.0, "3Year": 43.8, "5Year": None, "10Year": None}, none),
+                # A silver benchmark figure some fund houses report (not silver's return): ignored.
+                r("Beta Silver ETF Fund of Funds", "LBMA AM fixing Prices", 600,
+                  {"1Year": 29.5, "3Year": None, "5Year": None, "10Year": None}, (19.26, None, None, None)),
+                r("Delta Gold and Silver Passive FoF", "Domestic Gold and Silver Prices", 3000,
+                  {"1Year": 23.4, "3Year": 40.0, "5Year": None, "10Year": None}, none),
+                r("Gamma Gold Silver Passive FOF", "70% Domestic Price of physical Gold and 30% Domestic Price of physical Silver",
+                  50, {"1Year": None, "3Year": None, "5Year": None, "10Year": None}, none),
+                r("Alpha Multi Asset Allocation FoF", "CRISIL Hybrid 50+50", 900,
+                  {"1Year": 9.0, "3Year": 12.0, "5Year": 11.0, "10Year": None}, (8.0, 11.0, 10.0, None)),
+                {**r("Beta Gold Savings Fund", "Gold Index", 90, {"1Year": 17.0, "3Year": None, "5Year": None, "10Year": None}, gold),
+                 "navDirect": None},
+            ]
+            return rows
         if (category, subcategory) == (1, 1):
             r = self._record
             b = (-7.0, 7.7, 6.8, None)
@@ -298,13 +377,30 @@ class FakeAmfi:
     def amcs(self):
         return [{"id": str(i), "name": f"{n} Mutual Fund"} for i, n in enumerate(("Alpha", "Beta", "Gamma", "Delta"), 1)]
 
+    @staticmethod
+    def _silver_etfs():
+        def etf(name, one, three):
+            return {"schemeName": name, "benchmark": "Domestic Prices of physical Silver", "navDirect": None,
+                    "navRegular": 100.0, "dailyAUM": 1000, "return1YearRegular": one, "return3YearRegular": three}
+        # Silver's return: 1 year, the median of 27.1, 27.3, 27.4 and an outlier, 27.35; 3 years, 44.9.
+        return [etf("Alpha Silver ETF", 27.3, 44.9), etf("Beta Silver ETF", 27.4, 45.0),
+                etf("Gamma Silver Exchange Traded Fund", 27.1, 44.7), etf("Delta Silver ETF", 43.1, None)]
+
+    # Expense ratios; a third item is the row's category (ETF rows are never a compared fund's).
+    TER_ROWS = {"1": [("Alpha Large Cap Fund", 0.6), ("Alpha - Nifty 50 Index Fund.", 0.1), ("Alpha Gold Fund", 0.25),
+                      ("Alpha Silver ETF Fund of Fund", 0.3), ("Alpha Gold ETF", 0.5, "Other Scheme - Gold ETF")],
+                "2": [("Beta Large Cap Fund", 0.9), ("Beta Nifty 50 Index Fund", 0.3), ("Beta Gold ETF FoF", 0.2),
+                      ("Beta Silver ETF FOF", 0.25)],
+                "3": [("Gamma Large Cap Fund", 1.2), ("Gamma Nifty 50 Index Fund", 0.2),
+                      ("Gamma Gold ETF Fund of Fund", 0.5),
+                      ("Gamma Gold ETF", 0.45, "Exchange Traded Funds (ETFs) - Gold ETF"),
+                      ("Gamma Gold Silver Passive FOF", 0.21)],
+                "4": [("Delta Large Cap Fund", 0.7), ("Delta Nifty 50 Index Fund", 0.25),
+                      ("Delta Gold and Silver Passive FoF", 0.2)]}
+
     def latest_ter(self, amc_id, today):
-        ters = {"1": [("Alpha Large Cap Fund", 0.6), ("Alpha - Nifty 50 Index Fund.", 0.1)],
-                "2": [("Beta Large Cap Fund", 0.9), ("Beta Nifty 50 Index Fund", 0.3)],
-                "3": [("Gamma Large Cap Fund", 1.2), ("Gamma Nifty 50 Index Fund", 0.2)],
-                "4": [("Delta Large Cap Fund", 0.7), ("Delta Nifty 50 Index Fund", 0.25)]}
-        return [{"name": n, "category": "", "date": "2026-10-07", "ter_direct": t, "ter_regular": None}
-                for n, t in ters[amc_id]]
+        return [{"name": row[0], "category": row[2] if len(row) > 2 else "", "date": "2026-10-07",
+                 "ter_direct": row[1], "ter_regular": None} for row in self.TER_ROWS[amc_id]]
 
     def latest_tracking_error(self, today):
         return [{"Scheme_Name": n, "DirectPercent": te, "as_of": "2026-10-07"} for n, te in
@@ -325,6 +421,13 @@ class FakeMfApi:
             1002: nav_series(D(2019, 1, 1), end, 0.11, wiggle=2),
             1003: nav_series(D(2026, 3, 1), end, 0.11, wiggle=2),
             1004: nav_series(D(2025, 6, 1), end, 0.11, wiggle=2),
+            3001: nav_series(D(2016, 1, 1), end, 0.14, wiggle=1),
+            3002: nav_series(D(2025, 3, 1), end, 0.18, wiggle=1),
+            3003: nav_series(D(2026, 4, 1), end, 0.18, wiggle=1),
+            3011: nav_series(D(2022, 2, 1), end, 0.20, wiggle=2),
+            3012: nav_series(D(2024, 6, 1), end, 0.25, wiggle=2),
+            3021: nav_series(D(2022, 9, 1), end, 0.20, wiggle=2),
+            3022: nav_series(D(2026, 2, 1), end, 0.20, wiggle=2),
         }
 
     def history(self, code):
@@ -364,8 +467,11 @@ class BuildTest(unittest.TestCase):
     def test_shape(self):
         s = self.snap
         self.assertEqual((s["market"], s["data_through"]), ("mf", "2026-10-07"))
-        self.assertEqual(set(self.groups), {"nifty50", "largecap"})
-        self.assertEqual(s["stats"]["funds"], 8, "the ETF (no direct plan) is left out")
+        self.assertEqual(list(self.groups), ["nifty50", "largecap", "gold", "silver", "goldsilver"])
+        self.assertEqual([g["kind"] for g in s["groups"]], ["index", "active", "metal", "metal", "metal"])
+        self.assertEqual(s["stats"]["funds"], 15,
+                         "ETFs, a fund without a direct plan and other fund of funds are left out")
+        self.assertEqual(s["model"]["metal_weights"], ms.METAL_WEIGHTS)
         json.dumps(s, ensure_ascii=False)
 
     def test_index_group(self):
@@ -406,6 +512,64 @@ class BuildTest(unittest.TestCase):
         self.assertEqual(check["of"], 4)
         self.assertEqual(g["stats"]["beat_benchmark_5y"], {"beat": 3, "of": 3})
 
+    def test_gold_funds_are_measured_against_the_price_of_gold(self):
+        g = self.groups["gold"]
+        self.assertTrue(g["compared"])
+        self.assertEqual(g["measure"], {"name": "the price of gold", "short": "gold", "basis": "benchmark"})
+        self.assertEqual(g["stats"]["reference_return"]["1y"], 19.12)
+        funds = {f["name"]: f for f in g["funds"]}
+        alpha, beta, gamma = funds["Alpha Gold Fund"], funds["Beta Gold ETF Fund of Fund"], funds["Gamma Gold ETF FoF"]
+        self.assertEqual((alpha["tracking_difference"]["1y"], alpha["tracking_difference"]["3y"]), (-1.32, -1.62))
+        self.assertEqual(set(alpha["components"]), set(ms.METAL_WEIGHTS))
+        self.assertEqual([f["name"] for f in g["funds"] if f["rank"]], ["Beta Gold ETF Fund of Fund", "Alpha Gold Fund"],
+                         "Beta's 0.72% one-year gap, pulled halfway to the typical fund, beats Alpha's 1.3-1.6%")
+        self.assertEqual((alpha["ter"], beta["ter"], gamma["ter"]), (0.25, 0.2, 0.5))
+        self.assertTrue(any("the price of gold" in r for r in alpha["reasons"]))
+        self.assertTrue(any("not part of the score" in r for r in alpha["reasons"]))
+        self.assertEqual((gamma["status"], gamma["rank"]), ("too_new", None))
+        self.assertTrue(any("Small fund" in n for n in gamma["notes"]))
+
+    def test_silver_funds_are_measured_against_silver_etfs(self):
+        g = self.groups["silver"]
+        self.assertEqual(g["measure"]["basis"], "silver_etfs")
+        self.assertEqual((g["stats"]["reference_return"]["1y"], g["stats"]["reference_return"]["3y"]), (27.35, 44.9))
+        funds = {f["name"]: f for f in g["funds"]}
+        alpha, beta = funds["Alpha Silver ETF FoF"], funds["Beta Silver ETF Fund of Funds"]
+        self.assertEqual((alpha["tracking_difference"]["1y"], alpha["tracking_difference"]["3y"]), (-1.35, -1.1))
+        self.assertEqual(beta["tracking_difference"]["1y"], 2.15, "not against the 19.26% its fund house reports")
+        self.assertEqual((alpha["ter"], beta["ter"]), (0.3, 0.25), "'Fund of Fund' and 'FoF' name the same fund")
+        self.assertEqual([f["name"] for f in g["funds"] if f["rank"]],
+                         ["Alpha Silver ETF FoF", "Beta Silver ETF Fund of Funds"])
+        self.assertTrue(any("silver ETFs" in r for r in alpha["reasons"]))
+
+    def test_mixed_metal_funds_are_listed_without_a_rank(self):
+        g = self.groups["goldsilver"]
+        self.assertFalse(g["compared"])
+        self.assertIsNone(g["measure"])
+        self.assertIn("own mix", g["unranked_reason"])
+        self.assertEqual([f["name"] for f in g["funds"]],
+                         ["Delta Gold and Silver Passive FoF", "Gamma Gold Silver Passive FOF"], "largest first")
+        self.assertEqual(g["stats"]["ranked"], 0)
+        self.assertEqual({(f["rank"], f["status"]) for f in g["funds"]}, {(None, "not_compared")})
+        delta = g["funds"][0]
+        self.assertIn("Returned 23.4% over the last year and 40.0% a year over 3 years.", delta["reasons"])
+        self.assertEqual(delta["ter"], 0.2)
+
+    def test_other_fund_of_funds_are_left_out(self):
+        names = {f["name"] for g in self.snap["groups"] for f in g["funds"]}
+        self.assertNotIn("Alpha Multi Asset Allocation FoF", names)
+        self.assertNotIn("Beta Gold Savings Fund", names, "no direct plan")
+
+    def test_a_gold_fund_never_takes_its_etfs_expense_ratio(self):
+        class NoFundRow(FakeAmfi):
+            TER_ROWS = {**FakeAmfi.TER_ROWS,
+                        "3": [row for row in FakeAmfi.TER_ROWS["3"] if row[0] != "Gamma Gold ETF Fund of Fund"]}
+        with mock.patch.object(mf, "MIN_RANKED", 1):
+            snap = mf.build(NoFundRow(self.AS_OF), FakeMfApi(self.AS_OF), FakeNse(), today=self.TODAY)
+        gamma = next(f for g in snap["groups"] for f in g["funds"] if f["name"] == "Gamma Gold ETF FoF")
+        self.assertIsNone(gamma["ter"], "not the 0.45% of the ETF it holds")
+        self.assertIn("Expense ratio not found in AMFI's data.", gamma["notes"])
+
     def test_reasons_are_neutral(self):
         texts = [t for g in self.snap["groups"] for f in g["funds"]
                  for t in f["reasons"] + f["notes"] + [f["status_reason"] or ""]]
@@ -419,7 +583,7 @@ class BuildTest(unittest.TestCase):
                     raise MfDataError("throttled")
                 return super().latest_ter(amc_id, today)
         with mock.patch.object(mf, "MIN_RANKED", 1):
-            with self.assertRaises(mf.SnapshotError, msg="2 of 8 funds without a TER is too many to publish"):
+            with self.assertRaises(mf.SnapshotError, msg="4 of 15 funds without a TER is too many to publish"):
                 mf.build(FlakyAmfi(self.AS_OF), FakeMfApi(self.AS_OF), FakeNse(), today=self.TODAY)
             snap = mf.build(FlakyAmfi(self.AS_OF), FakeMfApi(self.AS_OF), FakeNse(), previous=self.snap,
                             today=self.TODAY)
