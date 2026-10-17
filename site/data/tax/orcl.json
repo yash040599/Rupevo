@@ -3,7 +3,7 @@
  "name": "Oracle Corporation",
  "exchange": "NYSE",
  "currency": "USD",
- "generated_at": "2026-10-17T11:08:16+05:30",
+ "generated_at": "2026-10-17T13:48:54+05:30",
  "sources": {"prices": "Yahoo Finance daily close (split-adjusted)", "dividends": "Oracle investor relations"},
  "first": "2016-10-17",
  "last": "2026-10-16",
