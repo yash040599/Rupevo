@@ -321,17 +321,28 @@ tests/             engine, snapshot, universe, parser, publication-safety,
   direct NAV) and ELSS index funds. Each fund is matched to its direct growth
   plan in `NAVAll.txt` for the scheme code (some fund houses call the growth
   option *Cumulative*; a few rows give no plan or option and are used only
-  when their NAV matches the direct plan's).
+  when their NAV matches the direct plan's). When a fund house renames its
+  schemes in `NAVAll.txt` before AMFI's performance data catches up (Zerodha's
+  *Zerodha CASE* in November 2026), a fund whose old name no longer matches
+  keeps the scheme code it had in the published `mf.json`, as long as that
+  code is still a direct plan with the same NAV.
 * **Joins by name**: expense ratios (AMFI's daily TER rows per fund house: this
   month's, or last month's when a fund house has not posted yet) and tracking
   error (AMFI, the last three days published) are matched by scheme name
   through `name_key` with a close-match fallback that never pairs names with
-  different numbers (Nifty 50 never matches Nifty 500).
+  different numbers (Nifty 50 never matches Nifty 500). A fund is looked up
+  under both its AMFI performance name and its `NAVAll.txt` name, and a fund
+  house still finds its expense ratios when one list adds a word to its name.
 * **Index funds** are grouped by the index their **name** spells out (AMFI's
   benchmark label is occasionally wrong: a Nifty 50 fund labelled Nifty 500).
   Tracking difference is computed from AMFI's returns: the fund's 1-, 3-, 5-
   and 10-year return minus the group's index return (the median of what the
-  group's funds report). AMFI's monthly tracking-difference disclosure is not
+  group's funds report). An index return more than 10 points a year from what
+  the group's funds earned is a data error and is not used (AMFI's Gold Index
+  1-year return read −98.8% on 5 November 2026, when gold funds had earned
+  18%): funds are then compared on the periods left, and the file's `errors`
+  say so. The same applies to the gold and Nifty Metal references below.
+  AMFI's monthly tracking-difference disclosure is not
   used because fund houses report it with different signs. Scores, on fixed
   scales: the gap to the index either way, averaged over 1 and 3 years (50%;
   0% scores 100, 1% or more 0; a fund with only a 1-year record is pulled

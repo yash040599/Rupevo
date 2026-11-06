@@ -144,6 +144,20 @@ class NameMatchingTest(unittest.TestCase):
         self.assertEqual(mf.closest("kotak nifty 50", ["kotak nifty 50 tracker", "kotak nifty 50 etf"], 0.7), None,
                          "two equally close names are ambiguous")
 
+    def test_fund_house_that_adds_a_word_to_its_name(self):
+        houses = ["zerodha", "hdfc", "bank of india", "nippon india"]
+        self.assertEqual(mf.match_amc("zerodha case", houses), "zerodha")
+        self.assertEqual(mf.match_amc("hdfc", houses), "hdfc")
+        self.assertIsNone(mf.match_amc("navi", houses))
+        self.assertIsNone(mf.match_amc("india", houses), "two fund houses contain the word")
+
+    def test_name_lookup_tries_both_names_of_a_fund(self):
+        lookup = mf.NameLookup([{"n": "Beta CASE Nifty 50 Index Fund", "v": 1},
+                                {"n": "Beta Nifty Next 50 Index Fund", "v": 2}], "n")
+        self.assertIsNone(lookup.find("Beta Nifty 50 Index Fund"), "as close to the Next 50 fund as to its new name")
+        self.assertEqual(lookup.find("Beta Nifty 50 Index Fund", "Beta CASE Nifty 50 Index Fund")["v"], 1)
+        self.assertEqual(lookup.find(None, "Beta Nifty Next 50 Index Fund")["v"], 2)
+
     def test_index_group_from_name(self):
         self.assertEqual(mf.index_group_by_name("Kotak NIFTY 100 Low Volatility 30 Index Fund").key, "lowvol30")
         self.assertEqual(mf.index_group_by_name("Axis Nifty50 Equal Weight Index Fund").key, "nifty50ew")
@@ -177,6 +191,17 @@ class NameMatchingTest(unittest.TestCase):
         ref = mf.index_reference(groups["nifty50"])
         self.assertEqual(ref["1y"], -9.0, "regrouped funds do not set the index return")
 
+    def test_an_index_return_far_from_what_its_funds_earned_is_left_out(self):
+        def rec(own1, bench1, own3, bench3):
+            return ({"return1YearDirect": own1, "return1YearBenchmark": bench1,
+                     "return3YearDirect": own3, "return3YearBenchmark": bench3}, None)
+        # AMFI's Gold Index on 5 Nov 2026: -98.79% over a year, while gold funds had earned 18%.
+        entries = [rec(18.2, -98.79, 32.1, 32.92), rec(18.4, -98.79, 31.9, 32.92), rec(18.3, None, None, None)]
+        problems = []
+        ref = mf.index_reference(entries, problems, "Gold")
+        self.assertEqual((ref["1y"], ref["3y"]), (None, 32.92))
+        self.assertEqual(problems, ["Gold 1y: AMFI reports -98.8%, its funds earned 18.3%"])
+
     def test_scheme_index(self):
         schemes = parse_nav_all(NAV_ALL)
         index = mf.SchemeIndex(schemes)
@@ -185,6 +210,11 @@ class NameMatchingTest(unittest.TestCase):
         self.assertEqual(index.find("Beta Sensex Index Fund", 40.1)["code"], 1003,
                          "an unlabelled direct row is used when its NAV matches")
         self.assertIsNone(index.find("Beta Sensex Index Fund", 30.0), "...and only then")
+        self.assertEqual(index.get(1002, 31.4)["code"], 1002, "by scheme code when the NAV agrees")
+        self.assertEqual(index.get(1003, 40.1)["code"], 1003)
+        self.assertIsNone(index.get(1002, 25.0), "...and only then")
+        self.assertIsNone(index.get(2101, 50.0), "never a regular plan")
+        self.assertIsNone(index.get(None, 31.4))
 
     def test_indian_number(self):
         self.assertEqual(mf.indian_number(12345678), "1,23,45,678")
@@ -592,6 +622,68 @@ class BuildTest(unittest.TestCase):
         self.assertEqual(funds["Beta Nifty 50 Index Fund"]["ter"], 0.3)
         self.assertFalse(any("Expense ratio" in n for f in funds.values() for n in f["notes"]))
         self.assertTrue(any(e["source"] == "AMFI expense ratios" for e in snap["errors"]))
+
+    def test_fund_house_renamed_in_navall_keeps_its_funds(self):
+        class RenamedAmfi(FakeAmfi):
+            """Beta's schemes are 'Beta CASE ...' in NAVAll.txt, its expense ratios and tracking errors;
+            AMFI's performance data and its expense-ratio page still say 'Beta'."""
+            def __init__(self, as_of):
+                super().__init__(as_of)
+                for s in self.schemes:
+                    if s["amc"] == "Beta Mutual Fund":
+                        s["name"], s["amc"] = s["name"].replace("Beta ", "Beta CASE ", 1), "Beta CASE Mutual Fund"
+
+            def latest_ter(self, amc_id, today):
+                rows = super().latest_ter(amc_id, today)
+                for r in rows:
+                    r["name"] = r["name"].replace("Beta ", "Beta CASE ", 1)
+                return rows
+
+            def latest_tracking_error(self, today):
+                rows = super().latest_tracking_error(today)
+                for r in rows:
+                    r["Scheme_Name"] = r["Scheme_Name"].replace("Beta ", "Beta CASE ", 1)
+                return rows
+
+        with mock.patch.object(mf, "MIN_RANKED", 1):
+            first = mf.build(RenamedAmfi(self.AS_OF), FakeMfApi(self.AS_OF), FakeNse(), today=self.TODAY)
+            snap = mf.build(RenamedAmfi(self.AS_OF), FakeMfApi(self.AS_OF), FakeNse(), previous=self.snap,
+                            today=self.TODAY)
+        self.assertNotIn("Beta Nifty 50 Index Fund", {f["name"] for g in first["groups"] for f in g["funds"]},
+                         "the old name alone is too far from the new one")
+        funds = {f["name"]: f for g in snap["groups"] for f in g["funds"]}
+        self.assertEqual(snap["stats"]["funds"], self.snap["stats"]["funds"])
+        beta = funds["Beta Nifty 50 Index Fund"]
+        self.assertEqual((beta["code"], beta["amc"], beta["ter"], beta["tracking_error"]), (1002, "Beta CASE", 0.3, 0.08))
+        self.assertEqual((funds["Beta Large Cap Fund"]["code"], funds["Beta Large Cap Fund"]["ter"]), (2002, 0.9))
+        self.assertEqual((funds["Beta Gold ETF Fund of Fund"]["ter"], funds["Beta Silver ETF Fund of Funds"]["ter"]),
+                         (0.2, 0.25))
+        self.assertEqual(snap["errors"], [])
+
+    def test_an_impossible_gold_index_return_is_not_used(self):
+        class BrokenGoldIndexAmfi(FakeAmfi):
+            """AMFI's Gold Index 1-year return reads -98.79% while the gold funds earned 18%."""
+            def performance(self, category, subcategory, report_date):
+                rows = super().performance(category, subcategory, report_date)
+                for r in rows:
+                    if r.get("return1YearBenchmark") == 19.12:
+                        r["return1YearBenchmark"] = -98.79
+                return rows
+
+        with mock.patch.object(mf, "MIN_RANKED", 1):
+            snap = mf.build(BrokenGoldIndexAmfi(self.AS_OF), FakeMfApi(self.AS_OF), FakeNse(), today=self.TODAY)
+        gold = next(g for g in snap["groups"] if g["key"] == "gold")
+        self.assertEqual((gold["stats"]["reference_return"]["1y"], gold["stats"]["reference_return"]["3y"]),
+                         (None, 36.22))
+        funds = {f["name"]: f for f in gold["funds"]}
+        alpha, beta = funds["Alpha Gold Fund"], funds["Beta Gold ETF Fund of Fund"]
+        self.assertEqual((alpha["rank"], alpha["tracking_difference"]["1y"], alpha["tracking_difference"]["3y"]),
+                         (1, None, -1.62), "ranked on its 3-year gap")
+        self.assertEqual((beta["status"], beta["status_reason"]),
+                         ("no_tracking", "The return of the price of gold could not be measured this time."),
+                         "a fund with only a 1-year record has no gap to rank it on")
+        self.assertTrue(any(e["source"] == "AMFI index returns" and "-98.8%" in e["error"] for e in snap["errors"]))
+        self.assertEqual(self.groups["gold"]["stats"]["reference_return"]["1y"], 19.12, "a sound figure is kept")
 
     def test_valuation_reuses_months_already_fetched(self):
         v = self.snap["valuation"]

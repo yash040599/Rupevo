@@ -226,6 +226,19 @@ def amc_label(name: str) -> str:
     return re.sub(r"\s*Mutual Fund\s*$", "", (name or "").strip(), flags=re.I) or name
 
 
+def match_amc(key: str, candidates) -> str | None:
+    """The fund-house key among `candidates` for `key` (both `amc_key`s): the closest one, or
+    else the only one whose words all appear in the other, for a fund house that added a word
+    to its name in one list first ('Zerodha CASE Mutual Fund' in NAVAll.txt is still 'Zerodha
+    Mutual Fund' on AMFI's expense-ratio page)."""
+    match = closest(key, candidates, 0.6)
+    if match or not key:
+        return match
+    words = set(key.split())
+    within = [c for c in candidates if c and (set(c.split()) <= words or words <= set(c.split()))]
+    return within[0] if len(within) == 1 else None
+
+
 def similarity(a: str, b: str) -> float:
     """Token overlap of two name keys; 0 unless both carry the same numbers
     (so 'nifty 50' never matches 'nifty 100' or 'nifty 50 equal weight 50')."""
@@ -326,23 +339,35 @@ def _is_index_fund(record: dict) -> bool:
 
 EQUITY_CATEGORIES = ("equity", "index")
 FOF_CATEGORIES = ("fof", "fund of funds")  # 'Other Scheme - FoF Domestic', 'Fund of Funds Scheme (Domestic)'
+NAV_TOLERANCE = 0.05  # how far a NAVAll.txt NAV may be from AMFI's performance data and still confirm a match
 
 
 class SchemeIndex:
     """Direct-plan growth schemes from NAVAll.txt in some categories (equity and index funds,
-    or `FOF_CATEGORIES` for metal funds), looked up by name."""
+    or `FOF_CATEGORIES` for metal funds), looked up by name or scheme code."""
 
     def __init__(self, schemes: list[dict], categories: tuple[str, ...] = EQUITY_CATEGORIES) -> None:
         self.by_key: dict[str, list[dict]] = {}
         self.unlabelled: dict[str, list[dict]] = {}
+        self.by_code: dict[int, dict] = {}
         for s in schemes:
             cat = s["category"].lower()
             if not s["nav"] or not any(c in cat for c in categories):
                 continue
             if s["direct"] and s["growth"]:
                 self.by_key.setdefault(name_key(s["name"]), []).append(s)
+                self.by_code[s["code"]] = s
             elif not s.get("labelled", True) and not re.search(r"regular", f"{s['plan']} {s['name']}", re.I):
                 self.unlabelled.setdefault(name_key(s["name"]), []).append(s)
+                self.by_code[s["code"]] = s
+
+    def get(self, code: int | None, nav: float | None) -> dict | None:
+        """The scheme with this code, if it is still here and its NAV agrees with AMFI's
+        performance data."""
+        s = self.by_code.get(code) if code is not None else None
+        if not s or not nav or abs(s["nav"] / nav - 1.0) >= NAV_TOLERANCE:
+            return None
+        return s
 
     def find(self, name: str, nav: float | None) -> dict | None:
         key = closest(name_key(name), self.by_key, 0.8)
@@ -358,7 +383,7 @@ class SchemeIndex:
         key = closest(name_key(name), self.unlabelled, 0.8) if nav else None
         if key:
             best = min(self.unlabelled[key], key=lambda s: abs(s["nav"] / nav - 1.0))
-            if abs(best["nav"] / nav - 1.0) < 0.05:
+            if abs(best["nav"] / nav - 1.0) < NAV_TOLERANCE:
                 return best
         return None
 
@@ -374,13 +399,26 @@ class NameLookup:
                 continue
             self.rows.setdefault(key, row)
 
-    def find(self, name: str, threshold: float = 0.8) -> dict | None:
-        key = closest(name_key(name), self.rows, threshold)
-        return self.rows.get(key) if key else None
+    def find(self, *names: str | None, threshold: float = 0.8) -> dict | None:
+        """The row named by any of `names` (a fund's AMFI performance name and its NAVAll.txt
+        name, which differ while a fund house's renaming reaches one list before the other):
+        an exact match on any of them first, then the first close match."""
+        keys = [k for k in (name_key(n or "") for n in names) if k]
+        for key in keys:
+            if key in self.rows:
+                return self.rows[key]
+        for key in keys:
+            match = closest(key, self.rows, threshold)
+            if match:
+                return self.rows[match]
+        return None
 
 
 PERIODS = (("1y", "1Year"), ("3y", "3Year"), ("5y", "5Year"), ("10y", "10Year"))
 MAX_REGROUP_GAP = 1.5
+# An index return this many points (a year) from what the group's funds earned is a data error:
+# AMFI's Gold Index 1-year return read -98.8% on 5 Nov 2026, when gold funds had earned 18%.
+MAX_REFERENCE_GAP = 10.0
 _ETF_CATEGORY = re.compile(r"\betfs?\b", re.I)  # 'Other Scheme - Gold ETF', 'Exchange Traded Funds (ETFs) - ...'
 
 
@@ -425,13 +463,23 @@ def assign_index_records(records: list[dict]) -> tuple[dict[str, list[tuple[dict
     return out, skipped
 
 
-def index_reference(entries: list[tuple[dict, str | None]]) -> dict[str, float | None]:
+def index_reference(entries: list[tuple[dict, str | None]], problems: list[str] | None = None,
+                    label: str = "") -> dict[str, float | None]:
     """The index's total return per period: the median of what the group's funds report
-    (fund houses occasionally report a different figure; funds regrouped by name are left out)."""
+    (fund houses occasionally report a different figure; funds regrouped by name are left out).
+    The funds follow the index, so a figure more than MAX_REFERENCE_GAP from their own median
+    return is wrong: that period has no reference, and `problems` gets a line."""
     ref: dict[str, float | None] = {}
     for period, field in PERIODS:
         values = [r.get(f"return{field}Benchmark") for r, moved in entries if not moved]
-        ref[period] = ms.median(v for v in values if isinstance(v, (int, float)))
+        index = ms.median(v for v in values if isinstance(v, (int, float)))
+        earned = ms.median(r.get(f"return{field}Direct") for r, _ in entries
+                           if isinstance(r.get(f"return{field}Direct"), (int, float)))
+        if index is not None and earned is not None and abs(index - earned) > MAX_REFERENCE_GAP:
+            if problems is not None:
+                problems.append(f"{label} {period}: AMFI reports {index:.1f}%, its funds earned {earned:.1f}%")
+            index = None
+        ref[period] = index
     return ref
 
 
@@ -767,8 +815,15 @@ def _gap_stats(ranked: list[dict]) -> dict:
     }
 
 
+def _unmeasured(group: Group, reference: dict | None) -> str | None:
+    """Why a fund without a gap cannot be ranked when its group's reference has no 1-year return."""
+    if (reference or {}).get("1y") is not None:
+        return None
+    return f"The return of {group.measure or 'the index'} could not be measured this time."
+
+
 def build_index_group(group: Group, funds: list[dict], reference: dict | None = None) -> dict:
-    _mark_untracked(funds)
+    _mark_untracked(funds, _unmeasured(group, reference))
     score_index(funds)
     ranked = [f for f in funds if f["status"] == "ranked"]
     stats = {
@@ -798,8 +853,7 @@ def build_metal_group(group: Group, funds: list[dict], reference: dict | None = 
                  "median_return_1y": rnd(_median_of(funds, lambda f: f["returns"].get("1y"))),
                  "median_ter": rnd(_median_of(funds, lambda f: f.get("ter")))}
         return {"stats": stats, "funds": sorted(funds, key=lambda f: (-(f.get("aum_cr") or 0), f["name"]))}
-    measured = any(v is not None for v in (reference or {}).values())
-    _mark_untracked(funds, None if measured else f"The return of {group.measure} could not be measured this time.")
+    _mark_untracked(funds, _unmeasured(group, reference))
     score_metal(funds)
     ranked = [f for f in funds if f["status"] == "ranked"]
     stats = {
@@ -870,6 +924,17 @@ def _index_check(ranked: list[dict], medians: dict, proxy: dict | None, proxy_wi
 
 # ── The snapshot ────────────────────────────────────────────────
 
+def _known_codes(previous: dict | None) -> dict[str, int]:
+    """The scheme code of each fund in the published file, by name: a fund house can rename its
+    schemes in NAVAll.txt before AMFI's performance data catches up."""
+    codes: dict[str, int] = {}
+    for g in (previous or {}).get("groups") or []:
+        for f in g.get("funds") or []:
+            if isinstance(f.get("code"), int) and f.get("name"):
+                codes.setdefault(name_key(f["name"]), f["code"])
+    return codes
+
+
 def build(amfi, mfapi, nse, log: Logger | None = None, *, previous: dict | None = None,
           today: datetime.date | None = None, limit: int | None = None,
           cache_dir: str | None = None) -> dict:
@@ -902,7 +967,8 @@ def build(amfi, mfapi, nse, log: Logger | None = None, *, previous: dict | None 
     if skipped:
         log.warning(f"left out {len(skipped)} index funds whose name and returns point to different "
                     f"indices: {', '.join(skipped[:6])}")
-    references = {g.key: index_reference(records[g.key]) for g in INDEX_GROUPS}
+    bad_references: list[str] = []
+    references = {g.key: index_reference(records[g.key], bad_references, g.label) for g in INDEX_GROUPS}
     for g in ACTIVE_GROUPS:
         try:
             records[g.key] = [(r, None) for r in amfi.performance(EQUITY, g.subcategory, as_of)
@@ -926,14 +992,19 @@ def build(amfi, mfapi, nse, log: Logger | None = None, *, previous: dict | None 
             records[group.key].append((rec, None))
     for g in METAL_GROUPS:
         if g.reference == "benchmark":
-            references[g.key] = index_reference(records[g.key])
+            references[g.key] = index_reference(records[g.key], bad_references, g.label)
         elif g.reference == "silver_etfs":
             references[g.key] = etf_reference(index_and_etfs, "silver")
+    if bad_references:
+        problem = "left out, too far from what their funds earned: " + "; ".join(bad_references)
+        log.warning(f"index returns {problem}")
+        errors.append({"source": "AMFI index returns", "error": problem[:200]})
     if failed_groups > MAX_GROUP_FAILURE_SHARE * len(GROUPS):
         raise SnapshotError(f"AMFI fund performance failed for {failed_groups} of {len(GROUPS)} groups")
 
     funds_by_group: dict[str, list[dict]] = {}
-    unmatched = []
+    unmatched, renamed = [], []
+    known_codes = _known_codes(previous)
     for g in GROUPS:
         rows = records[g.key][:limit] if limit else records[g.key]
         benchmark_names = Counter((r.get("benchmark") or "").strip() for r, moved in rows if not moved)
@@ -941,7 +1012,12 @@ def build(amfi, mfapi, nse, log: Logger | None = None, *, previous: dict | None 
         funds = []
         seen = set()
         for rec, moved_from in rows:
-            scheme = lookup.find(rec.get("schemeName") or "", rec.get("navDirect"))
+            name = rec.get("schemeName") or ""
+            scheme = lookup.find(name, rec.get("navDirect"))
+            if not scheme:
+                scheme = lookup.get(known_codes.get(name_key(name)), rec.get("navDirect"))
+                if scheme:
+                    renamed.append(name)
             if not scheme:
                 unmatched.append(rec.get("schemeName"))
                 continue
@@ -960,11 +1036,14 @@ def build(amfi, mfapi, nse, log: Logger | None = None, *, previous: dict | None 
         funds_by_group[g.key] = funds
     if unmatched:
         log.warning(f"{len(unmatched)} funds not found in NAVAll.txt: {', '.join(map(str, unmatched[:8]))}")
+    if renamed:
+        log.info(f"{len(renamed)} funds named differently in NAVAll.txt keep their previous scheme code: "
+                 f"{', '.join(renamed[:8])}")
     all_funds = [f for funds in funds_by_group.values() for f in funds]
     log.info(f"{len(all_funds)} funds in {sum(1 for v in funds_by_group.values() if v)} groups")
 
     _attach_ter(amfi, all_funds, schemes, today, cache, errors, log, previous)
-    _attach_tracking_error(amfi, funds_by_group, today, errors, log)
+    _attach_tracking_error(amfi, funds_by_group, schemes, today, errors, log)
 
     # NAV histories (rolling returns, volatility, falls; fund age).
     series_by_code: dict[int, ms.NavSeries] = {}
@@ -1107,9 +1186,10 @@ def _attach_ter(amfi, funds: list[dict], schemes: list[dict], today: datetime.da
         amcs, unreached = [], list(funds)
     by_amc_key = {amc_key(a["name"]): a for a in amcs}
     scheme_amc = {s["code"]: s["amc"] for s in schemes}
+    scheme_name = {s["code"]: s["name"] for s in schemes}
     wanted: dict[str, list[dict]] = {}
     for f in funds if amcs else []:
-        key = closest(amc_key(scheme_amc.get(f["code"], "")), by_amc_key, 0.6)
+        key = match_amc(amc_key(scheme_amc.get(f["code"], "")), by_amc_key)
         if key:
             wanted.setdefault(by_amc_key[key]["id"], []).append(f)
     failed = 0
@@ -1128,7 +1208,7 @@ def _attach_ter(amfi, funds: list[dict], schemes: list[dict], today: datetime.da
         priced = [r for r in rows if r.get("ter_direct") and not _ETF_CATEGORY.search(r.get("category") or "")]
         lookup = NameLookup(priced, "name")
         for f in members:
-            row = lookup.find(f["name"], 0.7)
+            row = lookup.find(f["name"], scheme_name.get(f["code"]), threshold=0.7)
             if row:
                 f["ter"], f["ter_date"] = rnd(row["ter_direct"]), row["date"]
         if n % 10 == 0:
@@ -1152,8 +1232,8 @@ def _attach_ter(amfi, funds: list[dict], schemes: list[dict], today: datetime.da
         log.warning(f"{len(missing)} funds without an expense ratio: {', '.join(missing[:8])}")
 
 
-def _attach_tracking_error(amfi, funds_by_group: dict[str, list[dict]], today: datetime.date,
-                           errors: list[dict], log: Logger) -> None:
+def _attach_tracking_error(amfi, funds_by_group: dict[str, list[dict]], schemes: list[dict],
+                           today: datetime.date, errors: list[dict], log: Logger) -> None:
     """AMFI's daily tracking error of each index fund (its spread around the index)."""
     index_funds = [f for g in INDEX_GROUPS for f in funds_by_group.get(g.key, [])]
     for f in index_funds:
@@ -1166,9 +1246,10 @@ def _attach_tracking_error(amfi, funds_by_group: dict[str, list[dict]], today: d
         errors.append({"source": "AMFI tracking error", "error": str(exc)[:200]})
         log.warning(f"tracking error: {exc}")
         return
+    scheme_name = {s["code"]: s["name"] for s in schemes}
     lookup = NameLookup(rows, "Scheme_Name", skip_etfs=True)
     for f in index_funds:
-        row = lookup.find(f["name"])
+        row = lookup.find(f["name"], scheme_name.get(f["code"]))
         if row and isinstance(row.get("DirectPercent"), (int, float)):
             f["tracking_error"], f["tracking_error_as_of"] = rnd(row["DirectPercent"]), row.get("as_of")
     missing = [f["name"] for f in index_funds if f["tracking_error"] is None]
