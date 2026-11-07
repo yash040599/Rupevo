@@ -3,8 +3,8 @@
  "market": "mf",
  "title": "Mutual Fund Comparison",
  "currency": "INR",
- "generated_at": "2026-11-06T15:45:27+05:30",
- "started_at": "2026-11-06T15:45:01+05:30",
+ "generated_at": "2026-11-07T16:23:31+05:30",
+ "started_at": "2026-11-07T16:11:31+05:30",
  "data_through": "2026-11-05",
  "data_source": {
   "funds": "AMFI fund performance and NAVAll (direct plans, growth option)",
@@ -16,9 +16,9 @@
  },
  "as_of": {
   "performance": "2026-11-05",
-  "expense_ratio": "2026-11-05",
+  "expense_ratio": "2026-11-08",
   "tracking_error": "2026-11-05",
-  "valuation": "2026-11-05"
+  "valuation": "2026-11-06"
  },
  "partial": false,
  "model": {
@@ -113,7 +113,7 @@
       "10y": 12.6
      },
      "ter": 0.1,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2021-07-16",
      "years": 5.3,
      "components": {
@@ -242,7 +242,7 @@
       "10y": -0.22
      },
      "tracking_error": 0.03,
-     "tracking_error_as_of": "2026-11-04"
+     "tracking_error_as_of": "2026-11-05"
     },
     {
      "code": 120716,
@@ -271,7 +271,7 @@
       "10y": 12.6
      },
      "ter": 0.25,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -377,7 +377,7 @@
       "10y": 12.6
      },
      "ter": 0.14,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2021-10-07",
      "years": 5.1,
      "components": {
@@ -429,7 +429,7 @@
       "10y": 12.6
      },
      "ter": 0.23,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2019-12-26",
      "years": 6.9,
      "components": {
@@ -506,7 +506,7 @@
       "10y": null
      },
      "tracking_error": 0.06,
-     "tracking_error_as_of": "2026-11-04"
+     "tracking_error_as_of": "2026-11-05"
     },
     {
      "code": 119827,
@@ -535,7 +535,7 @@
       "10y": 12.6
      },
      "ter": 0.23,
-     "ter_date": "2026-11-04",
+     "ter_date": "2026-11-05",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -559,7 +559,7 @@
       "10y": -0.44
      },
      "tracking_error": 0.02,
-     "tracking_error_as_of": "2026-11-04"
+     "tracking_error_as_of": "2026-11-05"
     },
     {
      "code": 146376,
@@ -588,7 +588,7 @@
       "10y": 12.6
      },
      "ter": 0.24,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2019-02-22",
      "years": 7.7,
      "components": {
@@ -694,7 +694,7 @@
       "10y": 12.6
      },
      "ter": 0.21,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2025-08-22",
      "years": 1.2,
      "components": {
@@ -749,7 +749,7 @@
       "10y": 12.6
      },
      "ter": 0.23,
-     "ter_date": "2026-11-04",
+     "ter_date": "2026-11-05",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -773,7 +773,7 @@
       "10y": -0.64
      },
      "tracking_error": 0.07,
-     "tracking_error_as_of": "2026-11-04"
+     "tracking_error_as_of": "2026-11-05"
     },
     {
      "code": 119063,
@@ -802,7 +802,7 @@
       "10y": 12.6
      },
      "ter": 0.29,
-     "ter_date": "2026-11-03",
+     "ter_date": "2026-11-04",
      "since": "2013-01-01",
      "years": 13.8,
      "components": {
@@ -855,7 +855,7 @@
       "10y": 12.6
      },
      "ter": 0.22,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2022-11-28",
      "years": 3.9,
      "components": {
@@ -882,64 +882,11 @@
      "tracking_error_as_of": "2026-11-05"
     },
     {
-     "code": 118581,
-     "name": "Franklin India NSE Nifty 50 Index Fund",
-     "amc": "Franklin Templeton",
-     "isin": "INF090I01GS4",
-     "rank": 16,
-     "score": 76.4,
-     "status": "ranked",
-     "status_reason": null,
-     "benchmark": "Nifty 50 TRI",
-     "riskometer": "Very High",
-     "aum_cr": 686.0,
-     "nav": 210.2247,
-     "nav_date": "2026-11-05",
-     "returns": {
-      "1y": -3.26,
-      "3y": 9.44,
-      "5y": 7.56,
-      "10y": 11.96
-     },
-     "benchmark_returns": {
-      "1y": -3.14,
-      "3y": 9.67,
-      "5y": 7.73,
-      "10y": 12.6
-     },
-     "ter": 0.31,
-     "ter_date": "2026-11-05",
-     "since": "2013-01-01",
-     "years": 13.8,
-     "components": {
-      "tracking": 82.5,
-      "steadiness": 76.0,
-      "cost": 69.0,
-      "size": 61.2
-     },
-     "reasons": [
-      "Trailed the index by 0.24% a year over 3 years and 0.11% over the last year, against a typical gap of 0.24% in this group.",
-      "Tracking error 0.12%: how far its daily returns stray from the index (median 0.06%).",
-      "Expense ratio 0.31% a year (median 0.24%).",
-      "Manages ₹686 crore."
-     ],
-     "notes": [],
-     "group": "nifty50",
-     "tracking_difference": {
-      "1y": -0.11,
-      "3y": -0.24,
-      "5y": -0.17,
-      "10y": -0.64
-     },
-     "tracking_error": 0.12,
-     "tracking_error_as_of": "2026-11-04"
-    },
-    {
      "code": 152972,
      "name": "Mirae Asset Nifty 50 Index Fund",
      "amc": "Mirae Asset",
      "isin": "INF769K01MQ1",
-     "rank": 17,
+     "rank": 16,
      "score": 76.2,
      "status": "ranked",
      "status_reason": null,
@@ -961,7 +908,7 @@
       "10y": 12.6
      },
      "ter": 0.23,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2024-10-25",
      "years": 2.0,
      "components": {
@@ -991,6 +938,59 @@
      "tracking_error_as_of": "2026-11-05"
     },
     {
+     "code": 118581,
+     "name": "Franklin India NSE Nifty 50 Index Fund",
+     "amc": "Franklin Templeton",
+     "isin": "INF090I01GS4",
+     "rank": 17,
+     "score": 75.6,
+     "status": "ranked",
+     "status_reason": null,
+     "benchmark": "Nifty 50 TRI",
+     "riskometer": "Very High",
+     "aum_cr": 686.0,
+     "nav": 210.2247,
+     "nav_date": "2026-11-05",
+     "returns": {
+      "1y": -3.26,
+      "3y": 9.44,
+      "5y": 7.56,
+      "10y": 11.96
+     },
+     "benchmark_returns": {
+      "1y": -3.14,
+      "3y": 9.67,
+      "5y": 7.73,
+      "10y": 12.6
+     },
+     "ter": 0.31,
+     "ter_date": "2026-11-06",
+     "since": "2013-01-01",
+     "years": 13.8,
+     "components": {
+      "tracking": 82.5,
+      "steadiness": 72.0,
+      "cost": 69.0,
+      "size": 61.2
+     },
+     "reasons": [
+      "Trailed the index by 0.24% a year over 3 years and 0.11% over the last year, against a typical gap of 0.24% in this group.",
+      "Tracking error 0.14%: how far its daily returns stray from the index (median 0.06%).",
+      "Expense ratio 0.31% a year (median 0.24%).",
+      "Manages ₹686 crore."
+     ],
+     "notes": [],
+     "group": "nifty50",
+     "tracking_difference": {
+      "1y": -0.11,
+      "3y": -0.24,
+      "5y": -0.17,
+      "10y": -0.64
+     },
+     "tracking_error": 0.14,
+     "tracking_error_as_of": "2026-11-05"
+    },
+    {
      "code": 153529,
      "name": "Angel One Nifty 50 Index Fund",
      "amc": "Angel One",
@@ -1017,7 +1017,7 @@
       "10y": 12.6
      },
      "ter": 0.24,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2025-05-28",
      "years": 1.4,
      "components": {
@@ -1073,7 +1073,7 @@
       "10y": 12.6
      },
      "ter": 0.26,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -1182,7 +1182,7 @@
       "10y": 12.6
      },
      "ter": 0.47,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2024-01-30",
      "years": 2.8,
      "components": {
@@ -1238,7 +1238,7 @@
       "10y": 12.6
      },
      "ter": 0.45,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2025-07-22",
      "years": 1.3,
      "components": {
@@ -1294,7 +1294,7 @@
       "10y": 12.6
      },
      "ter": 0.56,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-08",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -1347,7 +1347,7 @@
       "10y": 12.6
      },
      "ter": 0.33,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2025-05-19",
      "years": 1.5,
      "components": {
@@ -1403,7 +1403,7 @@
       "10y": 12.6
      },
      "ter": 0.86,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2013-01-03",
      "years": 13.8,
      "components": {
@@ -1458,7 +1458,7 @@
       "10y": 12.6
      },
      "ter": 0.61,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2026-04-09",
      "years": 0.6,
      "components": {
@@ -1512,7 +1512,7 @@
       "10y": 12.6
      },
      "ter": 10.78,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2026-10-29",
      "years": 0.0,
      "components": {
@@ -1595,7 +1595,7 @@
       "10y": 12.58
      },
      "ter": 0.22,
-     "ter_date": "2026-11-03",
+     "ter_date": "2026-11-04",
      "since": "2013-01-01",
      "years": 13.8,
      "components": {
@@ -1754,7 +1754,7 @@
       "10y": 12.58
      },
      "ter": 0.23,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2022-02-01",
      "years": 4.8,
      "components": {
@@ -1863,7 +1863,7 @@
       "10y": 12.58
      },
      "ter": 0.23,
-     "ter_date": "2026-11-04",
+     "ter_date": "2026-11-05",
      "since": "2023-05-31",
      "years": 3.4,
      "components": {
@@ -1887,7 +1887,7 @@
       "10y": null
      },
      "tracking_error": 0.04,
-     "tracking_error_as_of": "2026-11-04"
+     "tracking_error_as_of": "2026-11-05"
     },
     {
      "code": 153286,
@@ -1943,7 +1943,7 @@
       "10y": null
      },
      "tracking_error": 0.1,
-     "tracking_error_as_of": "2026-11-04"
+     "tracking_error_as_of": "2026-11-05"
     },
     {
      "code": 119287,
@@ -1972,7 +1972,7 @@
       "10y": 12.58
      },
      "ter": 0.33,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -2025,7 +2025,7 @@
       "10y": 12.58
      },
      "ter": 0.49,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2023-09-05",
      "years": 3.2,
      "components": {
@@ -2079,7 +2079,7 @@
       "10y": 12.58
      },
      "ter": 0.66,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-08",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -2133,18 +2133,19 @@
       "5y": 6.98,
       "10y": 12.58
      },
-     "ter": 0.69,
-     "ter_date": "2026-11-05",
+     "ter": 0.7,
+     "ter_date": "2026-11-06",
      "since": "2026-05-15",
      "years": 0.5,
      "components": {
       "tracking": null,
-      "steadiness": null,
-      "cost": 31.0,
+      "steadiness": 14.0,
+      "cost": 30.0,
       "size": 5.6
      },
      "reasons": [
-      "Expense ratio 0.69% a year (median 0.23%).",
+      "Tracking error 0.43%: how far its daily returns stray from the index (median 0.04%).",
+      "Expense ratio 0.70% a year (median 0.23%).",
       "Manages ₹15 crore."
      ],
      "notes": [
@@ -2157,8 +2158,8 @@
       "5y": null,
       "10y": null
      },
-     "tracking_error": null,
-     "tracking_error_as_of": null
+     "tracking_error": 0.43,
+     "tracking_error_as_of": "2026-11-05"
     },
     {
      "code": 153932,
@@ -2270,7 +2271,7 @@
       "10y": 13.39
      },
      "ter": 0.24,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2022-12-02",
      "years": 3.9,
      "components": {
@@ -2346,7 +2347,7 @@
       "10y": null
      },
      "tracking_error": 0.09,
-     "tracking_error_as_of": "2026-11-04"
+     "tracking_error_as_of": "2026-11-05"
     },
     {
      "code": 149466,
@@ -2428,7 +2429,7 @@
       "10y": 13.39
      },
      "ter": 0.45,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2018-06-29",
      "years": 8.4,
      "components": {
@@ -2481,7 +2482,7 @@
       "10y": 13.39
      },
      "ter": 0.37,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2025-10-07",
      "years": 1.1,
      "components": {
@@ -2535,7 +2536,7 @@
       "10y": 13.39
      },
      "ter": 0.42,
-     "ter_date": "2026-11-04",
+     "ter_date": "2026-11-05",
      "since": "2021-05-26",
      "years": 5.4,
      "components": {
@@ -2559,7 +2560,7 @@
       "10y": null
      },
      "tracking_error": 0.05,
-     "tracking_error_as_of": "2026-11-04"
+     "tracking_error_as_of": "2026-11-05"
     },
     {
      "code": 153789,
@@ -2588,7 +2589,7 @@
       "10y": 13.39
      },
      "ter": 0.39,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2025-08-22",
      "years": 1.2,
      "components": {
@@ -2643,7 +2644,7 @@
       "10y": 13.39
      },
      "ter": 0.28,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2022-01-20",
      "years": 4.8,
      "components": {
@@ -2695,7 +2696,7 @@
       "10y": 13.39
      },
      "ter": 0.38,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2019-02-22",
      "years": 7.7,
      "components": {
@@ -2775,7 +2776,7 @@
       "10y": null
      },
      "tracking_error": 0.07,
-     "tracking_error_as_of": "2026-11-04"
+     "tracking_error_as_of": "2026-11-05"
     },
     {
      "code": 151937,
@@ -2804,7 +2805,7 @@
       "10y": 13.39
      },
      "ter": 0.36,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-08",
      "since": "2023-07-31",
      "years": 3.3,
      "components": {
@@ -2857,7 +2858,7 @@
       "10y": 13.39
      },
      "ter": 0.43,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2019-12-26",
      "years": 6.9,
      "components": {
@@ -2910,7 +2911,7 @@
       "10y": 13.39
      },
      "ter": 0.38,
-     "ter_date": "2026-11-03",
+     "ter_date": "2026-11-04",
      "since": "2021-11-03",
      "years": 5.0,
      "components": {
@@ -2963,7 +2964,7 @@
       "10y": 13.39
      },
      "ter": 0.47,
-     "ter_date": "2026-11-04",
+     "ter_date": "2026-11-05",
      "since": "2022-02-21",
      "years": 4.7,
      "components": {
@@ -2987,7 +2988,7 @@
       "10y": null
      },
      "tracking_error": 0.11,
-     "tracking_error_as_of": "2026-11-04"
+     "tracking_error_as_of": "2026-11-05"
     },
     {
      "code": 120684,
@@ -3069,7 +3070,7 @@
       "10y": 13.39
      },
      "ter": 0.51,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2025-08-26",
      "years": 1.2,
      "components": {
@@ -3125,7 +3126,7 @@
       "10y": 13.39
      },
      "ter": 0.46,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2025-05-14",
      "years": 1.5,
      "components": {
@@ -3181,7 +3182,7 @@
       "10y": 13.39
      },
      "ter": 0.45,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2022-11-28",
      "years": 3.9,
      "components": {
@@ -3234,7 +3235,7 @@
       "10y": 13.39
      },
      "ter": 0.57,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2026-04-09",
      "years": 0.6,
      "components": {
@@ -3341,7 +3342,7 @@
       "10y": null
      },
      "tracking_error": 0.02,
-     "tracking_error_as_of": "2026-11-04"
+     "tracking_error_as_of": "2026-11-05"
     },
     {
      "code": 147666,
@@ -3423,7 +3424,7 @@
       "10y": null
      },
      "ter": 0.35,
-     "ter_date": "2026-11-03",
+     "ter_date": "2026-11-04",
      "since": "2022-02-23",
      "years": 4.7,
      "components": {
@@ -3476,7 +3477,7 @@
       "10y": null
      },
      "ter": 10.79,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2026-10-29",
      "years": 0.0,
      "components": {
@@ -3528,7 +3529,7 @@
     "median_td_3y": -0.69,
     "median_gap_1y": 0.22,
     "median_gap_3y": 0.69,
-    "median_te": 0.21,
+    "median_te": 0.2,
     "median_ter": 0.57
    },
    "funds": [
@@ -3538,7 +3539,7 @@
      "amc": "Kotak Mahindra",
      "isin": "INF174KA1TY2",
      "rank": 1,
-     "score": 65.4,
+     "score": 65.8,
      "status": "ranked",
      "status_reason": null,
      "benchmark": "NIFTY 100 Equal Weighted TRI",
@@ -3564,13 +3565,13 @@
      "years": 1.8,
      "components": {
       "tracking": 78.0,
-      "steadiness": 58.0,
+      "steadiness": 60.0,
       "cost": 62.0,
       "size": 24.1
      },
      "reasons": [
       "Trailed the index by 0.22% over the last year, against a typical gap of 0.22% in this group.",
-      "Tracking error 0.21%: how far its daily returns stray from the index (median 0.21%).",
+      "Tracking error 0.20%: how far its daily returns stray from the index (median 0.20%).",
       "Expense ratio 0.38% a year (median 0.57%).",
       "Manages ₹53 crore."
      ],
@@ -3585,8 +3586,8 @@
       "5y": null,
       "10y": null
      },
-     "tracking_error": 0.21,
-     "tracking_error_as_of": "2026-11-04"
+     "tracking_error": 0.2,
+     "tracking_error_as_of": "2026-11-05"
     },
     {
      "code": 149870,
@@ -3615,7 +3616,7 @@
       "10y": 13.09
      },
      "ter": 0.57,
-     "ter_date": "2026-11-03",
+     "ter_date": "2026-11-04",
      "since": "2022-02-23",
      "years": 4.7,
      "components": {
@@ -3626,7 +3627,7 @@
      },
      "reasons": [
       "Trailed the index by 0.65% a year over 3 years and 0.50% over the last year, against a typical gap of 0.69% in this group.",
-      "Tracking error 0.11%: how far its daily returns stray from the index (median 0.21%).",
+      "Tracking error 0.11%: how far its daily returns stray from the index (median 0.20%).",
       "Expense ratio 0.57% a year (median 0.57%).",
       "Manages ₹509 crore."
      ],
@@ -3668,7 +3669,7 @@
       "10y": 13.09
      },
      "ter": 0.67,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2022-01-03",
      "years": 4.8,
      "components": {
@@ -3679,7 +3680,7 @@
      },
      "reasons": [
       "Trailed the index by 0.72% a year over 3 years and 0.13% over the last year, against a typical gap of 0.69% in this group.",
-      "Tracking error 0.36%: how far its daily returns stray from the index (median 0.21%).",
+      "Tracking error 0.36%: how far its daily returns stray from the index (median 0.20%).",
       "Expense ratio 0.67% a year (median 0.57%).",
       "Manages ₹152 crore."
      ],
@@ -3750,7 +3751,7 @@
       "10y": null
      },
      "ter": 0.48,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2017-10-23",
      "years": 9.0,
      "components": {
@@ -3803,7 +3804,7 @@
       "10y": null
      },
      "ter": 0.5,
-     "ter_date": "2026-11-04",
+     "ter_date": "2026-11-05",
      "since": "2024-02-06",
      "years": 2.7,
      "components": {
@@ -3829,7 +3830,7 @@
       "10y": null
      },
      "tracking_error": 0.03,
-     "tracking_error_as_of": "2026-11-04"
+     "tracking_error_as_of": "2026-11-05"
     },
     {
      "code": 148962,
@@ -3858,7 +3859,7 @@
       "10y": null
      },
      "ter": 0.41,
-     "ter_date": "2026-11-04",
+     "ter_date": "2026-11-05",
      "since": "2021-06-10",
      "years": 5.4,
      "components": {
@@ -3882,7 +3883,7 @@
       "10y": null
      },
      "tracking_error": 0.06,
-     "tracking_error_as_of": "2026-11-04"
+     "tracking_error_as_of": "2026-11-05"
     },
     {
      "code": 149107,
@@ -3911,7 +3912,7 @@
       "10y": null
      },
      "ter": 0.46,
-     "ter_date": "2026-11-03",
+     "ter_date": "2026-11-04",
      "since": "2021-08-20",
      "years": 5.2,
      "components": {
@@ -4044,7 +4045,7 @@
       "10y": null
      },
      "tracking_error": 0.36,
-     "tracking_error_as_of": "2026-11-04"
+     "tracking_error_as_of": "2026-11-05"
     },
     {
      "code": 151762,
@@ -4073,7 +4074,7 @@
       "10y": null
      },
      "ter": 0.44,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2023-06-09",
      "years": 3.4,
      "components": {
@@ -4264,7 +4265,7 @@
       "10y": null
      },
      "ter": 0.27,
-     "ter_date": "2026-11-03",
+     "ter_date": "2026-11-04",
      "since": "2024-10-09",
      "years": 2.1,
      "components": {
@@ -4374,7 +4375,7 @@
       "10y": null
      },
      "ter": 0.19,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2021-12-03",
      "years": 4.9,
      "components": {
@@ -4426,7 +4427,7 @@
       "10y": null
      },
      "ter": 0.42,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2024-10-25",
      "years": 2.0,
      "components": {
@@ -4511,7 +4512,7 @@
       "10y": null
      },
      "ter": 0.39,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2019-09-11",
      "years": 7.2,
      "components": {
@@ -4670,7 +4671,7 @@
       "10y": null
      },
      "ter": 0.5,
-     "ter_date": "2026-11-04",
+     "ter_date": "2026-11-05",
      "since": "2022-10-11",
      "years": 4.1,
      "components": {
@@ -4694,7 +4695,7 @@
       "10y": null
      },
      "tracking_error": 0.04,
-     "tracking_error_as_of": "2026-11-04"
+     "tracking_error_as_of": "2026-11-05"
     },
     {
      "code": 148807,
@@ -4723,7 +4724,7 @@
       "10y": null
      },
      "ter": 0.48,
-     "ter_date": "2026-11-04",
+     "ter_date": "2026-11-05",
      "since": "2021-04-06",
      "years": 5.6,
      "components": {
@@ -4747,7 +4748,7 @@
       "10y": null
      },
      "tracking_error": 0.05,
-     "tracking_error_as_of": "2026-11-04"
+     "tracking_error_as_of": "2026-11-05"
     },
     {
      "code": 153788,
@@ -4776,7 +4777,7 @@
       "10y": null
      },
      "ter": 0.38,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2025-08-22",
      "years": 1.2,
      "components": {
@@ -4831,7 +4832,7 @@
       "10y": null
      },
      "ter": 0.29,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2025-06-25",
      "years": 1.4,
      "components": {
@@ -4886,7 +4887,7 @@
       "10y": null
      },
      "ter": 0.39,
-     "ter_date": "2026-11-03",
+     "ter_date": "2026-11-04",
      "since": "2023-04-21",
      "years": 3.5,
      "components": {
@@ -4966,7 +4967,7 @@
       "10y": null
      },
      "tracking_error": 0.12,
-     "tracking_error_as_of": "2026-11-04"
+     "tracking_error_as_of": "2026-11-05"
     },
     {
      "code": 153089,
@@ -4995,7 +4996,7 @@
       "10y": null
      },
      "ter": 0.7,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2024-12-03",
      "years": 1.9,
      "components": {
@@ -5078,7 +5079,7 @@
       "10y": null
      },
      "tracking_error": 0.08,
-     "tracking_error_as_of": "2026-11-04"
+     "tracking_error_as_of": "2026-11-05"
     },
     {
      "code": 149892,
@@ -5107,7 +5108,7 @@
       "10y": null
      },
      "ter": 0.37,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2022-03-11",
      "years": 4.7,
      "components": {
@@ -5159,7 +5160,7 @@
       "10y": null
      },
      "ter": 0.58,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2024-11-06",
      "years": 2.0,
      "components": {
@@ -5215,7 +5216,7 @@
       "10y": null
      },
      "ter": 0.43,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2025-12-11",
      "years": 0.9,
      "components": {
@@ -5269,7 +5270,7 @@
       "10y": null
      },
      "ter": 0.52,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2025-11-17",
      "years": 1.0,
      "components": {
@@ -5323,7 +5324,7 @@
       "10y": null
      },
      "ter": 10.9,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2026-10-29",
      "years": 0.0,
      "components": {
@@ -5406,7 +5407,7 @@
       "10y": null
      },
      "ter": 0.42,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2022-12-02",
      "years": 3.9,
      "components": {
@@ -5458,7 +5459,7 @@
       "10y": null
      },
      "ter": 0.45,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2019-09-11",
      "years": 7.2,
      "components": {
@@ -5511,7 +5512,7 @@
       "10y": null
      },
      "ter": 0.39,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2025-08-22",
      "years": 1.2,
      "components": {
@@ -5592,7 +5593,7 @@
       "10y": null
      },
      "tracking_error": 0.14,
-     "tracking_error_as_of": "2026-11-04"
+     "tracking_error_as_of": "2026-11-05"
     },
     {
      "code": 152431,
@@ -5621,7 +5622,7 @@
       "10y": null
      },
      "ter": 0.63,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2024-03-01",
      "years": 2.7,
      "components": {
@@ -5703,7 +5704,7 @@
       "10y": null
      },
      "tracking_error": 0.17,
-     "tracking_error_as_of": "2026-11-04"
+     "tracking_error_as_of": "2026-11-05"
     },
     {
      "code": 148519,
@@ -5785,7 +5786,7 @@
       "10y": null
      },
      "ter": 0.39,
-     "ter_date": "2026-11-03",
+     "ter_date": "2026-11-04",
      "since": "2023-04-21",
      "years": 3.5,
      "components": {
@@ -5838,7 +5839,7 @@
       "10y": null
      },
      "ter": 0.5,
-     "ter_date": "2026-11-04",
+     "ter_date": "2026-11-05",
      "since": "2022-10-11",
      "years": 4.1,
      "components": {
@@ -5862,7 +5863,7 @@
       "10y": null
      },
      "tracking_error": 0.13,
-     "tracking_error_as_of": "2026-11-04"
+     "tracking_error_as_of": "2026-11-05"
     },
     {
      "code": 149283,
@@ -5944,7 +5945,7 @@
       "10y": null
      },
      "ter": 0.57,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2025-12-11",
      "years": 0.9,
      "components": {
@@ -6027,7 +6028,7 @@
       "10y": null
      },
      "ter": 0.23,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2019-09-11",
      "years": 7.2,
      "components": {
@@ -6080,7 +6081,7 @@
       "10y": null
      },
      "ter": 0.34,
-     "ter_date": "2026-11-04",
+     "ter_date": "2026-11-05",
      "since": "2024-10-04",
      "years": 2.1,
      "components": {
@@ -6106,7 +6107,7 @@
       "10y": null
      },
      "tracking_error": 0.03,
-     "tracking_error_as_of": "2026-11-04"
+     "tracking_error_as_of": "2026-11-05"
     },
     {
      "code": 152731,
@@ -6245,7 +6246,7 @@
       "10y": null
      },
      "ter": 0.32,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2026-01-05",
      "years": 0.8,
      "components": {
@@ -6273,10 +6274,10 @@
      "tracking_error_as_of": "2026-11-05"
     },
     {
-     "code": 154604,
+     "code": 154603,
      "name": "UTI Nifty 500 Index Fund",
      "amc": "UTI",
-     "isin": "INF789F1AG92",
+     "isin": "INF789F1AG84",
      "rank": null,
      "score": null,
      "status": "too_new",
@@ -6299,7 +6300,7 @@
       "10y": null
      },
      "ter": 1.03,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2026-08-31",
      "years": 0.2,
      "components": {
@@ -6380,7 +6381,7 @@
       "10y": null
      },
      "ter": 0.32,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2025-03-05",
      "years": 1.7,
      "components": {
@@ -6436,7 +6437,7 @@
       "10y": null
      },
      "ter": 0.42,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2024-10-29",
      "years": 2.0,
      "components": {
@@ -6519,7 +6520,7 @@
       "10y": null
      },
      "tracking_error": 0.08,
-     "tracking_error_as_of": "2026-11-04"
+     "tracking_error_as_of": "2026-11-05"
     },
     {
      "code": 152092,
@@ -6548,7 +6549,7 @@
       "10y": null
      },
      "ter": 0.66,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2023-10-25",
      "years": 3.0,
      "components": {
@@ -6630,7 +6631,7 @@
       "10y": null
      },
      "ter": 0.78,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2021-03-12",
      "years": 5.7,
      "components": {
@@ -6707,7 +6708,7 @@
       "10y": null
      },
      "tracking_error": 0.19,
-     "tracking_error_as_of": "2026-11-04"
+     "tracking_error_as_of": "2026-11-05"
     },
     {
      "code": 150452,
@@ -6789,7 +6790,7 @@
       "10y": null
      },
      "ter": 0.7,
-     "ter_date": "2026-11-03",
+     "ter_date": "2026-11-04",
      "since": "2024-02-28",
      "years": 2.7,
      "components": {
@@ -6844,7 +6845,7 @@
       "10y": null
      },
      "ter": 0.8,
-     "ter_date": "2026-11-04",
+     "ter_date": "2026-11-05",
      "since": "2025-07-15",
      "years": 1.3,
      "components": {
@@ -6870,7 +6871,7 @@
       "10y": null
      },
      "tracking_error": 0.25,
-     "tracking_error_as_of": "2026-11-04"
+     "tracking_error_as_of": "2026-11-05"
     },
     {
      "code": 149800,
@@ -6899,7 +6900,7 @@
       "10y": null
      },
      "ter": 0.71,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2022-02-16",
      "years": 4.7,
      "components": {
@@ -6976,7 +6977,7 @@
       "10y": null
      },
      "tracking_error": 0.31,
-     "tracking_error_as_of": "2026-11-04"
+     "tracking_error_as_of": "2026-11-05"
     },
     {
      "code": 152931,
@@ -7005,7 +7006,7 @@
       "10y": null
      },
      "ter": 0.97,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2024-10-16",
      "years": 2.1,
      "components": {
@@ -7116,7 +7117,7 @@
       "10y": null
      },
      "tracking_error": 0.12,
-     "tracking_error_as_of": "2026-11-04"
+     "tracking_error_as_of": "2026-11-05"
     },
     {
      "code": 152713,
@@ -7145,7 +7146,7 @@
       "10y": null
      },
      "ter": 0.52,
-     "ter_date": "2026-11-03",
+     "ter_date": "2026-11-04",
      "since": "2024-07-10",
      "years": 2.3,
      "components": {
@@ -7200,7 +7201,7 @@
       "10y": null
      },
      "ter": 0.51,
-     "ter_date": "2026-11-04",
+     "ter_date": "2026-11-05",
      "since": "2025-07-31",
      "years": 1.3,
      "components": {
@@ -7227,7 +7228,7 @@
       "10y": null
      },
      "tracking_error": 0.05,
-     "tracking_error_as_of": "2026-11-04"
+     "tracking_error_as_of": "2026-11-05"
     },
     {
      "code": 150636,
@@ -7280,7 +7281,7 @@
       "10y": null
      },
      "tracking_error": 0.09,
-     "tracking_error_as_of": "2026-11-04"
+     "tracking_error_as_of": "2026-11-05"
     }
    ]
   },
@@ -7418,7 +7419,7 @@
       "10y": null
      },
      "tracking_error": 0.17,
-     "tracking_error_as_of": "2026-11-04"
+     "tracking_error_as_of": "2026-11-05"
     },
     {
      "code": 152616,
@@ -7447,7 +7448,7 @@
       "10y": null
      },
      "ter": 0.54,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2024-05-21",
      "years": 2.5,
      "components": {
@@ -7502,7 +7503,7 @@
       "10y": null
      },
      "ter": 0.76,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2024-12-03",
      "years": 1.9,
      "components": {
@@ -7583,7 +7584,7 @@
       "10y": null
      },
      "tracking_error": 0.25,
-     "tracking_error_as_of": "2026-11-04"
+     "tracking_error_as_of": "2026-11-05"
     }
    ]
   },
@@ -7756,7 +7757,7 @@
       "10y": 12.68
      },
      "ter": 0.94,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2013-01-08",
      "years": 13.8,
      "components": {
@@ -7791,7 +7792,7 @@
      "amc": "Kotak Mahindra",
      "isin": "INF174K01KW6",
      "rank": 4,
-     "score": 76.4,
+     "score": 76.1,
      "status": "ranked",
      "status_reason": null,
      "benchmark": "Nifty 100 TRI",
@@ -7820,7 +7821,7 @@
       "returns": 55.8,
       "risk_adjusted": 57.7,
       "downside": 76.9,
-      "cost": 94.2
+      "cost": 92.3
      },
      "reasons": [
       "Beat the category median in 56 of 60 rolling 3-year periods (93%).",
@@ -7847,7 +7848,7 @@
      "amc": "Invesco",
      "isin": "INF205K01LB0",
      "rank": 5,
-     "score": 75.5,
+     "score": 75.8,
      "status": "ranked",
      "status_reason": null,
      "benchmark": "Nifty 100 TRI",
@@ -7867,8 +7868,8 @@
       "5y": 8.21,
       "10y": 12.68
      },
-     "ter": 0.88,
-     "ter_date": "2026-11-05",
+     "ter": 0.87,
+     "ter_date": "2026-11-06",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -7876,14 +7877,14 @@
       "returns": 98.1,
       "risk_adjusted": 80.8,
       "downside": 11.5,
-      "cost": 76.9
+      "cost": 78.8
      },
      "reasons": [
       "Beat the category median in 53 of 60 rolling 3-year periods (88%).",
       "5-year return 11.3% a year; the median fund 9.2%.",
       "Worst fall from a peak in the last 5 years: 19.7%; the median fund fell 18.0% at worst in 5 years.",
       "Return per unit of risk 0.76 (median 0.67): 5-year return divided by volatility (14.9%).",
-      "Expense ratio 0.88% a year (median 1.06%).",
+      "Expense ratio 0.87% a year (median 1.06%).",
       "Beat its benchmark (Nifty 100 TRI) by 3.1% a year over 5 years."
      ],
      "notes": [],
@@ -7924,7 +7925,7 @@
       "10y": 13.02
      },
      "ter": 0.62,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -7980,7 +7981,7 @@
       "10y": 12.68
      },
      "ter": 1.01,
-     "ter_date": "2026-11-03",
+     "ter_date": "2026-11-04",
      "since": "2013-01-01",
      "years": 13.8,
      "components": {
@@ -8015,7 +8016,7 @@
      "amc": "Bandhan",
      "isin": "INF194K01Z44",
      "rank": 8,
-     "score": 64.1,
+     "score": 64.4,
      "status": "ranked",
      "status_reason": null,
      "benchmark": "BSE 100 TRI",
@@ -8044,7 +8045,7 @@
       "returns": 88.5,
       "risk_adjusted": 76.9,
       "downside": 19.2,
-      "cost": 44.2
+      "cost": 46.2
      },
      "reasons": [
       "Beat the category median in 43 of 60 rolling 3-year periods (72%).",
@@ -8071,7 +8072,7 @@
      "amc": "SBI",
      "isin": "INF200K01QX4",
      "rank": 9,
-     "score": 60.6,
+     "score": 60.9,
      "status": "ranked",
      "status_reason": null,
      "benchmark": "BSE 100 TRI",
@@ -8091,8 +8092,8 @@
       "5y": 8.76,
       "10y": 13.02
      },
-     "ter": 0.87,
-     "ter_date": "2026-11-04",
+     "ter": 0.86,
+     "ter_date": "2026-11-05",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -8100,14 +8101,14 @@
       "returns": 38.5,
       "risk_adjusted": 63.5,
       "downside": 92.3,
-      "cost": 82.7
+      "cost": 84.6
      },
      "reasons": [
       "Beat the category median in 28 of 60 rolling 3-year periods (47%).",
       "5-year return 9.2% a year; the median fund 9.2%.",
       "Worst fall from a peak in the last 5 years: 15.6%; the median fund fell 18.0% at worst in 5 years.",
       "Return per unit of risk 0.71 (median 0.67): 5-year return divided by volatility (13.1%).",
-      "Expense ratio 0.87% a year (median 1.06%).",
+      "Expense ratio 0.86% a year (median 1.06%).",
       "Beat its benchmark (BSE 100 TRI) by 0.5% a year over 5 years."
      ],
      "notes": [],
@@ -8147,8 +8148,8 @@
       "5y": 8.21,
       "10y": 12.68
      },
-     "ter": 1.04,
-     "ter_date": "2026-11-04",
+     "ter": 1.03,
+     "ter_date": "2026-11-05",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -8163,7 +8164,7 @@
       "5-year return 9.1% a year; the median fund 9.2%.",
       "Worst fall from a peak in the last 5 years: 16.7%; the median fund fell 18.0% at worst in 5 years.",
       "Return per unit of risk 0.68 (median 0.67): 5-year return divided by volatility (13.5%).",
-      "Expense ratio 1.04% a year (median 1.06%).",
+      "Expense ratio 1.03% a year (median 1.06%).",
       "Beat its benchmark (Nifty 100 TRI) by 0.9% a year over 5 years."
      ],
      "notes": [],
@@ -8204,7 +8205,7 @@
       "10y": 12.68
      },
      "ter": 1.13,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -8260,7 +8261,7 @@
       "10y": 12.68
      },
      "ter": 1.2,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -8316,7 +8317,7 @@
       "10y": 13.02
      },
      "ter": 1.2,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -8353,7 +8354,7 @@
      "amc": "Mahindra Manulife",
      "isin": "INF174V01721",
      "rank": 14,
-     "score": 50.9,
+     "score": 50.6,
      "status": "ranked",
      "status_reason": null,
      "benchmark": "Nifty 100 TRI",
@@ -8373,8 +8374,8 @@
       "5y": 8.21,
       "10y": null
      },
-     "ter": 1.07,
-     "ter_date": "2026-11-05",
+     "ter": 1.09,
+     "ter_date": "2026-11-06",
      "since": "2019-03-19",
      "years": 7.6,
      "components": {
@@ -8382,14 +8383,14 @@
       "returns": 30.8,
       "risk_adjusted": 36.5,
       "downside": 69.2,
-      "cost": 44.2
+      "cost": 42.3
      },
      "reasons": [
       "Beat the category median in 38 of 56 rolling 3-year periods (68%).",
       "5-year return 8.6% a year; the median fund 9.2%.",
       "Worst fall from a peak in the last 5 years: 16.7%; the median fund fell 18.0% at worst in 5 years.",
       "Return per unit of risk 0.64 (median 0.67): 5-year return divided by volatility (13.4%).",
-      "Expense ratio 1.07% a year (median 1.06%).",
+      "Expense ratio 1.09% a year (median 1.06%).",
       "Beat its benchmark (Nifty 100 TRI) by 0.4% a year over 5 years."
      ],
      "notes": [],
@@ -8409,7 +8410,7 @@
      "amc": "Mirae Asset",
      "isin": "INF769K01AX2",
      "rank": 15,
-     "score": 45.6,
+     "score": 45.9,
      "status": "ranked",
      "status_reason": null,
      "benchmark": "Nifty 100 TRI",
@@ -8429,8 +8430,8 @@
       "5y": 8.21,
       "10y": 12.68
      },
-     "ter": 0.76,
-     "ter_date": "2026-11-05",
+     "ter": 0.75,
+     "ter_date": "2026-11-06",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -8438,14 +8439,14 @@
       "returns": 25.0,
       "risk_adjusted": 26.9,
       "downside": 80.8,
-      "cost": 94.2
+      "cost": 96.2
      },
      "reasons": [
       "Beat the category median in 18 of 60 rolling 3-year periods (30%).",
       "5-year return 8.1% a year; the median fund 9.2%.",
       "Worst fall from a peak in the last 5 years: 16.4%; the median fund fell 18.0% at worst in 5 years.",
       "Return per unit of risk 0.61 (median 0.67): 5-year return divided by volatility (13.3%).",
-      "Expense ratio 0.76% a year (median 1.06%).",
+      "Expense ratio 0.75% a year (median 1.06%).",
       "Trailed its benchmark (Nifty 100 TRI) by 0.1% a year over 5 years."
      ],
      "notes": [],
@@ -8486,7 +8487,7 @@
       "10y": 13.02
      },
      "ter": 2.52,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2013-01-03",
      "years": 13.8,
      "components": {
@@ -8544,7 +8545,7 @@
       "10y": null
      },
      "ter": 1.33,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2021-07-01",
      "years": 5.3,
      "components": {
@@ -8581,7 +8582,7 @@
      "amc": "Sundaram",
      "isin": "INF903JA1JC0",
      "rank": 18,
-     "score": 41.0,
+     "score": 40.4,
      "status": "ranked",
      "status_reason": null,
      "benchmark": "Nifty 100 TRI",
@@ -8602,7 +8603,7 @@
       "10y": 12.68
      },
      "ter": 0.87,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2020-10-12",
      "years": 6.1,
      "components": {
@@ -8610,7 +8611,7 @@
       "returns": 11.5,
       "risk_adjusted": 36.5,
       "downside": 88.5,
-      "cost": 82.7
+      "cost": 78.8
      },
      "reasons": [
       "Beat the category median in 7 of 37 rolling 3-year periods (19%).",
@@ -8658,7 +8659,7 @@
       "10y": null
      },
      "ter": 0.93,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2020-12-29",
      "years": 5.9,
      "components": {
@@ -8716,7 +8717,7 @@
       "10y": 12.68
      },
      "ter": 1.4,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -8772,7 +8773,7 @@
       "10y": 12.68
      },
      "ter": 1.76,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -8829,8 +8830,8 @@
       "5y": 8.21,
       "10y": 12.68
      },
-     "ter": 1.44,
-     "ter_date": "2026-11-05",
+     "ter": 1.43,
+     "ter_date": "2026-11-06",
      "since": "2013-01-01",
      "years": 13.8,
      "components": {
@@ -8845,7 +8846,7 @@
       "5-year return 7.8% a year; the median fund 9.2%.",
       "Worst fall from a peak in the last 5 years: 18.4%; the median fund fell 18.0% at worst in 5 years.",
       "Return per unit of risk 0.60 (median 0.67): 5-year return divided by volatility (13.0%).",
-      "Expense ratio 1.44% a year (median 1.06%).",
+      "Expense ratio 1.43% a year (median 1.06%).",
       "Trailed its benchmark (Nifty 100 TRI) by 0.4% a year over 5 years."
      ],
      "notes": [],
@@ -8886,7 +8887,7 @@
       "10y": 13.02
      },
      "ter": 1.18,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -8942,7 +8943,7 @@
       "10y": 12.68
      },
      "ter": 1.06,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2016-03-08",
      "years": 10.7,
      "components": {
@@ -9054,7 +9055,7 @@
       "10y": 12.68
      },
      "ter": 1.35,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-08",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -9110,7 +9111,7 @@
       "10y": null
      },
      "ter": 1.68,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2017-05-18",
      "years": 9.5,
      "components": {
@@ -9168,7 +9169,7 @@
       "10y": null
      },
      "ter": 1.22,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2024-08-23",
      "years": 2.2,
      "components": {},
@@ -9214,7 +9215,7 @@
       "10y": 12.68
      },
      "ter": 0.88,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2022-03-14",
      "years": 4.6,
      "components": {},
@@ -9264,7 +9265,7 @@
       "10y": null
      },
      "ter": 1.28,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2026-04-16",
      "years": 0.6,
      "components": {},
@@ -9312,7 +9313,7 @@
       "10y": null
      },
      "ter": 0.96,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2024-02-12",
      "years": 2.7,
      "components": {},
@@ -9358,7 +9359,7 @@
       "10y": null
      },
      "ter": 0.31,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-08",
      "since": "2026-02-06",
      "years": 0.7,
      "components": {},
@@ -9404,7 +9405,7 @@
       "10y": null
      },
      "ter": 1.5,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2022-08-12",
      "years": 4.2,
      "components": {},
@@ -9452,7 +9453,7 @@
       "10y": null
      },
      "ter": 2.14,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2025-03-28",
      "years": 1.6,
      "components": {},
@@ -9499,8 +9500,8 @@
       "5y": null,
       "10y": null
      },
-     "ter": 0.91,
-     "ter_date": "2026-11-05",
+     "ter": 0.9,
+     "ter_date": "2026-11-06",
      "since": "2022-12-02",
      "years": 3.9,
      "components": {},
@@ -9508,7 +9509,7 @@
       "Beat the category median in 11 of 11 rolling 3-year periods (100%).",
       "3-year return 14.9% a year; the median fund 11.9%.",
       "Worst fall from a peak since its direct plan began 3.9 years ago: 15.2%; the median fund fell 18.0% at worst in 5 years.",
-      "Expense ratio 0.91% a year (median 1.06%)."
+      "Expense ratio 0.90% a year (median 1.06%)."
      ],
      "notes": [],
      "group": "largecap",
@@ -9764,7 +9765,7 @@
       "10y": 14.88
      },
      "ter": 0.69,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2016-11-28",
      "years": 9.9,
      "components": {
@@ -9819,8 +9820,8 @@
       "5y": 11.38,
       "10y": 14.88
      },
-     "ter": 1.15,
-     "ter_date": "2026-11-05",
+     "ter": 1.14,
+     "ter_date": "2026-11-06",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -9835,7 +9836,7 @@
       "5-year return 13.2% a year; the median fund 11.8%.",
       "Worst fall from a peak in the last 5 years: 18.1%; the median fund fell 19.3% at worst in 5 years.",
       "Return per unit of risk 0.91 (median 0.80): 5-year return divided by volatility (14.5%).",
-      "Expense ratio 1.15% a year (median 1.01%).",
+      "Expense ratio 1.14% a year (median 1.01%).",
       "Beat its benchmark (Nifty LargeMidcap 250 TRI) by 1.8% a year over 5 years."
      ],
      "notes": [],
@@ -9876,7 +9877,7 @@
       "10y": null
      },
      "ter": 0.92,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2019-10-22",
      "years": 7.0,
      "components": {
@@ -9932,7 +9933,7 @@
       "10y": 14.88
      },
      "ter": 0.77,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -9988,7 +9989,7 @@
       "10y": 14.88
      },
      "ter": 0.92,
-     "ter_date": "2026-11-03",
+     "ter_date": "2026-11-04",
      "since": "2014-06-30",
      "years": 12.4,
      "components": {
@@ -10023,7 +10024,7 @@
      "amc": "SBI",
      "isin": "INF200K01UJ5",
      "rank": 9,
-     "score": 64.9,
+     "score": 64.6,
      "status": "ranked",
      "status_reason": null,
      "benchmark": "Nifty LargeMidcap 250 TRI",
@@ -10043,8 +10044,8 @@
       "5y": 11.38,
       "10y": 14.88
      },
-     "ter": 0.85,
-     "ter_date": "2026-11-04",
+     "ter": 0.86,
+     "ter_date": "2026-11-05",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -10052,14 +10053,14 @@
       "returns": 44.0,
       "risk_adjusted": 82.0,
       "downside": 96.0,
-      "cost": 62.0
+      "cost": 60.0
      },
      "reasons": [
       "Beat the category median in 32 of 60 rolling 3-year periods (53%).",
       "5-year return 12.3% a year; the median fund 11.8%.",
       "Worst fall from a peak in the last 5 years: 16.4%; the median fund fell 19.3% at worst in 5 years.",
       "Return per unit of risk 0.92 (median 0.80): 5-year return divided by volatility (13.4%).",
-      "Expense ratio 0.85% a year (median 1.01%).",
+      "Expense ratio 0.86% a year (median 1.01%).",
       "Beat its benchmark (Nifty LargeMidcap 250 TRI) by 0.9% a year over 5 years."
      ],
      "notes": [],
@@ -10100,7 +10101,7 @@
       "10y": 14.88
      },
      "ter": 1.24,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2013-01-07",
      "years": 13.8,
      "components": {
@@ -10212,7 +10213,7 @@
       "10y": null
      },
      "ter": 1.09,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2020-09-11",
      "years": 6.1,
      "components": {
@@ -10268,7 +10269,7 @@
       "10y": 14.88
      },
      "ter": 0.8,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -10324,7 +10325,7 @@
       "10y": null
      },
      "ter": 1.31,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2019-04-04",
      "years": 7.6,
      "components": {
@@ -10435,8 +10436,8 @@
       "5y": 11.38,
       "10y": null
      },
-     "ter": 0.82,
-     "ter_date": "2026-11-05",
+     "ter": 0.83,
+     "ter_date": "2026-11-06",
      "since": "2020-01-01",
      "years": 6.8,
      "components": {
@@ -10451,7 +10452,7 @@
       "5-year return 11.7% a year; the median fund 11.8%.",
       "Worst fall from a peak in the last 5 years: 20.0%; the median fund fell 19.3% at worst in 5 years.",
       "Return per unit of risk 0.79 (median 0.80): 5-year return divided by volatility (14.9%).",
-      "Expense ratio 0.82% a year (median 1.01%).",
+      "Expense ratio 0.83% a year (median 1.01%).",
       "Beat its benchmark (Nifty LargeMidcap 250 TRI) by 0.3% a year over 5 years."
      ],
      "notes": [],
@@ -10492,7 +10493,7 @@
       "10y": 14.88
      },
      "ter": 0.77,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -10548,7 +10549,7 @@
       "10y": 14.88
      },
      "ter": 0.65,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2015-12-08",
      "years": 10.9,
      "components": {
@@ -10585,7 +10586,7 @@
      "amc": "Mirae Asset",
      "isin": "INF769K01BI1",
      "rank": 19,
-     "score": 32.4,
+     "score": 32.7,
      "status": "ranked",
      "status_reason": null,
      "benchmark": "Nifty LargeMidcap 250 TRI",
@@ -10606,7 +10607,7 @@
       "10y": 14.88
      },
      "ter": 0.85,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -10614,7 +10615,7 @@
       "returns": 16.0,
       "risk_adjusted": 16.0,
       "downside": 48.0,
-      "cost": 62.0
+      "cost": 64.0
      },
      "reasons": [
       "Beat the category median in 19 of 60 rolling 3-year periods (32%).",
@@ -10662,7 +10663,7 @@
       "10y": 14.88
      },
      "ter": 1.41,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-08",
      "since": "2015-02-26",
      "years": 11.7,
      "components": {
@@ -10718,7 +10719,7 @@
       "10y": 13.47
      },
      "ter": 1.39,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -10774,7 +10775,7 @@
       "10y": null
      },
      "ter": 1.29,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2019-12-13",
      "years": 6.9,
      "components": {
@@ -10830,7 +10831,7 @@
       "10y": 14.88
      },
      "ter": 1.2,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2013-01-08",
      "years": 13.8,
      "components": {
@@ -10886,7 +10887,7 @@
       "10y": 14.88
      },
      "ter": 0.77,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -10942,7 +10943,7 @@
       "10y": 14.88
      },
      "ter": 1.59,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2013-01-01",
      "years": 13.8,
      "components": {
@@ -10998,7 +10999,7 @@
       "10y": 14.88
      },
      "ter": 1.28,
-     "ter_date": "2026-11-04",
+     "ter_date": "2026-11-05",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -11053,13 +11054,13 @@
       "5y": null,
       "10y": null
      },
-     "ter": 1.85,
-     "ter_date": "2026-11-05",
+     "ter": 1.84,
+     "ter_date": "2026-11-07",
      "since": "2026-08-06",
      "years": 0.2,
      "components": {},
      "reasons": [
-      "Expense ratio 1.85% a year (median 1.01%)."
+      "Expense ratio 1.84% a year (median 1.01%)."
      ],
      "notes": [],
      "group": "largemidcap",
@@ -11099,7 +11100,7 @@
       "10y": null
      },
      "ter": 1.15,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2024-02-29",
      "years": 2.7,
      "components": {},
@@ -11145,7 +11146,7 @@
       "10y": null
      },
      "ter": 0.95,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2024-11-04",
      "years": 2.0,
      "components": {},
@@ -11191,7 +11192,7 @@
       "10y": null
      },
      "ter": 1.04,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2024-09-13",
      "years": 2.1,
      "components": {},
@@ -11237,7 +11238,7 @@
       "10y": null
      },
      "ter": 1.04,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2025-07-30",
      "years": 1.3,
      "components": {},
@@ -11285,7 +11286,7 @@
       "10y": null
      },
      "ter": 0.87,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2024-02-16",
      "years": 2.7,
      "components": {},
@@ -11331,7 +11332,7 @@
       "10y": null
      },
      "ter": 2.32,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2025-06-30",
      "years": 1.3,
      "components": {},
@@ -11379,7 +11380,7 @@
       "10y": null
      },
      "ter": 1.9,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2026-07-30",
      "years": 0.3,
      "components": {},
@@ -11426,7 +11427,7 @@
       "10y": null
      },
      "ter": 1.8,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2026-06-12",
      "years": 0.4,
      "components": {},
@@ -11472,14 +11473,14 @@
       "5y": null,
       "10y": null
      },
-     "ter": 0.89,
-     "ter_date": "2026-11-05",
+     "ter": 0.88,
+     "ter_date": "2026-11-06",
      "since": "2023-12-26",
      "years": 2.9,
      "components": {},
      "reasons": [
       "Worst fall from a peak since its direct plan began 2.9 years ago: 16.0%; the median fund fell 19.3% at worst in 5 years.",
-      "Expense ratio 0.89% a year (median 1.01%)."
+      "Expense ratio 0.88% a year (median 1.01%)."
      ],
      "notes": [],
      "group": "largemidcap",
@@ -11552,7 +11553,7 @@
       "10y": 13.51
      },
      "ter": 0.75,
-     "ter_date": "2026-11-03",
+     "ter_date": "2026-11-04",
      "since": "2013-01-01",
      "years": 13.8,
      "components": {
@@ -11608,7 +11609,7 @@
       "10y": 13.51
      },
      "ter": 0.68,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-08",
      "since": "2013-05-28",
      "years": 13.4,
      "components": {
@@ -11720,7 +11721,7 @@
       "10y": 13.51
      },
      "ter": 0.76,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2016-11-28",
      "years": 9.9,
      "components": {
@@ -11776,7 +11777,7 @@
       "10y": null
      },
      "ter": 0.91,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2020-07-01",
      "years": 6.3,
      "components": {
@@ -11832,7 +11833,7 @@
       "10y": 13.53
      },
      "ter": 1.06,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -11888,7 +11889,7 @@
       "10y": 13.51
      },
      "ter": 0.98,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2013-01-01",
      "years": 13.8,
      "components": {
@@ -11944,7 +11945,7 @@
       "10y": 13.51
      },
      "ter": 1.12,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2013-01-07",
      "years": 13.8,
      "components": {
@@ -11999,8 +12000,8 @@
       "5y": 9.67,
       "10y": null
      },
-     "ter": 0.95,
-     "ter_date": "2026-11-05",
+     "ter": 0.96,
+     "ter_date": "2026-11-06",
      "since": "2021-08-25",
      "years": 5.2,
      "components": {
@@ -12015,7 +12016,7 @@
       "5-year return 10.7% a year; the median fund 10.7%.",
       "Worst fall from a peak in the last 5 years: 17.2%; the median fund fell 19.8% at worst in 5 years.",
       "Return per unit of risk 0.76 (median 0.72): 5-year return divided by volatility (14.1%).",
-      "Expense ratio 0.95% a year (median 0.91%).",
+      "Expense ratio 0.96% a year (median 0.91%).",
       "Beat its benchmark (Nifty 500 TRI) by 1.0% a year over 5 years."
      ],
      "notes": [],
@@ -12056,7 +12057,7 @@
       "10y": 13.51
      },
      "ter": 1.28,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -12168,7 +12169,7 @@
       "10y": 13.51
      },
      "ter": 1.14,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2014-04-29",
      "years": 12.5,
      "components": {
@@ -12224,7 +12225,7 @@
       "10y": 13.51
      },
      "ter": 0.9,
-     "ter_date": "2026-11-04",
+     "ter_date": "2026-11-05",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -12280,7 +12281,7 @@
       "10y": null
      },
      "ter": 0.69,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2018-07-10",
      "years": 8.3,
      "components": {
@@ -12338,7 +12339,7 @@
       "10y": 13.53
      },
      "ter": 0.71,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -12394,7 +12395,7 @@
       "10y": 13.51
      },
      "ter": 0.86,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -12450,7 +12451,7 @@
       "10y": 13.53
      },
      "ter": 1.45,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -12561,8 +12562,8 @@
       "5y": 9.67,
       "10y": 13.51
      },
-     "ter": 0.83,
-     "ter_date": "2026-11-05",
+     "ter": 0.82,
+     "ter_date": "2026-11-07",
      "since": "2015-03-09",
      "years": 11.7,
      "components": {
@@ -12577,7 +12578,7 @@
       "5-year return 8.1% a year; the median fund 10.7%.",
       "Worst fall from a peak in the last 5 years: 22.6%; the median fund fell 19.8% at worst in 5 years.",
       "Return per unit of risk 0.58 (median 0.72): 5-year return divided by volatility (14.0%).",
-      "Expense ratio 0.83% a year (median 0.91%).",
+      "Expense ratio 0.82% a year (median 0.91%).",
       "Trailed its benchmark (Nifty 500 TRI) by 1.6% a year over 5 years."
      ],
      "notes": [],
@@ -12618,7 +12619,7 @@
       "10y": null
      },
      "ter": 0.88,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2018-09-10",
      "years": 8.2,
      "components": {
@@ -12785,8 +12786,8 @@
       "5y": 9.52,
       "10y": 13.53
      },
-     "ter": 1.24,
-     "ter_date": "2026-11-04",
+     "ter": 1.25,
+     "ter_date": "2026-11-05",
      "since": "2013-01-07",
      "years": 13.8,
      "components": {
@@ -12801,7 +12802,7 @@
       "5-year return 7.8% a year; the median fund 10.7%.",
       "Worst fall from a peak in the last 5 years: 16.4%; the median fund fell 19.8% at worst in 5 years.",
       "Return per unit of risk 0.61 (median 0.72): 5-year return divided by volatility (12.8%).",
-      "Expense ratio 1.24% a year (median 0.91%).",
+      "Expense ratio 1.25% a year (median 0.91%).",
       "Trailed its benchmark (BSE 500 TRI) by 1.7% a year over 5 years."
      ],
      "notes": [],
@@ -12842,7 +12843,7 @@
       "10y": 13.53
      },
      "ter": 2.66,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -12900,7 +12901,7 @@
       "10y": null
      },
      "ter": 1.07,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2018-10-08",
      "years": 8.1,
      "components": {
@@ -12958,7 +12959,7 @@
       "10y": 13.51
      },
      "ter": 1.79,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-08",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -13014,7 +13015,7 @@
       "10y": 13.51
      },
      "ter": 1.16,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -13118,7 +13119,7 @@
       "10y": null
      },
      "ter": 0.81,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2025-12-30",
      "years": 0.8,
      "components": {},
@@ -13164,7 +13165,7 @@
       "10y": null
      },
      "ter": 2.5,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2026-08-13",
      "years": 0.2,
      "components": {},
@@ -13211,7 +13212,7 @@
       "10y": null
      },
      "ter": 1.02,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2023-08-16",
      "years": 3.2,
      "components": {},
@@ -13258,8 +13259,8 @@
       "5y": null,
       "10y": null
      },
-     "ter": 1.3,
-     "ter_date": "2026-11-05",
+     "ter": 1.29,
+     "ter_date": "2026-11-06",
      "since": "2022-08-22",
      "years": 4.2,
      "components": {},
@@ -13267,7 +13268,7 @@
       "Beat the category median in 9 of 15 rolling 3-year periods (60%).",
       "3-year return 12.9% a year; the median fund 12.8%.",
       "Worst fall from a peak since its direct plan began 4.2 years ago: 20.4%; the median fund fell 19.8% at worst in 5 years.",
-      "Expense ratio 1.30% a year (median 0.91%)."
+      "Expense ratio 1.29% a year (median 0.91%)."
      ],
      "notes": [],
      "group": "flexicap",
@@ -13307,7 +13308,7 @@
       "10y": null
      },
      "ter": 1.74,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2025-08-06",
      "years": 1.2,
      "components": {},
@@ -13354,14 +13355,14 @@
       "5y": null,
       "10y": null
      },
-     "ter": 0.83,
-     "ter_date": "2026-11-05",
+     "ter": 0.81,
+     "ter_date": "2026-11-06",
      "since": "2023-11-15",
      "years": 3.0,
      "components": {},
      "reasons": [
       "Worst fall from a peak since its direct plan began 3.0 years ago: 18.2%; the median fund fell 19.8% at worst in 5 years.",
-      "Expense ratio 0.83% a year (median 0.91%)."
+      "Expense ratio 0.81% a year (median 0.91%)."
      ],
      "notes": [],
      "group": "flexicap",
@@ -13401,7 +13402,7 @@
       "10y": null
      },
      "ter": 0.9,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2023-02-22",
      "years": 3.7,
      "components": {},
@@ -13449,7 +13450,7 @@
       "10y": null
      },
      "ter": 0.87,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2022-02-16",
      "years": 4.7,
      "components": {},
@@ -13497,7 +13498,7 @@
       "10y": null
      },
      "ter": 1.11,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2025-10-17",
      "years": 1.1,
      "components": {},
@@ -13543,7 +13544,7 @@
       "10y": null
      },
      "ter": 0.72,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2023-02-27",
      "years": 3.7,
      "components": {},
@@ -13590,8 +13591,8 @@
       "5y": null,
       "10y": null
      },
-     "ter": 0.88,
-     "ter_date": "2026-11-04",
+     "ter": 0.87,
+     "ter_date": "2026-11-05",
      "since": "2023-09-06",
      "years": 3.2,
      "components": {},
@@ -13599,7 +13600,7 @@
       "Beat the category median in 0 of 2 rolling 3-year periods (0%).",
       "3-year return 9.8% a year; the median fund 12.8%.",
       "Worst fall from a peak since its direct plan began 3.2 years ago: 26.7%; the median fund fell 19.8% at worst in 5 years.",
-      "Expense ratio 0.88% a year (median 0.91%)."
+      "Expense ratio 0.87% a year (median 0.91%)."
      ],
      "notes": [],
      "group": "flexicap",
@@ -13639,7 +13640,7 @@
       "10y": null
      },
      "ter": 1.54,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2026-03-04",
      "years": 0.7,
      "components": {},
@@ -13685,7 +13686,7 @@
       "10y": null
      },
      "ter": 1.76,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2026-09-10",
      "years": 0.2,
      "components": {},
@@ -13732,7 +13733,7 @@
       "10y": null
      },
      "ter": 1.87,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2022-02-09",
      "years": 4.7,
      "components": {},
@@ -13782,7 +13783,7 @@
       "10y": null
      },
      "ter": 0.86,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2022-09-07",
      "years": 4.2,
      "components": {},
@@ -13830,7 +13831,7 @@
       "10y": null
      },
      "ter": 1.73,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2024-04-29",
      "years": 2.5,
      "components": {},
@@ -13876,7 +13877,7 @@
       "10y": null
      },
      "ter": 1.84,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2025-10-17",
      "years": 1.1,
      "components": {},
@@ -13924,7 +13925,7 @@
       "10y": null
      },
      "ter": 1.41,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2025-06-09",
      "years": 1.4,
      "components": {},
@@ -13971,8 +13972,8 @@
       "5y": null,
       "10y": null
      },
-     "ter": 0.84,
-     "ter_date": "2026-11-05",
+     "ter": 0.83,
+     "ter_date": "2026-11-06",
      "since": "2022-08-03",
      "years": 4.3,
      "components": {},
@@ -13980,7 +13981,7 @@
       "Beat the category median in 15 of 15 rolling 3-year periods (100%).",
       "3-year return 15.4% a year; the median fund 12.8%.",
       "Worst fall from a peak since its direct plan began 4.3 years ago: 15.6%; the median fund fell 19.8% at worst in 5 years.",
-      "Expense ratio 0.84% a year (median 0.91%)."
+      "Expense ratio 0.83% a year (median 0.91%)."
      ],
      "notes": [],
      "group": "flexicap",
@@ -14030,7 +14031,7 @@
     "median_drawdown": -20.79,
     "median_volatility": 15.89,
     "median_return_per_risk": 0.89,
-    "median_ter": 0.94,
+    "median_ter": 0.95,
     "beat_benchmark_3y": {
      "beat": 20,
      "of": 23
@@ -14083,7 +14084,7 @@
       "5-year return 16.4% a year; the median fund 13.3%.",
       "Worst fall from a peak in the last 5 years: 21.0%; the median fund fell 20.8% at worst in 5 years.",
       "Return per unit of risk 1.00 (median 0.89): 5-year return divided by volatility (16.4%).",
-      "Expense ratio 0.70% a year (median 0.94%).",
+      "Expense ratio 0.70% a year (median 0.95%).",
       "Beat its benchmark (NIFTY 500 Multicap 50:25:25 Total Return Index) by 5.2% a year over 5 years."
      ],
      "notes": [],
@@ -14123,8 +14124,8 @@
       "5y": 11.22,
       "10y": null
      },
-     "ter": 0.94,
-     "ter_date": "2026-11-05",
+     "ter": 0.95,
+     "ter_date": "2026-11-06",
      "since": "2017-05-18",
      "years": 9.5,
      "components": {
@@ -14139,7 +14140,7 @@
       "5-year return 14.6% a year; the median fund 13.3%.",
       "Worst fall from a peak in the last 5 years: 20.6%; the median fund fell 20.8% at worst in 5 years.",
       "Return per unit of risk 0.91 (median 0.89): 5-year return divided by volatility (16.0%).",
-      "Expense ratio 0.94% a year (median 0.94%).",
+      "Expense ratio 0.95% a year (median 0.95%).",
       "Beat its benchmark (NIFTY 500 Multicap 50:25:25 Total Return Index) by 3.4% a year over 5 years."
      ],
      "notes": [],
@@ -14195,7 +14196,7 @@
       "5-year return 15.4% a year; the median fund 13.3%.",
       "Worst fall from a peak in the last 5 years: 18.6%; the median fund fell 20.8% at worst in 5 years.",
       "Return per unit of risk 1.02 (median 0.89): 5-year return divided by volatility (15.1%).",
-      "Expense ratio 0.89% a year (median 0.94%).",
+      "Expense ratio 0.89% a year (median 0.95%).",
       "Beat its benchmark (NIFTY 500 Multicap 50:25:25 Total Return Index) by 4.2% a year over 5 years."
      ],
      "notes": [],
@@ -14236,7 +14237,7 @@
       "10y": null
      },
      "ter": 0.85,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2019-05-16",
      "years": 7.5,
      "components": {
@@ -14251,7 +14252,7 @@
       "5-year return 14.2% a year; the median fund 13.3%.",
       "Worst fall from a peak in the last 5 years: 23.1%; the median fund fell 20.8% at worst in 5 years.",
       "Return per unit of risk 0.89 (median 0.89): 5-year return divided by volatility (15.9%).",
-      "Expense ratio 0.85% a year (median 0.94%).",
+      "Expense ratio 0.85% a year (median 0.95%).",
       "Beat its benchmark (NIFTY 500 Multicap 50:25:25 Total Return Index) by 3.0% a year over 5 years."
      ],
      "notes": [],
@@ -14307,7 +14308,7 @@
       "5-year return 13.3% a year; the median fund 13.3%.",
       "Worst fall from a peak in the last 5 years: 17.2%; the median fund fell 20.8% at worst in 5 years.",
       "Return per unit of risk 0.89 (median 0.89): 5-year return divided by volatility (15.0%).",
-      "Expense ratio 1.00% a year (median 0.94%).",
+      "Expense ratio 1.00% a year (median 0.95%).",
       "Beat its benchmark (NIFTY 500 Multicap 50:25:25 Total Return Index) by 2.1% a year over 5 years."
      ],
      "notes": [],
@@ -14347,8 +14348,8 @@
       "5y": 11.22,
       "10y": null
      },
-     "ter": 1.02,
-     "ter_date": "2026-11-04",
+     "ter": 1.01,
+     "ter_date": "2026-11-05",
      "since": "2021-05-10",
      "years": 5.5,
      "components": {
@@ -14363,7 +14364,7 @@
       "5-year return 12.3% a year; the median fund 13.3%.",
       "Worst fall from a peak in the last 5 years: 19.9%; the median fund fell 20.8% at worst in 5 years.",
       "Return per unit of risk 0.83 (median 0.89): 5-year return divided by volatility (14.7%).",
-      "Expense ratio 1.02% a year (median 0.94%).",
+      "Expense ratio 1.01% a year (median 0.95%).",
       "Beat its benchmark (NIFTY 500 Multicap 50:25:25 Total Return Index) by 1.0% a year over 5 years."
      ],
      "notes": [],
@@ -14403,8 +14404,8 @@
       "5y": 11.22,
       "10y": 14.36
      },
-     "ter": 1.17,
-     "ter_date": "2026-11-05",
+     "ter": 1.16,
+     "ter_date": "2026-11-06",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -14419,7 +14420,7 @@
       "5-year return 11.8% a year; the median fund 13.3%.",
       "Worst fall from a peak in the last 5 years: 20.8%; the median fund fell 20.8% at worst in 5 years.",
       "Return per unit of risk 0.77 (median 0.89): 5-year return divided by volatility (15.3%).",
-      "Expense ratio 1.17% a year (median 0.94%).",
+      "Expense ratio 1.16% a year (median 0.95%).",
       "Beat its benchmark (NIFTY 500 Multicap 50:25:25 Total Return Index) by 0.6% a year over 5 years."
      ],
      "notes": [],
@@ -14459,8 +14460,8 @@
       "5y": 11.22,
       "10y": 14.36
      },
-     "ter": 0.91,
-     "ter_date": "2026-11-05",
+     "ter": 0.9,
+     "ter_date": "2026-11-06",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -14475,7 +14476,7 @@
       "5-year return 11.4% a year; the median fund 13.3%.",
       "Worst fall from a peak in the last 5 years: 22.6%; the median fund fell 20.8% at worst in 5 years.",
       "Return per unit of risk 0.72 (median 0.89): 5-year return divided by volatility (16.0%).",
-      "Expense ratio 0.91% a year (median 0.94%).",
+      "Expense ratio 0.90% a year (median 0.95%).",
       "Beat its benchmark (NIFTY 500 Multicap 50:25:25 Total Return Index) by 0.2% a year over 5 years."
      ],
      "notes": [],
@@ -14516,7 +14517,7 @@
       "10y": 14.36
      },
      "ter": 1.08,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2013-01-07",
      "years": 13.8,
      "components": {
@@ -14531,7 +14532,7 @@
       "5-year return 10.8% a year; the median fund 13.3%.",
       "Worst fall from a peak in the last 5 years: 25.3%; the median fund fell 20.8% at worst in 5 years.",
       "Return per unit of risk 0.62 (median 0.89): 5-year return divided by volatility (17.4%).",
-      "Expense ratio 1.08% a year (median 0.94%).",
+      "Expense ratio 1.08% a year (median 0.95%).",
       "Trailed its benchmark (NIFTY 500 Multicap 50:25:25 Total Return Index) by 0.4% a year over 5 years."
      ],
      "notes": [],
@@ -14580,7 +14581,7 @@
       "Beat the category median in 23 of 23 rolling 3-year periods (100%).",
       "3-year return 19.7% a year; the median fund 15.1%.",
       "Worst fall from a peak since its direct plan began 4.9 years ago: 18.1%; the median fund fell 20.8% at worst in 5 years.",
-      "Expense ratio 0.92% a year (median 0.94%)."
+      "Expense ratio 0.92% a year (median 0.95%)."
      ],
      "notes": [],
      "group": "multicap",
@@ -14620,13 +14621,13 @@
       "10y": null
      },
      "ter": 1.13,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2025-03-03",
      "years": 1.7,
      "components": {},
      "reasons": [
       "Worst fall from a peak since its direct plan began 1.7 years ago: 14.2%; the median fund fell 20.8% at worst in 5 years.",
-      "Expense ratio 1.13% a year (median 0.94%)."
+      "Expense ratio 1.13% a year (median 0.95%)."
      ],
      "notes": [],
      "group": "multicap",
@@ -14674,7 +14675,7 @@
       "Beat the category median in 1 of 23 rolling 3-year periods (4%).",
       "3-year return 13.5% a year; the median fund 15.1%.",
       "Worst fall from a peak since its direct plan began 4.9 years ago: 18.3%; the median fund fell 20.8% at worst in 5 years.",
-      "Expense ratio 0.94% a year (median 0.94%)."
+      "Expense ratio 0.94% a year (median 0.95%)."
      ],
      "notes": [],
      "group": "multicap",
@@ -14713,8 +14714,8 @@
       "5y": null,
       "10y": null
      },
-     "ter": 1.15,
-     "ter_date": "2026-11-05",
+     "ter": 1.13,
+     "ter_date": "2026-11-06",
      "since": "2023-03-06",
      "years": 3.7,
      "components": {},
@@ -14722,7 +14723,7 @@
       "Beat the category median in 8 of 8 rolling 3-year periods (100%).",
       "3-year return 17.7% a year; the median fund 15.1%.",
       "Worst fall from a peak since its direct plan began 3.7 years ago: 20.3%; the median fund fell 20.8% at worst in 5 years.",
-      "Expense ratio 1.15% a year (median 0.94%)."
+      "Expense ratio 1.13% a year (median 0.95%)."
      ],
      "notes": [],
      "group": "multicap",
@@ -14762,7 +14763,7 @@
       "10y": null
      },
      "ter": 0.65,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2023-08-02",
      "years": 3.3,
      "components": {},
@@ -14770,7 +14771,7 @@
       "Beat the category median in 0 of 3 rolling 3-year periods (0%).",
       "3-year return 14.6% a year; the median fund 15.1%.",
       "Worst fall from a peak since its direct plan began 3.3 years ago: 18.3%; the median fund fell 20.8% at worst in 5 years.",
-      "Expense ratio 0.65% a year (median 0.94%)."
+      "Expense ratio 0.65% a year (median 0.95%)."
      ],
      "notes": [],
      "group": "multicap",
@@ -14810,13 +14811,13 @@
       "10y": null
      },
      "ter": 0.71,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2024-01-31",
      "years": 2.8,
      "components": {},
      "reasons": [
       "Worst fall from a peak since its direct plan began 2.8 years ago: 21.3%; the median fund fell 20.8% at worst in 5 years.",
-      "Expense ratio 0.71% a year (median 0.94%)."
+      "Expense ratio 0.71% a year (median 0.95%)."
      ],
      "notes": [],
      "group": "multicap",
@@ -14856,7 +14857,7 @@
       "10y": null
      },
      "ter": 0.68,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2023-10-30",
      "years": 3.0,
      "components": {},
@@ -14864,7 +14865,7 @@
       "Beat the category median in 1 of 1 rolling 3-year periods (100%).",
       "3-year return 16.5% a year; the median fund 15.1%.",
       "Worst fall from a peak since its direct plan began 3.0 years ago: 20.2%; the median fund fell 20.8% at worst in 5 years.",
-      "Expense ratio 0.68% a year (median 0.94%)."
+      "Expense ratio 0.68% a year (median 0.95%)."
      ],
      "notes": [],
      "group": "multicap",
@@ -14904,13 +14905,13 @@
       "10y": null
      },
      "ter": 0.97,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2024-07-29",
      "years": 2.3,
      "components": {},
      "reasons": [
       "Worst fall from a peak since its direct plan began 2.3 years ago: 18.7%; the median fund fell 20.8% at worst in 5 years.",
-      "Expense ratio 0.97% a year (median 0.94%)."
+      "Expense ratio 0.97% a year (median 0.95%)."
      ],
      "notes": [],
      "group": "multicap",
@@ -14950,13 +14951,13 @@
       "10y": null
      },
      "ter": 0.98,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2024-12-18",
      "years": 1.9,
      "components": {},
      "reasons": [
       "Worst fall from a peak since its direct plan began 1.9 years ago: 16.5%; the median fund fell 20.8% at worst in 5 years.",
-      "Expense ratio 0.98% a year (median 0.94%)."
+      "Expense ratio 0.98% a year (median 0.95%)."
      ],
      "notes": [],
      "group": "multicap",
@@ -14996,7 +14997,7 @@
       "10y": null
      },
      "ter": 0.96,
-     "ter_date": "2026-11-03",
+     "ter_date": "2026-11-04",
      "since": "2021-12-10",
      "years": 4.9,
      "components": {},
@@ -15004,7 +15005,7 @@
       "Beat the category median in 15 of 23 rolling 3-year periods (65%).",
       "3-year return 11.9% a year; the median fund 15.1%.",
       "Worst fall from a peak since its direct plan began 4.9 years ago: 20.2%; the median fund fell 20.8% at worst in 5 years.",
-      "Expense ratio 0.96% a year (median 0.94%)."
+      "Expense ratio 0.96% a year (median 0.95%)."
      ],
      "notes": [],
      "group": "multicap",
@@ -15044,7 +15045,7 @@
       "10y": null
      },
      "ter": 0.79,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2023-02-03",
      "years": 3.8,
      "components": {},
@@ -15052,7 +15053,7 @@
       "Beat the category median in 9 of 9 rolling 3-year periods (100%).",
       "3-year return 17.6% a year; the median fund 15.1%.",
       "Worst fall from a peak since its direct plan began 3.8 years ago: 20.1%; the median fund fell 20.8% at worst in 5 years.",
-      "Expense ratio 0.79% a year (median 0.94%)."
+      "Expense ratio 0.79% a year (median 0.95%)."
      ],
      "notes": [],
      "group": "multicap",
@@ -15092,7 +15093,7 @@
       "10y": null
      },
      "ter": 0.79,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-08",
      "since": "2022-11-02",
      "years": 4.0,
      "components": {},
@@ -15100,7 +15101,7 @@
       "Beat the category median in 12 of 12 rolling 3-year periods (100%).",
       "3-year return 18.4% a year; the median fund 15.1%.",
       "Worst fall from a peak since its direct plan began 4.0 years ago: 19.3%; the median fund fell 20.8% at worst in 5 years.",
-      "Expense ratio 0.79% a year (median 0.94%)."
+      "Expense ratio 0.79% a year (median 0.95%)."
      ],
      "notes": [],
      "group": "multicap",
@@ -15140,7 +15141,7 @@
       "10y": null
      },
      "ter": 0.85,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2023-08-22",
      "years": 3.2,
      "components": {},
@@ -15148,7 +15149,7 @@
       "Beat the category median in 0 of 3 rolling 3-year periods (0%).",
       "3-year return 13.8% a year; the median fund 15.1%.",
       "Worst fall from a peak since its direct plan began 3.2 years ago: 18.2%; the median fund fell 20.8% at worst in 5 years.",
-      "Expense ratio 0.85% a year (median 0.94%)."
+      "Expense ratio 0.85% a year (median 0.95%)."
      ],
      "notes": [],
      "group": "multicap",
@@ -15188,13 +15189,13 @@
       "10y": null
      },
      "ter": 1.18,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2024-06-21",
      "years": 2.4,
      "components": {},
      "reasons": [
       "Worst fall from a peak since its direct plan began 2.4 years ago: 24.1%; the median fund fell 20.8% at worst in 5 years.",
-      "Expense ratio 1.18% a year (median 0.94%)."
+      "Expense ratio 1.18% a year (median 0.95%)."
      ],
      "notes": [],
      "group": "multicap",
@@ -15234,13 +15235,13 @@
       "10y": null
      },
      "ter": 0.81,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2024-09-13",
      "years": 2.1,
      "components": {},
      "reasons": [
       "Worst fall from a peak since its direct plan began 2.1 years ago: 18.1%; the median fund fell 20.8% at worst in 5 years.",
-      "Expense ratio 0.81% a year (median 0.94%)."
+      "Expense ratio 0.81% a year (median 0.95%)."
      ],
      "notes": [
       "Small fund: ₹480 crore in assets."
@@ -15282,7 +15283,7 @@
       "10y": null
      },
      "ter": 1.05,
-     "ter_date": "2026-11-04",
+     "ter_date": "2026-11-05",
      "since": "2022-03-15",
      "years": 4.6,
      "components": {},
@@ -15290,7 +15291,7 @@
       "Beat the category median in 0 of 20 rolling 3-year periods (0%).",
       "3-year return 13.4% a year; the median fund 15.1%.",
       "Worst fall from a peak since its direct plan began 4.6 years ago: 15.1%; the median fund fell 20.8% at worst in 5 years.",
-      "Expense ratio 1.05% a year (median 0.94%)."
+      "Expense ratio 1.05% a year (median 0.95%)."
      ],
      "notes": [],
      "group": "multicap",
@@ -15330,13 +15331,13 @@
       "10y": null
      },
      "ter": 2.33,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2024-11-06",
      "years": 2.0,
      "components": {},
      "reasons": [
       "Worst fall from a peak since its direct plan began 2.0 years ago: 20.1%; the median fund fell 20.8% at worst in 5 years.",
-      "Expense ratio 2.33% a year (median 0.94%)."
+      "Expense ratio 2.33% a year (median 0.95%)."
      ],
      "notes": [
       "Small fund: ₹218 crore in assets."
@@ -15378,7 +15379,7 @@
       "10y": 14.36
      },
      "ter": 1.2,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2022-01-03",
      "years": 4.8,
      "components": {},
@@ -15387,7 +15388,7 @@
       "5-year return 10.7% a year; the median fund 13.3%.",
       "Worst fall from a peak since its direct plan began 4.8 years ago: 19.4%; the median fund fell 20.8% at worst in 5 years.",
       "Return per unit of risk 0.71 (median 0.89): 5-year return divided by volatility (15.2%).",
-      "Expense ratio 1.20% a year (median 0.94%).",
+      "Expense ratio 1.20% a year (median 0.95%).",
       "Trailed its benchmark (NIFTY 500 Multicap 50:25:25 Total Return Index) by 0.5% a year over 5 years."
      ],
      "notes": [],
@@ -15428,13 +15429,13 @@
       "10y": null
      },
      "ter": 1.81,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2025-07-25",
      "years": 1.3,
      "components": {},
      "reasons": [
       "Worst fall from a peak since its direct plan began 1.3 years ago: 12.7%; the median fund fell 20.8% at worst in 5 years.",
-      "Expense ratio 1.81% a year (median 0.94%)."
+      "Expense ratio 1.81% a year (median 0.95%)."
      ],
      "notes": [],
      "group": "multicap",
@@ -15474,7 +15475,7 @@
       "10y": null
      },
      "ter": 0.82,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2023-02-09",
      "years": 3.7,
      "components": {},
@@ -15482,7 +15483,7 @@
       "Beat the category median in 0 of 9 rolling 3-year periods (0%).",
       "3-year return 10.5% a year; the median fund 15.1%.",
       "Worst fall from a peak since its direct plan began 3.7 years ago: 22.4%; the median fund fell 20.8% at worst in 5 years.",
-      "Expense ratio 0.82% a year (median 0.94%)."
+      "Expense ratio 0.82% a year (median 0.95%)."
      ],
      "notes": [],
      "group": "multicap",
@@ -15522,12 +15523,12 @@
       "10y": null
      },
      "ter": 2.58,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2026-09-21",
      "years": 0.1,
      "components": {},
      "reasons": [
-      "Expense ratio 2.58% a year (median 0.94%)."
+      "Expense ratio 2.58% a year (median 0.95%)."
      ],
      "notes": [
       "Small fund: ₹150 crore in assets."
@@ -15568,14 +15569,14 @@
       "5y": null,
       "10y": null
      },
-     "ter": 1.07,
-     "ter_date": "2026-11-05",
+     "ter": 1.06,
+     "ter_date": "2026-11-06",
      "since": "2025-05-20",
      "years": 1.5,
      "components": {},
      "reasons": [
       "Worst fall from a peak since its direct plan began 1.5 years ago: 14.1%; the median fund fell 20.8% at worst in 5 years.",
-      "Expense ratio 1.07% a year (median 0.94%)."
+      "Expense ratio 1.06% a year (median 0.95%)."
      ],
      "notes": [],
      "group": "multicap",
@@ -15615,7 +15616,7 @@
       "10y": null
      },
      "ter": 1.34,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2022-12-26",
      "years": 3.9,
      "components": {},
@@ -15623,7 +15624,7 @@
       "Beat the category median in 4 of 11 rolling 3-year periods (36%).",
       "3-year return 15.6% a year; the median fund 15.1%.",
       "Worst fall from a peak since its direct plan began 3.9 years ago: 19.8%; the median fund fell 20.8% at worst in 5 years.",
-      "Expense ratio 1.34% a year (median 0.94%)."
+      "Expense ratio 1.34% a year (median 0.95%)."
      ],
      "notes": [],
      "group": "multicap",
@@ -15663,7 +15664,7 @@
       "10y": null
      },
      "ter": 0.88,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2023-09-25",
      "years": 3.1,
      "components": {},
@@ -15671,7 +15672,7 @@
       "Beat the category median in 2 of 2 rolling 3-year periods (100%).",
       "3-year return 18.7% a year; the median fund 15.1%.",
       "Worst fall from a peak since its direct plan began 3.1 years ago: 16.9%; the median fund fell 20.8% at worst in 5 years.",
-      "Expense ratio 0.88% a year (median 0.94%)."
+      "Expense ratio 0.88% a year (median 0.95%)."
      ],
      "notes": [],
      "group": "multicap",
@@ -15759,7 +15760,7 @@
       "10y": 16.86
      },
      "ter": 0.7,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2016-11-28",
      "years": 9.9,
      "components": {
@@ -15815,7 +15816,7 @@
       "10y": 16.86
      },
      "ter": 0.74,
-     "ter_date": "2026-11-03",
+     "ter_date": "2026-11-04",
      "since": "2013-01-01",
      "years": 13.8,
      "components": {
@@ -15850,7 +15851,7 @@
      "amc": "Nippon India",
      "isin": "INF204K01E54",
      "rank": 3,
-     "score": 81.8,
+     "score": 82.2,
      "status": "ranked",
      "status_reason": null,
      "benchmark": "Nifty Midcap 150 TRI",
@@ -15879,7 +15880,7 @@
       "returns": 76.2,
       "risk_adjusted": 81.0,
       "downside": 85.7,
-      "cost": 66.7
+      "cost": 69.0
      },
      "reasons": [
       "Beat the category median in 55 of 60 rolling 3-year periods (92%).",
@@ -15927,7 +15928,7 @@
       "10y": null
      },
      "ter": 0.75,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -15956,67 +15957,11 @@
      }
     },
     {
-     "code": 142110,
-     "name": "Mahindra Manulife Mid Cap Fund",
-     "amc": "Mahindra Manulife",
-     "isin": "INF174V01507",
-     "rank": 5,
-     "score": 72.6,
-     "status": "ranked",
-     "status_reason": null,
-     "benchmark": "Nifty Midcap 150 TRI",
-     "riskometer": "Very High",
-     "aum_cr": 5204.4,
-     "nav": 39.9084,
-     "nav_date": "2026-11-05",
-     "returns": {
-      "1y": 4.24,
-      "3y": 16.84,
-      "5y": 16.0,
-      "10y": null
-     },
-     "benchmark_returns": {
-      "1y": 1.35,
-      "3y": 15.22,
-      "5y": 14.4,
-      "10y": null
-     },
-     "ter": 0.78,
-     "ter_date": "2026-11-05",
-     "since": "2018-02-06",
-     "years": 8.7,
-     "components": {
-      "consistency": 83.3,
-      "returns": 66.7,
-      "risk_adjusted": 71.4,
-      "downside": 57.1,
-      "cost": 76.2
-     },
-     "reasons": [
-      "Beat the category median in 50 of 60 rolling 3-year periods (83%).",
-      "5-year return 16.0% a year; the median fund 14.6%.",
-      "Worst fall from a peak in the last 5 years: 20.9%; the median fund fell 21.2% at worst in 5 years.",
-      "Return per unit of risk 0.94 (median 0.86): 5-year return divided by volatility (17.1%).",
-      "Expense ratio 0.78% a year (median 0.90%).",
-      "Beat its benchmark (Nifty Midcap 150 TRI) by 1.6% a year over 5 years."
-     ],
-     "notes": [],
-     "group": "midcap",
-     "volatility": 17.09,
-     "max_drawdown": -20.92,
-     "return_per_risk": 0.94,
-     "consistency": {
-      "beat": 50,
-      "of": 60,
-      "pct": 83.3
-     }
-    },
-    {
      "code": 119775,
      "name": "Kotak Mid Cap Fund",
      "amc": "Kotak Mahindra",
      "isin": "INF174K01LT0",
-     "rank": 6,
+     "rank": 5,
      "score": 72.1,
      "status": "ranked",
      "status_reason": null,
@@ -16068,6 +16013,62 @@
      }
     },
     {
+     "code": 142110,
+     "name": "Mahindra Manulife Mid Cap Fund",
+     "amc": "Mahindra Manulife",
+     "isin": "INF174V01507",
+     "rank": 6,
+     "score": 71.5,
+     "status": "ranked",
+     "status_reason": null,
+     "benchmark": "Nifty Midcap 150 TRI",
+     "riskometer": "Very High",
+     "aum_cr": 5204.4,
+     "nav": 39.9084,
+     "nav_date": "2026-11-05",
+     "returns": {
+      "1y": 4.24,
+      "3y": 16.84,
+      "5y": 16.0,
+      "10y": null
+     },
+     "benchmark_returns": {
+      "1y": 1.35,
+      "3y": 15.22,
+      "5y": 14.4,
+      "10y": null
+     },
+     "ter": 0.79,
+     "ter_date": "2026-11-06",
+     "since": "2018-02-06",
+     "years": 8.7,
+     "components": {
+      "consistency": 83.3,
+      "returns": 66.7,
+      "risk_adjusted": 71.4,
+      "downside": 57.1,
+      "cost": 69.0
+     },
+     "reasons": [
+      "Beat the category median in 50 of 60 rolling 3-year periods (83%).",
+      "5-year return 16.0% a year; the median fund 14.6%.",
+      "Worst fall from a peak in the last 5 years: 20.9%; the median fund fell 21.2% at worst in 5 years.",
+      "Return per unit of risk 0.94 (median 0.86): 5-year return divided by volatility (17.1%).",
+      "Expense ratio 0.79% a year (median 0.90%).",
+      "Beat its benchmark (Nifty Midcap 150 TRI) by 1.6% a year over 5 years."
+     ],
+     "notes": [],
+     "group": "midcap",
+     "volatility": 17.09,
+     "max_drawdown": -20.92,
+     "return_per_risk": 0.94,
+     "consistency": {
+      "beat": 50,
+      "of": 60,
+      "pct": 83.3
+     }
+    },
+    {
      "code": 127042,
      "name": "Motilal Oswal Midcap Fund",
      "amc": "Motilal Oswal",
@@ -16094,7 +16095,7 @@
       "10y": 16.86
      },
      "ter": 0.91,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2014-02-25",
      "years": 12.7,
      "components": {
@@ -16150,7 +16151,7 @@
       "10y": null
      },
      "ter": 0.88,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2021-03-10",
      "years": 5.7,
      "components": {
@@ -16206,7 +16207,7 @@
       "10y": 16.86
      },
      "ter": 1.06,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -16297,7 +16298,7 @@
      "amc": "Axis",
      "isin": "INF846K01EH3",
      "rank": 11,
-     "score": 46.2,
+     "score": 46.6,
      "status": "ranked",
      "status_reason": null,
      "benchmark": "BSE Midcap 150 TRI",
@@ -16326,7 +16327,7 @@
       "returns": 50.0,
       "risk_adjusted": 38.1,
       "downside": 81.0,
-      "cost": 76.2
+      "cost": 78.6
      },
      "reasons": [
       "Beat the category median in 10 of 60 rolling 3-year periods (17%).",
@@ -16373,7 +16374,7 @@
       "10y": 16.86
      },
      "ter": 0.81,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -16429,7 +16430,7 @@
       "10y": 16.86
      },
      "ter": 1.01,
-     "ter_date": "2026-11-04",
+     "ter_date": "2026-11-05",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -16459,11 +16460,67 @@
      }
     },
     {
+     "code": 125307,
+     "name": "PGIM India Midcap Fund",
+     "amc": "PGIM India",
+     "isin": "INF663L01DV3",
+     "rank": 14,
+     "score": 40.7,
+     "status": "ranked",
+     "status_reason": null,
+     "benchmark": "Nifty Midcap 150 TRI",
+     "riskometer": "Very High",
+     "aum_cr": 10624.2,
+     "nav": 77.39,
+     "nav_date": "2026-11-05",
+     "returns": {
+      "1y": 1.74,
+      "3y": 12.45,
+      "5y": 9.87,
+      "10y": 16.45
+     },
+     "benchmark_returns": {
+      "1y": 1.35,
+      "3y": 15.22,
+      "5y": 14.4,
+      "10y": 16.86
+     },
+     "ter": 0.78,
+     "ter_date": "2026-11-07",
+     "since": "2013-12-05",
+     "years": 12.9,
+     "components": {
+      "consistency": 40.0,
+      "returns": 9.5,
+      "risk_adjusted": 7.1,
+      "downside": 90.5,
+      "cost": 78.6
+     },
+     "reasons": [
+      "Beat the category median in 24 of 60 rolling 3-year periods (40%).",
+      "5-year return 9.9% a year; the median fund 14.6%.",
+      "Worst fall from a peak in the last 5 years: 19.5%; the median fund fell 21.2% at worst in 5 years.",
+      "Return per unit of risk 0.64 (median 0.86): 5-year return divided by volatility (15.5%).",
+      "Expense ratio 0.78% a year (median 0.90%).",
+      "Trailed its benchmark (Nifty Midcap 150 TRI) by 4.5% a year over 5 years."
+     ],
+     "notes": [],
+     "group": "midcap",
+     "volatility": 15.46,
+     "max_drawdown": -19.5,
+     "return_per_risk": 0.64,
+     "consistency": {
+      "beat": 24,
+      "of": 60,
+      "pct": 40.0
+     }
+    },
+    {
      "code": 148073,
      "name": "Union Midcap Fund",
      "amc": "Union",
      "isin": "INF582M01GI3",
-     "rank": 14,
+     "rank": 15,
      "score": 40.4,
      "status": "ranked",
      "status_reason": null,
@@ -16485,7 +16542,7 @@
       "10y": null
      },
      "ter": 1.05,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2020-03-30",
      "years": 6.6,
      "components": {
@@ -16511,62 +16568,6 @@
       "beat": 10,
       "of": 44,
       "pct": 22.7
-     }
-    },
-    {
-     "code": 125307,
-     "name": "PGIM India Midcap Fund",
-     "amc": "PGIM India",
-     "isin": "INF663L01DV3",
-     "rank": 15,
-     "score": 40.3,
-     "status": "ranked",
-     "status_reason": null,
-     "benchmark": "Nifty Midcap 150 TRI",
-     "riskometer": "Very High",
-     "aum_cr": 10624.2,
-     "nav": 77.39,
-     "nav_date": "2026-11-05",
-     "returns": {
-      "1y": 1.74,
-      "3y": 12.45,
-      "5y": 9.87,
-      "10y": 16.45
-     },
-     "benchmark_returns": {
-      "1y": 1.35,
-      "3y": 15.22,
-      "5y": 14.4,
-      "10y": 16.86
-     },
-     "ter": 0.78,
-     "ter_date": "2026-11-05",
-     "since": "2013-12-05",
-     "years": 12.9,
-     "components": {
-      "consistency": 40.0,
-      "returns": 9.5,
-      "risk_adjusted": 7.1,
-      "downside": 90.5,
-      "cost": 76.2
-     },
-     "reasons": [
-      "Beat the category median in 24 of 60 rolling 3-year periods (40%).",
-      "5-year return 9.9% a year; the median fund 14.6%.",
-      "Worst fall from a peak in the last 5 years: 19.5%; the median fund fell 21.2% at worst in 5 years.",
-      "Return per unit of risk 0.64 (median 0.86): 5-year return divided by volatility (15.5%).",
-      "Expense ratio 0.78% a year (median 0.90%).",
-      "Trailed its benchmark (Nifty Midcap 150 TRI) by 4.5% a year over 5 years."
-     ],
-     "notes": [],
-     "group": "midcap",
-     "volatility": 15.46,
-     "max_drawdown": -19.5,
-     "return_per_risk": 0.64,
-     "consistency": {
-      "beat": 24,
-      "of": 60,
-      "pct": 40.0
      }
     },
     {
@@ -16596,7 +16597,7 @@
       "10y": 16.86
      },
      "ter": 1.17,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2013-01-07",
      "years": 13.8,
      "components": {
@@ -16652,7 +16653,7 @@
       "10y": null
      },
      "ter": 0.96,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2019-07-30",
      "years": 7.3,
      "components": {
@@ -16708,7 +16709,7 @@
       "10y": 16.86
      },
      "ter": 1.14,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2013-01-01",
      "years": 13.8,
      "components": {
@@ -16764,7 +16765,7 @@
       "10y": 16.86
      },
      "ter": 0.83,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -16819,8 +16820,8 @@
       "5y": 14.4,
       "10y": 16.86
      },
-     "ter": 1.26,
-     "ter_date": "2026-11-05",
+     "ter": 1.27,
+     "ter_date": "2026-11-06",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -16835,7 +16836,7 @@
       "5-year return 10.9% a year; the median fund 14.6%.",
       "Worst fall from a peak in the last 5 years: 22.7%; the median fund fell 21.2% at worst in 5 years.",
       "Return per unit of risk 0.67 (median 0.86): 5-year return divided by volatility (16.4%).",
-      "Expense ratio 1.26% a year (median 0.90%).",
+      "Expense ratio 1.27% a year (median 0.90%).",
       "Trailed its benchmark (Nifty Midcap 150 TRI) by 3.5% a year over 5 years."
      ],
      "notes": [],
@@ -16876,7 +16877,7 @@
       "10y": 16.86
      },
      "ter": 1.21,
-     "ter_date": "2026-11-04",
+     "ter_date": "2026-11-05",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -16932,7 +16933,7 @@
       "10y": 16.86
      },
      "ter": 2.35,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -17038,7 +17039,7 @@
       "10y": null
      },
      "ter": 1.38,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2025-08-25",
      "years": 1.2,
      "components": {},
@@ -17084,7 +17085,7 @@
       "10y": 16.86
      },
      "ter": 0.78,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2022-03-14",
      "years": 4.6,
      "components": {},
@@ -17134,7 +17135,7 @@
       "10y": null
      },
      "ter": 0.9,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2022-12-06",
      "years": 3.9,
      "components": {},
@@ -17182,7 +17183,7 @@
       "10y": 16.86
      },
      "ter": 1.09,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2022-11-28",
      "years": 3.9,
      "components": {},
@@ -17232,7 +17233,7 @@
       "10y": null
      },
      "ter": 0.89,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2025-03-17",
      "years": 1.6,
      "components": {},
@@ -17278,7 +17279,7 @@
       "10y": null
      },
      "ter": 0.92,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2022-11-25",
      "years": 3.9,
      "components": {},
@@ -17326,7 +17327,7 @@
       "10y": null
      },
      "ter": 1.98,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-08",
      "since": "2023-07-31",
      "years": 3.3,
      "components": {},
@@ -17378,7 +17379,7 @@
       "10y": null
      },
      "ter": 1.8,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2026-02-13",
      "years": 0.7,
      "components": {},
@@ -17426,7 +17427,7 @@
       "10y": null
      },
      "ter": 1.89,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2026-03-24",
      "years": 0.6,
      "components": {},
@@ -17472,7 +17473,7 @@
       "10y": null
      },
      "ter": 1.96,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2026-08-06",
      "years": 0.2,
      "components": {},
@@ -17519,7 +17520,7 @@
       "10y": null
      },
      "ter": 0.95,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2022-09-08",
      "years": 4.2,
      "components": {},
@@ -17671,7 +17672,7 @@
       "10y": null
      },
      "ter": 0.63,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2018-11-02",
      "years": 8.0,
      "components": {
@@ -17727,7 +17728,7 @@
       "10y": null
      },
      "ter": 0.63,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2019-02-14",
      "years": 7.7,
      "components": {
@@ -17839,7 +17840,7 @@
       "10y": null
      },
      "ter": 0.82,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2018-12-27",
      "years": 7.9,
      "components": {
@@ -17874,7 +17875,7 @@
      "amc": "quant",
      "isin": "INF966L01689",
      "rank": 6,
-     "score": 67.4,
+     "score": 67.0,
      "status": "ranked",
      "status_reason": null,
      "benchmark": "Nifty Smallcap 250 TRI",
@@ -17894,8 +17895,8 @@
       "5y": 13.39,
       "10y": 14.45
      },
-     "ter": 0.96,
-     "ter_date": "2026-11-05",
+     "ter": 0.97,
+     "ter_date": "2026-11-06",
      "since": "2013-01-07",
      "years": 13.8,
      "components": {
@@ -17903,14 +17904,14 @@
       "returns": 80.0,
       "risk_adjusted": 70.0,
       "downside": 25.0,
-      "cost": 27.5
+      "cost": 25.0
      },
      "reasons": [
       "Beat the category median in 59 of 60 rolling 3-year periods (98%).",
       "5-year return 17.4% a year; the median fund 14.8%.",
       "Worst fall from a peak in the last 5 years: 25.2%; the median fund fell 24.1% at worst in 5 years.",
       "Return per unit of risk 0.91 (median 0.83): 5-year return divided by volatility (19.0%).",
-      "Expense ratio 0.96% a year (median 0.82%).",
+      "Expense ratio 0.97% a year (median 0.82%).",
       "Beat its benchmark (Nifty Smallcap 250 TRI) by 4.0% a year over 5 years."
      ],
      "notes": [],
@@ -17986,7 +17987,7 @@
      "amc": "ITI",
      "isin": "INF00XX01747",
      "rank": 8,
-     "score": 55.4,
+     "score": 55.8,
      "status": "ranked",
      "status_reason": null,
      "benchmark": "Nifty Smallcap 250 TRI",
@@ -18007,7 +18008,7 @@
       "10y": null
      },
      "ter": 0.84,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2020-02-19",
      "years": 6.7,
      "components": {
@@ -18015,7 +18016,7 @@
       "returns": 85.0,
       "risk_adjusted": 75.0,
       "downside": 5.0,
-      "cost": 40.0
+      "cost": 42.5
      },
      "reasons": [
       "Beat the category median in 25 of 45 rolling 3-year periods (56%).",
@@ -18042,7 +18043,7 @@
      "amc": "HDFC",
      "isin": "INF179KA1RW5",
      "rank": 9,
-     "score": 51.1,
+     "score": 51.5,
      "status": "ranked",
      "status_reason": null,
      "benchmark": "BSE 250 Smallcap TRI",
@@ -18062,8 +18063,8 @@
       "5y": 12.56,
       "10y": 14.26
      },
-     "ter": 0.8,
-     "ter_date": "2026-11-03",
+     "ter": 0.79,
+     "ter_date": "2026-11-04",
      "since": "2014-06-30",
      "years": 12.4,
      "components": {
@@ -18071,14 +18072,14 @@
       "returns": 17.5,
       "risk_adjusted": 45.0,
       "downside": 80.0,
-      "cost": 57.5
+      "cost": 60.0
      },
      "reasons": [
       "Beat the category median in 36 of 60 rolling 3-year periods (60%).",
       "5-year return 13.3% a year; the median fund 14.8%.",
       "Worst fall from a peak in the last 5 years: 22.6%; the median fund fell 24.1% at worst in 5 years.",
       "Return per unit of risk 0.80 (median 0.83): 5-year return divided by volatility (16.7%).",
-      "Expense ratio 0.80% a year (median 0.82%).",
+      "Expense ratio 0.79% a year (median 0.82%).",
       "Beat its benchmark (BSE 250 Smallcap TRI) by 0.8% a year over 5 years."
      ],
      "notes": [],
@@ -18093,67 +18094,11 @@
      }
     },
     {
-     "code": 119212,
-     "name": "DSP Small Cap Fund",
-     "amc": "DSP",
-     "isin": "INF740K01QD1",
-     "rank": 10,
-     "score": 46.0,
-     "status": "ranked",
-     "status_reason": null,
-     "benchmark": "BSE 250 Smallcap TRI",
-     "riskometer": "Very High",
-     "aum_cr": 21097.8,
-     "nav": 246.897,
-     "nav_date": "2026-11-05",
-     "returns": {
-      "1y": 13.16,
-      "3y": 16.97,
-      "5y": 16.33,
-      "10y": 16.42
-     },
-     "benchmark_returns": {
-      "1y": -0.0,
-      "3y": 12.05,
-      "5y": 12.56,
-      "10y": 14.26
-     },
-     "ter": 0.83,
-     "ter_date": "2026-11-05",
-     "since": "2013-01-02",
-     "years": 13.8,
-     "components": {
-      "consistency": 23.3,
-      "returns": 72.5,
-      "risk_adjusted": 55.0,
-      "downside": 45.0,
-      "cost": 45.0
-     },
-     "reasons": [
-      "Beat the category median in 14 of 60 rolling 3-year periods (23%).",
-      "5-year return 16.3% a year; the median fund 14.8%.",
-      "Worst fall from a peak in the last 5 years: 24.1%; the median fund fell 24.1% at worst in 5 years.",
-      "Return per unit of risk 0.84 (median 0.83): 5-year return divided by volatility (19.4%).",
-      "Expense ratio 0.83% a year (median 0.82%).",
-      "Beat its benchmark (BSE 250 Smallcap TRI) by 3.8% a year over 5 years."
-     ],
-     "notes": [],
-     "group": "smallcap",
-     "volatility": 19.37,
-     "max_drawdown": -24.14,
-     "return_per_risk": 0.84,
-     "consistency": {
-      "beat": 14,
-      "of": 60,
-      "pct": 23.3
-     }
-    },
-    {
      "code": 146130,
      "name": "Canara Robeco Small Cap Fund",
      "amc": "Canara Robeco",
      "isin": "INF760K01JC6",
-     "rank": 11,
+     "rank": 10,
      "score": 45.6,
      "status": "ranked",
      "status_reason": null,
@@ -18175,7 +18120,7 @@
       "10y": null
      },
      "ter": 0.74,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2019-02-19",
      "years": 7.7,
      "components": {
@@ -18205,12 +18150,68 @@
      }
     },
     {
+     "code": 119212,
+     "name": "DSP Small Cap Fund",
+     "amc": "DSP",
+     "isin": "INF740K01QD1",
+     "rank": 11,
+     "score": 45.6,
+     "status": "ranked",
+     "status_reason": null,
+     "benchmark": "BSE 250 Smallcap TRI",
+     "riskometer": "Very High",
+     "aum_cr": 21097.8,
+     "nav": 246.897,
+     "nav_date": "2026-11-05",
+     "returns": {
+      "1y": 13.16,
+      "3y": 16.97,
+      "5y": 16.33,
+      "10y": 16.42
+     },
+     "benchmark_returns": {
+      "1y": -0.0,
+      "3y": 12.05,
+      "5y": 12.56,
+      "10y": 14.26
+     },
+     "ter": 0.84,
+     "ter_date": "2026-11-06",
+     "since": "2013-01-02",
+     "years": 13.8,
+     "components": {
+      "consistency": 23.3,
+      "returns": 72.5,
+      "risk_adjusted": 55.0,
+      "downside": 45.0,
+      "cost": 42.5
+     },
+     "reasons": [
+      "Beat the category median in 14 of 60 rolling 3-year periods (23%).",
+      "5-year return 16.3% a year; the median fund 14.8%.",
+      "Worst fall from a peak in the last 5 years: 24.1%; the median fund fell 24.1% at worst in 5 years.",
+      "Return per unit of risk 0.84 (median 0.83): 5-year return divided by volatility (19.4%).",
+      "Expense ratio 0.84% a year (median 0.82%).",
+      "Beat its benchmark (BSE 250 Smallcap TRI) by 3.8% a year over 5 years."
+     ],
+     "notes": [],
+     "group": "smallcap",
+     "volatility": 19.37,
+     "max_drawdown": -24.14,
+     "return_per_risk": 0.84,
+     "consistency": {
+      "beat": 14,
+      "of": 60,
+      "pct": 23.3
+     }
+    },
+    {
      "code": 119589,
      "name": "Sundaram Small Cap Fund",
      "amc": "Sundaram",
      "isin": "INF903J01NK9",
      "rank": 12,
-     "score": 40.4,
+     "score": 40.7,
      "status": "ranked",
      "status_reason": null,
      "benchmark": "Nifty Smallcap 250 TRI",
@@ -18231,7 +18232,7 @@
       "10y": 14.45
      },
      "ter": 0.96,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -18239,7 +18240,7 @@
       "returns": 55.0,
       "risk_adjusted": 50.0,
       "downside": 55.0,
-      "cost": 27.5
+      "cost": 30.0
      },
      "reasons": [
       "Beat the category median in 14 of 60 rolling 3-year periods (23%).",
@@ -18287,7 +18288,7 @@
       "10y": null
      },
      "ter": 0.52,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2018-11-13",
      "years": 8.0,
      "components": {
@@ -18343,7 +18344,7 @@
       "10y": 14.26
      },
      "ter": 1.03,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2014-06-17",
      "years": 12.4,
      "components": {
@@ -18399,7 +18400,7 @@
       "10y": 14.45
      },
      "ter": 1.06,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2013-01-01",
      "years": 13.8,
      "components": {
@@ -18434,7 +18435,7 @@
      "amc": "SBI",
      "isin": "INF200K01T51",
      "rank": 16,
-     "score": 33.9,
+     "score": 33.5,
      "status": "ranked",
      "status_reason": null,
      "benchmark": "BSE 250 Smallcap TRI",
@@ -18455,7 +18456,7 @@
       "10y": 14.26
      },
      "ter": 0.8,
-     "ter_date": "2026-11-04",
+     "ter_date": "2026-11-05",
      "since": "2013-11-18",
      "years": 13.0,
      "components": {
@@ -18463,7 +18464,7 @@
       "returns": 17.5,
       "risk_adjusted": 40.0,
       "downside": 85.0,
-      "cost": 57.5
+      "cost": 55.0
      },
      "reasons": [
       "Beat the category median in 2 of 60 rolling 3-year periods (3%).",
@@ -18623,7 +18624,7 @@
       "10y": null
      },
      "ter": 1.05,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2020-12-23",
      "years": 5.9,
      "components": {
@@ -18679,7 +18680,7 @@
       "10y": null
      },
      "ter": 0.93,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2021-08-02",
      "years": 5.3,
      "components": {
@@ -18735,7 +18736,7 @@
       "10y": 14.26
      },
      "ter": 1.07,
-     "ter_date": "2026-11-04",
+     "ter_date": "2026-11-05",
      "since": "2013-01-07",
      "years": 13.8,
      "components": {
@@ -18791,7 +18792,7 @@
       "10y": null
      },
      "ter": 1.13,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2026-03-20",
      "years": 0.6,
      "components": {},
@@ -18837,7 +18838,7 @@
       "10y": null
      },
      "ter": 1.01,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2025-07-22",
      "years": 1.3,
      "components": {},
@@ -18883,7 +18884,7 @@
       "10y": null
      },
      "ter": 1.21,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2023-11-01",
      "years": 3.0,
      "components": {},
@@ -18929,14 +18930,14 @@
       "5y": null,
       "10y": null
      },
-     "ter": 1.0,
-     "ter_date": "2026-11-05",
+     "ter": 1.01,
+     "ter_date": "2026-11-06",
      "since": "2026-02-02",
      "years": 0.8,
      "components": {},
      "reasons": [
       "Worst fall from a peak since its direct plan began 0.8 years ago: 10.8%; the median fund fell 24.1% at worst in 5 years.",
-      "Expense ratio 1.00% a year (median 0.82%)."
+      "Expense ratio 1.01% a year (median 0.82%)."
      ],
      "notes": [],
      "group": "smallcap",
@@ -18976,7 +18977,7 @@
       "10y": 14.45
      },
      "ter": 0.76,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2022-11-28",
      "years": 3.9,
      "components": {},
@@ -19026,7 +19027,7 @@
       "10y": null
      },
      "ter": 0.84,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2025-11-28",
      "years": 0.9,
      "components": {},
@@ -19072,7 +19073,7 @@
       "10y": null
      },
      "ter": 1.0,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2024-06-24",
      "years": 2.4,
      "components": {},
@@ -19118,7 +19119,7 @@
       "10y": null
      },
      "ter": 1.3,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-08",
      "since": "2023-07-31",
      "years": 3.3,
      "components": {},
@@ -19167,8 +19168,8 @@
       "5y": null,
       "10y": null
      },
-     "ter": 0.9,
-     "ter_date": "2026-11-05",
+     "ter": 0.91,
+     "ter_date": "2026-11-06",
      "since": "2022-12-14",
      "years": 3.9,
      "components": {},
@@ -19176,7 +19177,7 @@
       "Beat the category median in 11 of 11 rolling 3-year periods (100%).",
       "3-year return 18.8% a year; the median fund 14.1%.",
       "Worst fall from a peak since its direct plan began 3.9 years ago: 26.0%; the median fund fell 24.1% at worst in 5 years.",
-      "Expense ratio 0.90% a year (median 0.82%)."
+      "Expense ratio 0.91% a year (median 0.82%)."
      ],
      "notes": [],
      "group": "smallcap",
@@ -19216,7 +19217,7 @@
       "10y": null
      },
      "ter": 0.67,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2025-02-03",
      "years": 1.8,
      "components": {},
@@ -19262,7 +19263,7 @@
       "10y": null
      },
      "ter": 0.85,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2023-12-29",
      "years": 2.9,
      "components": {},
@@ -19308,7 +19309,7 @@
       "10y": null
      },
      "ter": 0.83,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2023-11-03",
      "years": 3.0,
      "components": {},
@@ -19357,7 +19358,7 @@
       "10y": null
      },
      "ter": 1.92,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2025-12-09",
      "years": 0.9,
      "components": {},
@@ -19405,7 +19406,7 @@
       "10y": null
      },
      "ter": 1.46,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2024-11-05",
      "years": 2.0,
      "components": {},
@@ -19451,7 +19452,7 @@
       "10y": null
      },
      "ter": 1.67,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2026-03-30",
      "years": 0.6,
      "components": {},
@@ -19547,7 +19548,7 @@
       "10y": 13.51
      },
      "ter": 0.84,
-     "ter_date": "2026-11-03",
+     "ter_date": "2026-11-04",
      "since": "2013-01-01",
      "years": 13.8,
      "components": {
@@ -19659,7 +19660,7 @@
       "10y": null
      },
      "ter": 0.9,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2020-11-19",
      "years": 6.0,
      "components": {
@@ -19715,7 +19716,7 @@
       "10y": null
      },
      "ter": 0.67,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2020-10-01",
      "years": 6.1,
      "components": {
@@ -19771,7 +19772,7 @@
       "10y": null
      },
      "ter": 0.79,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2021-05-18",
      "years": 5.5,
      "components": {
@@ -19883,7 +19884,7 @@
       "10y": null
      },
      "ter": 1.06,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2020-07-29",
      "years": 6.3,
      "components": {
@@ -19994,8 +19995,8 @@
       "5y": 9.52,
       "10y": 13.53
      },
-     "ter": 0.8,
-     "ter_date": "2026-11-04",
+     "ter": 0.83,
+     "ter_date": "2026-11-05",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -20010,7 +20011,7 @@
       "5-year return 11.0% a year; the median fund 11.1%.",
       "Worst fall from a peak in the last 5 years: 22.5%; the median fund fell 19.6% at worst in 5 years.",
       "Return per unit of risk 0.82 (median 0.76): 5-year return divided by volatility (13.5%).",
-      "Expense ratio 0.80% a year (median 1.06%).",
+      "Expense ratio 0.83% a year (median 1.06%).",
       "Beat its benchmark (BSE 500 TRI) by 1.5% a year over 5 years."
      ],
      "notes": [],
@@ -20051,7 +20052,7 @@
       "10y": 13.51
      },
      "ter": 1.86,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2013-01-07",
      "years": 13.8,
      "components": {
@@ -20162,8 +20163,8 @@
       "5y": 9.67,
       "10y": 13.51
      },
-     "ter": 1.02,
-     "ter_date": "2026-11-04",
+     "ter": 1.01,
+     "ter_date": "2026-11-05",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -20178,7 +20179,7 @@
       "5-year return 10.6% a year; the median fund 11.1%.",
       "Worst fall from a peak in the last 5 years: 17.1%; the median fund fell 19.6% at worst in 5 years.",
       "Return per unit of risk 0.78 (median 0.76): 5-year return divided by volatility (13.6%).",
-      "Expense ratio 1.02% a year (median 1.06%).",
+      "Expense ratio 1.01% a year (median 1.06%).",
       "Beat its benchmark (Nifty 500 TRI) by 0.9% a year over 5 years."
      ],
      "notes": [],
@@ -20219,7 +20220,7 @@
       "10y": 13.53
      },
      "ter": 1.25,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -20277,7 +20278,7 @@
       "10y": null
      },
      "ter": 0.92,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2019-12-06",
      "years": 6.9,
      "components": {
@@ -20333,7 +20334,7 @@
       "10y": 13.51
      },
      "ter": 1.17,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2013-01-01",
      "years": 13.8,
      "components": {
@@ -20388,8 +20389,8 @@
       "5y": 9.67,
       "10y": 13.51
      },
-     "ter": 1.11,
-     "ter_date": "2026-11-05",
+     "ter": 1.1,
+     "ter_date": "2026-11-06",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -20404,7 +20405,7 @@
       "5-year return 11.1% a year; the median fund 11.1%.",
       "Worst fall from a peak in the last 5 years: 20.7%; the median fund fell 19.6% at worst in 5 years.",
       "Return per unit of risk 0.73 (median 0.76): 5-year return divided by volatility (15.2%).",
-      "Expense ratio 1.11% a year (median 1.06%).",
+      "Expense ratio 1.10% a year (median 1.06%).",
       "Beat its benchmark (Nifty 500 TRI) by 1.4% a year over 5 years."
      ],
      "notes": [],
@@ -20500,8 +20501,8 @@
       "5y": 9.67,
       "10y": null
      },
-     "ter": 1.12,
-     "ter_date": "2026-11-05",
+     "ter": 1.11,
+     "ter_date": "2026-11-06",
      "since": "2021-08-26",
      "years": 5.2,
      "components": {
@@ -20516,7 +20517,7 @@
       "5-year return 10.0% a year; the median fund 11.1%.",
       "Worst fall from a peak in the last 5 years: 19.3%; the median fund fell 19.6% at worst in 5 years.",
       "Return per unit of risk 0.70 (median 0.76): 5-year return divided by volatility (14.1%).",
-      "Expense ratio 1.12% a year (median 1.06%).",
+      "Expense ratio 1.11% a year (median 1.06%).",
       "Beat its benchmark (Nifty 500 TRI) by 0.3% a year over 5 years."
      ],
      "notes": [],
@@ -20536,7 +20537,7 @@
      "amc": "Union",
      "isin": "INF582M01FS4",
      "rank": 19,
-     "score": 26.1,
+     "score": 26.5,
      "status": "ranked",
      "status_reason": null,
      "benchmark": "BSE 500 TRI",
@@ -20557,7 +20558,7 @@
       "10y": null
      },
      "ter": 1.55,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2019-08-13",
      "years": 7.2,
      "components": {
@@ -20565,7 +20566,7 @@
       "returns": 21.4,
       "risk_adjusted": 33.3,
       "downside": 66.7,
-      "cost": 7.1
+      "cost": 9.5
      },
      "reasons": [
       "Beat the category median in 7 of 51 rolling 3-year periods (14%).",
@@ -20614,8 +20615,8 @@
       "5y": 9.67,
       "10y": null
      },
-     "ter": 0.98,
-     "ter_date": "2026-11-05",
+     "ter": 0.97,
+     "ter_date": "2026-11-06",
      "since": "2019-05-15",
      "years": 7.5,
      "components": {
@@ -20630,7 +20631,7 @@
       "5-year return 6.2% a year; the median fund 11.1%.",
       "Worst fall from a peak in the last 5 years: 21.0%; the median fund fell 19.6% at worst in 5 years.",
       "Return per unit of risk 0.44 (median 0.76): 5-year return divided by volatility (14.0%).",
-      "Expense ratio 0.98% a year (median 1.06%).",
+      "Expense ratio 0.97% a year (median 1.06%).",
       "Trailed its benchmark (Nifty 500 TRI) by 3.5% a year over 5 years."
      ],
      "notes": [],
@@ -20650,7 +20651,7 @@
      "amc": "Motilal Oswal",
      "isin": "INF247L01189",
      "rank": 21,
-     "score": 15.4,
+     "score": 15.1,
      "status": "ranked",
      "status_reason": null,
      "benchmark": "Nifty 500 TRI",
@@ -20670,8 +20671,8 @@
       "5y": 9.67,
       "10y": 13.51
      },
-     "ter": 1.55,
-     "ter_date": "2026-11-05",
+     "ter": 1.56,
+     "ter_date": "2026-11-06",
      "since": "2013-05-15",
      "years": 13.5,
      "components": {
@@ -20679,14 +20680,14 @@
       "returns": 54.8,
       "risk_adjusted": 9.5,
       "downside": 0.0,
-      "cost": 7.1
+      "cost": 4.8
      },
      "reasons": [
       "Beat the category median in 3 of 60 rolling 3-year periods (5%).",
       "5-year return 10.9% a year; the median fund 11.1%.",
       "Worst fall from a peak in the last 5 years: 31.2%; the median fund fell 19.6% at worst in 5 years.",
       "Return per unit of risk 0.63 (median 0.76): 5-year return divided by volatility (17.3%).",
-      "Expense ratio 1.55% a year (median 1.06%).",
+      "Expense ratio 1.56% a year (median 1.06%).",
       "Beat its benchmark (Nifty 500 TRI) by 1.2% a year over 5 years."
      ],
      "notes": [],
@@ -20782,8 +20783,8 @@
       "5y": 9.67,
       "10y": null
      },
-     "ter": 1.21,
-     "ter_date": "2026-11-05",
+     "ter": 1.2,
+     "ter_date": "2026-11-06",
      "since": "2022-03-14",
      "years": 4.6,
      "components": {},
@@ -20792,7 +20793,7 @@
       "5-year return 9.0% a year; the median fund 11.1%.",
       "Worst fall from a peak since its direct plan began 4.6 years ago: 22.5%; the median fund fell 19.6% at worst in 5 years.",
       "Return per unit of risk 0.56 (median 0.76): 5-year return divided by volatility (16.0%).",
-      "Expense ratio 1.21% a year (median 1.06%).",
+      "Expense ratio 1.20% a year (median 1.06%).",
       "Trailed its benchmark (Nifty 500 TRI) by 0.7% a year over 5 years."
      ],
      "notes": [],
@@ -20833,7 +20834,7 @@
       "10y": null
      },
      "ter": 0.85,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2022-08-03",
      "years": 4.3,
      "components": {},
@@ -20881,7 +20882,7 @@
       "10y": null
      },
      "ter": 0.94,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2023-06-21",
      "years": 3.4,
      "components": {},
@@ -20929,7 +20930,7 @@
       "10y": null
      },
      "ter": 2.24,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-08",
      "since": "2023-07-31",
      "years": 3.3,
      "components": {},
@@ -20981,7 +20982,7 @@
       "10y": null
      },
      "ter": 1.19,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2024-01-25",
      "years": 2.8,
      "components": {},
@@ -21027,7 +21028,7 @@
       "10y": 13.51
      },
      "ter": 1.32,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2022-01-03",
      "years": 4.8,
      "components": {},
@@ -21160,7 +21161,7 @@
      "amc": "Axis",
      "isin": "INF846K010C0",
      "rank": 2,
-     "score": 87.7,
+     "score": 87.2,
      "status": "ranked",
      "status_reason": null,
      "benchmark": "Nifty 500 TRI",
@@ -21189,7 +21190,7 @@
       "returns": 100.0,
       "risk_adjusted": 93.3,
       "downside": 26.7,
-      "cost": 100.0
+      "cost": 96.7
      },
      "reasons": [
       "Beat the category median in 26 of 26 rolling 3-year periods (100%).",
@@ -21349,7 +21350,7 @@
       "10y": 13.51
      },
      "ter": 1.09,
-     "ter_date": "2026-11-03",
+     "ter_date": "2026-11-04",
      "since": "2013-01-01",
      "years": 13.8,
      "components": {
@@ -21404,8 +21405,8 @@
       "5y": 9.67,
       "10y": 13.51
      },
-     "ter": 1.05,
-     "ter_date": "2026-11-05",
+     "ter": 1.04,
+     "ter_date": "2026-11-06",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -21420,7 +21421,7 @@
       "5-year return 12.9% a year; the median fund 12.3%.",
       "Worst fall from a peak in the last 5 years: 20.9%; the median fund fell 18.2% at worst in 5 years.",
       "Return per unit of risk 0.89 (median 0.81): 5-year return divided by volatility (14.5%).",
-      "Expense ratio 1.05% a year (median 1.20%).",
+      "Expense ratio 1.04% a year (median 1.20%).",
       "Beat its benchmark (Nifty 500 TRI) by 3.2% a year over 5 years."
      ],
      "notes": [],
@@ -21440,7 +21441,7 @@
      "amc": "Canara Robeco",
      "isin": "INF760K01JW4",
      "rank": 7,
-     "score": 55.2,
+     "score": 55.7,
      "status": "ranked",
      "status_reason": null,
      "benchmark": "BSE 500 TRI",
@@ -21460,8 +21461,8 @@
       "5y": 9.52,
       "10y": null
      },
-     "ter": 0.86,
-     "ter_date": "2026-11-05",
+     "ter": 0.85,
+     "ter_date": "2026-11-06",
      "since": "2021-09-06",
      "years": 5.2,
      "components": {
@@ -21469,14 +21470,14 @@
       "returns": 40.0,
       "risk_adjusted": 83.3,
       "downside": 33.3,
-      "cost": 93.3
+      "cost": 96.7
      },
      "reasons": [
       "Beat the category median in 10 of 26 rolling 3-year periods (38%).",
       "5-year return 12.7% a year; the median fund 12.3%.",
       "Worst fall from a peak in the last 5 years: 19.0%; the median fund fell 18.2% at worst in 5 years.",
       "Return per unit of risk 0.90 (median 0.81): 5-year return divided by volatility (14.1%).",
-      "Expense ratio 0.86% a year (median 1.20%).",
+      "Expense ratio 0.85% a year (median 1.20%).",
       "Beat its benchmark (BSE 500 TRI) by 3.1% a year over 5 years."
      ],
      "notes": [],
@@ -21517,7 +21518,7 @@
       "10y": 13.51
      },
      "ter": 1.12,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2013-01-01",
      "years": 13.8,
      "components": {
@@ -21573,7 +21574,7 @@
       "10y": 13.51
      },
      "ter": 1.23,
-     "ter_date": "2026-11-04",
+     "ter_date": "2026-11-05",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -21629,7 +21630,7 @@
       "10y": 13.53
      },
      "ter": 1.55,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -21685,7 +21686,7 @@
       "10y": null
      },
      "ter": 1.5,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2018-12-12",
      "years": 7.9,
      "components": {
@@ -21743,7 +21744,7 @@
       "10y": 13.51
      },
      "ter": 1.35,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -21799,7 +21800,7 @@
       "10y": null
      },
      "ter": 1.31,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2021-06-17",
      "years": 5.4,
      "components": {
@@ -21857,7 +21858,7 @@
       "10y": 13.51
      },
      "ter": 1.53,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2015-09-09",
      "years": 11.2,
      "components": {
@@ -21915,7 +21916,7 @@
       "10y": 13.53
      },
      "ter": 1.17,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2006-04-03",
      "years": 20.6,
      "components": {
@@ -21970,8 +21971,8 @@
       "5y": 9.67,
       "10y": 13.51
      },
-     "ter": 1.75,
-     "ter_date": "2026-11-05",
+     "ter": 1.74,
+     "ter_date": "2026-11-06",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -21986,7 +21987,7 @@
       "5-year return 7.2% a year; the median fund 12.3%.",
       "Worst fall from a peak in the last 5 years: 16.3%; the median fund fell 18.2% at worst in 5 years.",
       "Return per unit of risk 0.53 (median 0.81): 5-year return divided by volatility (13.6%).",
-      "Expense ratio 1.75% a year (median 1.20%).",
+      "Expense ratio 1.74% a year (median 1.20%).",
       "Trailed its benchmark (Nifty 500 TRI) by 2.4% a year over 5 years."
      ],
      "notes": [],
@@ -22027,7 +22028,7 @@
       "10y": null
      },
      "ter": 2.95,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2026-09-22",
      "years": 0.1,
      "components": {},
@@ -22074,7 +22075,7 @@
       "10y": null
      },
      "ter": 1.38,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2023-06-09",
      "years": 3.4,
      "components": {},
@@ -22122,7 +22123,7 @@
       "10y": 13.51
      },
      "ter": 0.88,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2022-11-28",
      "years": 3.9,
      "components": {},
@@ -22172,7 +22173,7 @@
       "10y": null
      },
      "ter": 1.89,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-08",
      "since": "2023-07-31",
      "years": 3.3,
      "components": {},
@@ -22223,14 +22224,14 @@
       "5y": null,
       "10y": null
      },
-     "ter": 1.01,
-     "ter_date": "2026-11-05",
+     "ter": 1.0,
+     "ter_date": "2026-11-06",
      "since": "2025-03-05",
      "years": 1.7,
      "components": {},
      "reasons": [
       "Worst fall from a peak since its direct plan began 1.7 years ago: 11.5%; the median fund fell 18.2% at worst in 5 years.",
-      "Expense ratio 1.01% a year (median 1.20%)."
+      "Expense ratio 1.00% a year (median 1.20%)."
      ],
      "notes": [],
      "group": "value",
@@ -22270,7 +22271,7 @@
       "10y": null
      },
      "ter": 1.35,
-     "ter_date": "2026-11-04",
+     "ter_date": "2026-11-05",
      "since": "2026-08-03",
      "years": 0.3,
      "components": {},
@@ -22317,7 +22318,7 @@
       "10y": null
      },
      "ter": 0.95,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2021-12-01",
      "years": 4.9,
      "components": {},
@@ -22412,8 +22413,8 @@
       "5y": 9.67,
       "10y": 13.51
      },
-     "ter": 0.89,
-     "ter_date": "2026-11-05",
+     "ter": 0.88,
+     "ter_date": "2026-11-06",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -22428,7 +22429,7 @@
       "5-year return 11.9% a year; the median fund 10.8%.",
       "Worst fall from a peak in the last 5 years: 16.9%; the median fund fell 18.4% at worst in 5 years.",
       "Return per unit of risk 0.81 (median 0.73): 5-year return divided by volatility (14.6%).",
-      "Expense ratio 0.89% a year (median 1.08%).",
+      "Expense ratio 0.88% a year (median 1.08%).",
       "Beat its benchmark (Nifty 500 TRI) by 2.2% a year over 5 years."
      ],
      "notes": [],
@@ -22469,7 +22470,7 @@
       "10y": null
      },
      "ter": 0.65,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-08",
      "since": "2019-07-26",
      "years": 7.3,
      "components": {
@@ -22499,67 +22500,11 @@
      }
     },
     {
-     "code": 119060,
-     "name": "HDFC ELSS - Tax Saver Fund",
-     "amc": "HDFC",
-     "isin": "INF179K01YS4",
-     "rank": 3,
-     "score": 79.2,
-     "status": "ranked",
-     "status_reason": null,
-     "benchmark": "Nifty 500 TRI",
-     "riskometer": "Very High",
-     "aum_cr": 15914.7,
-     "nav": 1512.195,
-     "nav_date": "2026-11-05",
-     "returns": {
-      "1y": -3.75,
-      "3y": 14.3,
-      "5y": 13.91,
-      "10y": 13.61
-     },
-     "benchmark_returns": {
-      "1y": -1.02,
-      "3y": 11.97,
-      "5y": 9.67,
-      "10y": 13.51
-     },
-     "ter": 1.2,
-     "ter_date": "2026-11-03",
-     "since": "2013-01-01",
-     "years": 13.8,
-     "components": {
-      "consistency": 78.3,
-      "returns": 82.8,
-      "risk_adjusted": 100.0,
-      "downside": 96.6,
-      "cost": 31.0
-     },
-     "reasons": [
-      "Beat the category median in 47 of 60 rolling 3-year periods (78%).",
-      "5-year return 13.9% a year; the median fund 10.8%.",
-      "Worst fall from a peak in the last 5 years: 14.8%; the median fund fell 18.4% at worst in 5 years.",
-      "Return per unit of risk 1.06 (median 0.73): 5-year return divided by volatility (13.1%).",
-      "Expense ratio 1.20% a year (median 1.08%).",
-      "Beat its benchmark (Nifty 500 TRI) by 4.2% a year over 5 years."
-     ],
-     "notes": [],
-     "group": "elss",
-     "volatility": 13.08,
-     "max_drawdown": -14.81,
-     "return_per_risk": 1.06,
-     "consistency": {
-      "beat": 47,
-      "of": 60,
-      "pct": 78.3
-     }
-    },
-    {
      "code": 119723,
      "name": "SBI ELSS Tax Saver Fund",
      "amc": "SBI",
      "isin": "INF200K01UM9",
-     "rank": 4,
+     "rank": 3,
      "score": 78.9,
      "status": "ranked",
      "status_reason": null,
@@ -22580,8 +22525,8 @@
       "5y": 9.52,
       "10y": 13.53
      },
-     "ter": 1.22,
-     "ter_date": "2026-11-04",
+     "ter": 1.25,
+     "ter_date": "2026-11-05",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -22596,7 +22541,7 @@
       "5-year return 14.0% a year; the median fund 10.8%.",
       "Worst fall from a peak in the last 5 years: 16.7%; the median fund fell 18.4% at worst in 5 years.",
       "Return per unit of risk 0.95 (median 0.73): 5-year return divided by volatility (14.7%).",
-      "Expense ratio 1.22% a year (median 1.08%).",
+      "Expense ratio 1.25% a year (median 1.08%).",
       "Beat its benchmark (BSE 500 TRI) by 4.5% a year over 5 years."
      ],
      "notes": [],
@@ -22608,6 +22553,62 @@
       "beat": 53,
       "of": 60,
       "pct": 88.3
+     }
+    },
+    {
+     "code": 119060,
+     "name": "HDFC ELSS - Tax Saver Fund",
+     "amc": "HDFC",
+     "isin": "INF179K01YS4",
+     "rank": 4,
+     "score": 78.9,
+     "status": "ranked",
+     "status_reason": null,
+     "benchmark": "Nifty 500 TRI",
+     "riskometer": "Very High",
+     "aum_cr": 15914.7,
+     "nav": 1512.195,
+     "nav_date": "2026-11-05",
+     "returns": {
+      "1y": -3.75,
+      "3y": 14.3,
+      "5y": 13.91,
+      "10y": 13.61
+     },
+     "benchmark_returns": {
+      "1y": -1.02,
+      "3y": 11.97,
+      "5y": 9.67,
+      "10y": 13.51
+     },
+     "ter": 1.2,
+     "ter_date": "2026-11-04",
+     "since": "2013-01-01",
+     "years": 13.8,
+     "components": {
+      "consistency": 78.3,
+      "returns": 82.8,
+      "risk_adjusted": 100.0,
+      "downside": 96.6,
+      "cost": 29.3
+     },
+     "reasons": [
+      "Beat the category median in 47 of 60 rolling 3-year periods (78%).",
+      "5-year return 13.9% a year; the median fund 10.8%.",
+      "Worst fall from a peak in the last 5 years: 14.8%; the median fund fell 18.4% at worst in 5 years.",
+      "Return per unit of risk 1.06 (median 0.73): 5-year return divided by volatility (13.1%).",
+      "Expense ratio 1.20% a year (median 1.08%).",
+      "Beat its benchmark (Nifty 500 TRI) by 4.2% a year over 5 years."
+     ],
+     "notes": [],
+     "group": "elss",
+     "volatility": 13.08,
+     "max_drawdown": -14.81,
+     "return_per_risk": 1.06,
+     "consistency": {
+      "beat": 47,
+      "of": 60,
+      "pct": 78.3
      }
     },
     {
@@ -22693,7 +22694,7 @@
       "10y": 13.51
      },
      "ter": 0.92,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2015-01-22",
      "years": 11.8,
      "components": {
@@ -22749,7 +22750,7 @@
       "10y": 13.53
      },
      "ter": 1.31,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -22807,7 +22808,7 @@
       "10y": 13.51
      },
      "ter": 1.29,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2013-01-07",
      "years": 13.8,
      "components": {
@@ -22954,7 +22955,7 @@
      "amc": "Mirae Asset",
      "isin": "INF769K01DM9",
      "rank": 11,
-     "score": 59.7,
+     "score": 59.9,
      "status": "ranked",
      "status_reason": null,
      "benchmark": "Nifty 500 TRI",
@@ -22974,8 +22975,8 @@
       "5y": 9.67,
       "10y": 13.51
      },
-     "ter": 1.02,
-     "ter_date": "2026-11-05",
+     "ter": 1.01,
+     "ter_date": "2026-11-06",
      "since": "2015-12-29",
      "years": 10.9,
      "components": {
@@ -22983,14 +22984,14 @@
       "returns": 58.6,
       "risk_adjusted": 46.6,
       "downside": 69.0,
-      "cost": 62.1
+      "cost": 63.8
      },
      "reasons": [
       "Beat the category median in 38 of 60 rolling 3-year periods (63%).",
       "5-year return 10.4% a year; the median fund 10.8%.",
       "Worst fall from a peak in the last 5 years: 17.7%; the median fund fell 18.4% at worst in 5 years.",
       "Return per unit of risk 0.72 (median 0.73): 5-year return divided by volatility (14.4%).",
-      "Expense ratio 1.02% a year (median 1.08%).",
+      "Expense ratio 1.01% a year (median 1.08%).",
       "Beat its benchmark (Nifty 500 TRI) by 0.7% a year over 5 years."
      ],
      "notes": [],
@@ -23031,7 +23032,7 @@
       "10y": 13.51
      },
      "ter": 1.14,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2013-01-01",
      "years": 13.8,
      "components": {
@@ -23087,7 +23088,7 @@
       "10y": null
      },
      "ter": 0.93,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2019-10-25",
      "years": 7.0,
      "components": {
@@ -23145,7 +23146,7 @@
       "10y": 13.53
      },
      "ter": 1.16,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -23201,7 +23202,7 @@
       "10y": 13.51
      },
      "ter": 0.87,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2014-10-14",
      "years": 12.1,
      "components": {
@@ -23257,7 +23258,7 @@
       "10y": 13.51
      },
      "ter": 0.93,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2013-01-24",
      "years": 13.8,
      "components": {
@@ -23315,7 +23316,7 @@
       "10y": 13.53
      },
      "ter": 0.73,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -23371,7 +23372,7 @@
       "10y": 13.51
      },
      "ter": 1.03,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2015-12-14",
      "years": 10.9,
      "components": {
@@ -23427,7 +23428,7 @@
       "10y": 13.53
      },
      "ter": 0.97,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2008-12-31",
      "years": 17.8,
      "components": {
@@ -23485,7 +23486,7 @@
       "10y": 13.53
      },
      "ter": 2.05,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -23542,8 +23543,8 @@
       "5y": 9.67,
       "10y": 13.51
      },
-     "ter": 1.05,
-     "ter_date": "2026-11-05",
+     "ter": 1.06,
+     "ter_date": "2026-11-06",
      "since": "2016-10-19",
      "years": 10.0,
      "components": {
@@ -23558,7 +23559,7 @@
       "5-year return 9.3% a year; the median fund 10.8%.",
       "Worst fall from a peak in the last 5 years: 17.6%; the median fund fell 18.4% at worst in 5 years.",
       "Return per unit of risk 0.67 (median 0.73): 5-year return divided by volatility (13.8%).",
-      "Expense ratio 1.05% a year (median 1.08%).",
+      "Expense ratio 1.06% a year (median 1.08%).",
       "Trailed its benchmark (Nifty 500 TRI) by 0.3% a year over 5 years."
      ],
      "notes": [],
@@ -23599,7 +23600,7 @@
       "10y": 13.53
      },
      "ter": 1.66,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -23634,7 +23635,7 @@
      "amc": "ICICI Prudential",
      "isin": "INF109K01Y31",
      "rank": 23,
-     "score": 33.6,
+     "score": 33.3,
      "status": "ranked",
      "status_reason": null,
      "benchmark": "Nifty 500 TRI",
@@ -23663,7 +23664,7 @@
       "returns": 34.5,
       "risk_adjusted": 34.5,
       "downside": 75.9,
-      "cost": 25.9
+      "cost": 24.1
      },
      "reasons": [
       "Beat the category median in 9 of 60 rolling 3-year periods (15%).",
@@ -23690,7 +23691,7 @@
      "amc": "Invesco",
      "isin": "INF205K01NT8",
      "rank": 24,
-     "score": 28.7,
+     "score": 29.2,
      "status": "ranked",
      "status_reason": null,
      "benchmark": "BSE 500 TRI",
@@ -23710,8 +23711,8 @@
       "5y": 9.52,
       "10y": 13.53
      },
-     "ter": 1.21,
-     "ter_date": "2026-11-05",
+     "ter": 1.2,
+     "ter_date": "2026-11-06",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -23719,14 +23720,14 @@
       "returns": 37.9,
       "risk_adjusted": 15.5,
       "downside": 20.7,
-      "cost": 25.9
+      "cost": 29.3
      },
      "reasons": [
       "Beat the category median in 22 of 60 rolling 3-year periods (37%).",
       "5-year return 9.4% a year; the median fund 10.8%.",
       "Worst fall from a peak in the last 5 years: 22.5%; the median fund fell 18.4% at worst in 5 years.",
       "Return per unit of risk 0.60 (median 0.73): 5-year return divided by volatility (15.7%).",
-      "Expense ratio 1.21% a year (median 1.08%).",
+      "Expense ratio 1.20% a year (median 1.08%).",
       "Trailed its benchmark (BSE 500 TRI) by 0.1% a year over 5 years."
      ],
      "notes": [],
@@ -23766,8 +23767,8 @@
       "5y": 9.67,
       "10y": 13.51
      },
-     "ter": 1.1,
-     "ter_date": "2026-11-04",
+     "ter": 1.09,
+     "ter_date": "2026-11-05",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -23782,7 +23783,7 @@
       "5-year return 8.3% a year; the median fund 10.8%.",
       "Worst fall from a peak in the last 5 years: 18.3%; the median fund fell 18.4% at worst in 5 years.",
       "Return per unit of risk 0.60 (median 0.73): 5-year return divided by volatility (13.8%).",
-      "Expense ratio 1.10% a year (median 1.08%).",
+      "Expense ratio 1.09% a year (median 1.08%).",
       "Trailed its benchmark (Nifty 500 TRI) by 1.4% a year over 5 years."
      ],
      "notes": [],
@@ -23823,7 +23824,7 @@
       "10y": 13.51
      },
      "ter": 1.33,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-08",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -23879,7 +23880,7 @@
       "10y": 13.51
      },
      "ter": 1.16,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -23970,7 +23971,7 @@
      "amc": "Shriram",
      "isin": "INF680P01158",
      "rank": 29,
-     "score": 14.0,
+     "score": 13.7,
      "status": "ranked",
      "status_reason": null,
      "benchmark": "Nifty 500 TRI",
@@ -23991,7 +23992,7 @@
       "10y": null
      },
      "ter": 1.01,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2019-02-01",
      "years": 7.8,
      "components": {
@@ -23999,7 +24000,7 @@
       "returns": 1.7,
       "risk_adjusted": 3.4,
       "downside": 13.8,
-      "cost": 65.5
+      "cost": 63.8
      },
      "reasons": [
       "Beat the category median in 2 of 57 rolling 3-year periods (4%).",
@@ -24049,7 +24050,7 @@
       "10y": null
      },
      "ter": 1.47,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2017-12-29",
      "years": 8.9,
      "components": {
@@ -24107,7 +24108,7 @@
       "10y": null
      },
      "ter": 1.25,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2025-02-03",
      "years": 1.8,
      "components": {},
@@ -24155,7 +24156,7 @@
       "10y": 13.51
      },
      "ter": 1.26,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2022-03-14",
      "years": 4.6,
      "components": {},
@@ -24205,7 +24206,7 @@
       "10y": 13.51
      },
      "ter": 1.2,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2022-11-28",
      "years": 3.9,
      "components": {},
@@ -24255,7 +24256,7 @@
       "10y": null
      },
      "ter": 0.77,
-     "ter_date": "2026-11-04",
+     "ter_date": "2026-11-05",
      "since": "2023-06-19",
      "years": 3.4,
      "components": {},
@@ -24305,7 +24306,7 @@
       "10y": null
      },
      "ter": 2.04,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2022-12-29",
      "years": 3.9,
      "components": {},
@@ -24355,7 +24356,7 @@
       "10y": 13.51
      },
      "ter": 1.68,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2022-01-03",
      "years": 4.8,
      "components": {},
@@ -24404,8 +24405,8 @@
       "5y": null,
       "10y": null
      },
-     "ter": 0.88,
-     "ter_date": "2026-11-05",
+     "ter": 0.87,
+     "ter_date": "2026-11-06",
      "since": "2022-10-17",
      "years": 4.1,
      "components": {},
@@ -24413,7 +24414,7 @@
       "Beat the category median in 13 of 13 rolling 3-year periods (100%).",
       "3-year return 16.9% a year; the median fund 12.7%.",
       "Worst fall from a peak since its direct plan began 4.1 years ago: 16.4%; the median fund fell 18.4% at worst in 5 years.",
-      "Expense ratio 0.88% a year (median 1.08%)."
+      "Expense ratio 0.87% a year (median 1.08%)."
      ],
      "notes": [],
      "group": "elss",
@@ -24497,7 +24498,7 @@
       "10y": 16.67
      },
      "ter": 0.07,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2022-10-31",
      "years": 4.0,
      "components": {
@@ -24593,7 +24594,7 @@
       "10y": 16.67
      },
      "ter": 0.25,
-     "ter_date": "2026-11-04",
+     "ter_date": "2026-11-05",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -24641,7 +24642,7 @@
       "10y": 16.67
      },
      "ter": 0.21,
-     "ter_date": "2026-11-04",
+     "ter_date": "2026-11-05",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -24689,7 +24690,7 @@
       "10y": 16.67
      },
      "ter": 0.2,
-     "ter_date": "2026-11-03",
+     "ter_date": "2026-11-04",
      "since": "2013-01-01",
      "years": 13.8,
      "components": {
@@ -24737,7 +24738,7 @@
       "10y": 16.67
      },
      "ter": 0.06,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2011-05-25",
      "years": 15.4,
      "components": {
@@ -24929,7 +24930,7 @@
       "10y": 16.67
      },
      "ter": 0.12,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2013-01-02",
      "years": 13.8,
      "components": {
@@ -24977,7 +24978,7 @@
       "10y": 16.67
      },
      "ter": 0.35,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-08",
      "since": "2023-07-31",
      "years": 3.3,
      "components": {
@@ -25025,7 +25026,7 @@
       "10y": 16.67
      },
      "ter": 0.2,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2025-09-12",
      "years": 1.1,
      "components": {
@@ -25121,7 +25122,7 @@
       "10y": 16.67
      },
      "ter": 0.11,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2025-08-22",
      "years": 1.2,
      "components": {
@@ -25168,7 +25169,7 @@
       "10y": 16.67
      },
      "ter": 0.64,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2023-11-20",
      "years": 3.0,
      "components": {
@@ -25215,7 +25216,7 @@
       "10y": 16.67
      },
      "ter": 0.11,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2026-03-06",
      "years": 0.7,
      "components": {
@@ -25264,7 +25265,7 @@
       "10y": 16.67
      },
      "ter": 0.14,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2024-11-08",
      "years": 2.0,
      "components": {
@@ -25311,7 +25312,7 @@
       "10y": 16.67
      },
      "ter": 0.07,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2026-04-07",
      "years": 0.6,
      "components": {
@@ -25358,7 +25359,7 @@
       "10y": 16.67
      },
      "ter": 0.11,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2024-10-28",
      "years": 2.0,
      "components": {
@@ -25405,7 +25406,7 @@
       "10y": 16.67
      },
      "ter": 0.64,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2026-09-30",
      "years": 0.1,
      "components": {
@@ -25454,7 +25455,7 @@
       "10y": 16.67
      },
      "ter": 0.24,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2024-01-24",
      "years": 2.8,
      "components": {
@@ -25501,7 +25502,7 @@
       "10y": 16.67
      },
      "ter": 0.23,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2026-02-04",
      "years": 0.8,
      "components": {
@@ -25550,7 +25551,7 @@
       "10y": 16.67
      },
      "ter": 0.32,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2025-03-04",
      "years": 1.7,
      "components": {
@@ -25726,7 +25727,7 @@
       "10y": null
      },
      "ter": 0.32,
-     "ter_date": "2026-11-04",
+     "ter_date": "2026-11-05",
      "since": "2024-07-18",
      "years": 2.3,
      "components": {
@@ -25872,7 +25873,7 @@
       "10y": null
      },
      "ter": 0.14,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2023-04-25",
      "years": 3.5,
      "components": {
@@ -25920,7 +25921,7 @@
       "10y": null
      },
      "ter": 0.21,
-     "ter_date": "2026-11-03",
+     "ter_date": "2026-11-04",
      "since": "2022-10-28",
      "years": 4.0,
      "components": {
@@ -25968,7 +25969,7 @@
       "10y": null
      },
      "ter": 0.18,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2025-05-26",
      "years": 1.4,
      "components": {
@@ -26067,7 +26068,7 @@
       "10y": null
      },
      "ter": 0.22,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2024-01-24",
      "years": 2.8,
      "components": {
@@ -26117,7 +26118,7 @@
       "10y": null
      },
      "ter": 0.32,
-     "ter_date": "2026-11-04",
+     "ter_date": "2026-11-05",
      "since": "2022-02-04",
      "years": 4.8,
      "components": {
@@ -26165,7 +26166,7 @@
       "10y": null
      },
      "ter": 0.62,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2025-05-15",
      "years": 1.5,
      "components": {
@@ -26265,7 +26266,7 @@
       "10y": null
      },
      "ter": 0.15,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2026-03-06",
      "years": 0.7,
      "components": {
@@ -26360,8 +26361,8 @@
       "5y": null,
       "10y": null
      },
-     "ter": 0.11,
-     "ter_date": "2026-11-05",
+     "ter": 0.12,
+     "ter_date": "2026-11-07",
      "since": "2025-12-30",
      "years": 0.8,
      "components": {
@@ -26369,7 +26370,7 @@
       "size": 31.4
      },
      "reasons": [
-      "Expense ratio 0.11% a year as its fund house reports it (median 0.21%); not part of the score, as the gap includes every cost.",
+      "Expense ratio 0.12% a year as its fund house reports it (median 0.21%); not part of the score, as the gap includes every cost.",
       "Manages ₹88 crore."
      ],
      "notes": [
@@ -26410,7 +26411,7 @@
       "10y": null
      },
      "ter": 0.21,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2026-03-25",
      "years": 0.6,
      "components": {
@@ -26484,7 +26485,7 @@
       "10y": null
      },
      "ter": 0.18,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-07",
      "since": "2022-09-16",
      "years": 4.1,
      "components": {},
@@ -26524,7 +26525,7 @@
       "10y": null
      },
      "ter": 0.18,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2022-10-19",
      "years": 4.0,
      "components": {},
@@ -26564,7 +26565,7 @@
       "10y": null
      },
      "ter": 0.12,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2025-09-01",
      "years": 1.2,
      "components": {},
@@ -26644,7 +26645,7 @@
       "10y": null
      },
      "ter": 0.21,
-     "ter_date": "2026-11-03",
+     "ter_date": "2026-11-04",
      "since": "2026-09-01",
      "years": 0.2,
      "components": {},
@@ -26715,7 +26716,7 @@
       "10y": null
      },
      "ter": 0.13,
-     "ter_date": "2026-11-03",
+     "ter_date": "2026-11-04",
      "since": "2026-08-06",
      "years": 0.2,
      "components": {
@@ -26762,7 +26763,7 @@
       "10y": null
      },
      "ter": 0.18,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2026-02-27",
      "years": 0.7,
      "components": {
@@ -26834,7 +26835,7 @@
       "10y": null
      },
      "ter": 1.76,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2013-01-03",
      "years": 13.8,
      "components": {},
@@ -26914,7 +26915,7 @@
       "10y": null
      },
      "ter": 1.71,
-     "ter_date": "2026-11-05",
+     "ter_date": "2026-11-06",
      "since": "2013-01-04",
      "years": 13.8,
      "components": {},
@@ -27004,17 +27005,17 @@
    "2026-09",
    "2026-10"
   ],
-  "as_of": "2026-11-05",
+  "as_of": "2026-11-06",
   "indices": [
    {
     "key": "nifty50",
     "name": "Nifty 50",
     "nse_name": "Nifty 50",
-    "pe": 20.25,
-    "pb": 3.01,
-    "dy": 1.42,
-    "date": "2026-11-05",
-    "percentile": 7.0,
+    "pe": 20.65,
+    "pb": 3.07,
+    "dy": 1.41,
+    "date": "2026-11-06",
+    "percentile": 19.0,
     "zone": "low",
     "zone_label": "Cheaper than usual",
     "points": 67,
@@ -27297,10 +27298,10 @@
     "key": "next50",
     "name": "Nifty Next 50",
     "nse_name": "Nifty Next 50",
-    "pe": 17.47,
-    "pb": 3.45,
+    "pe": 17.45,
+    "pb": 3.44,
     "dy": 1.44,
-    "date": "2026-11-05",
+    "date": "2026-11-06",
     "percentile": 3.0,
     "zone": "low",
     "zone_label": "Cheaper than usual",
@@ -27584,11 +27585,11 @@
     "key": "nifty100",
     "name": "Nifty 100",
     "nse_name": "Nifty 100",
-    "pe": 19.68,
-    "pb": 3.08,
+    "pe": 20.0,
+    "pb": 3.13,
     "dy": 1.42,
-    "date": "2026-11-05",
-    "percentile": 6.0,
+    "date": "2026-11-06",
+    "percentile": 7.0,
     "zone": "low",
     "zone_label": "Cheaper than usual",
     "points": 67,
@@ -27871,11 +27872,11 @@
     "key": "nifty100ew",
     "name": "Nifty 100 Equal Weight",
     "nse_name": "Nifty100 Equal Weight",
-    "pe": 19.25,
-    "pb": 3.25,
-    "dy": 1.5,
-    "date": "2026-11-05",
-    "percentile": 10.0,
+    "pe": 19.38,
+    "pb": 3.27,
+    "dy": 1.51,
+    "date": "2026-11-06",
+    "percentile": 12.0,
     "zone": "low",
     "zone_label": "Cheaper than usual",
     "points": 67,
@@ -28158,11 +28159,11 @@
     "key": "nifty50ew",
     "name": "Nifty 50 Equal Weight",
     "nse_name": "NIFTY50 Equal Weight",
-    "pe": 24.06,
-    "pb": 3.42,
-    "dy": 1.47,
-    "date": "2026-11-05",
-    "percentile": 75.0,
+    "pe": 24.38,
+    "pb": 3.47,
+    "dy": 1.49,
+    "date": "2026-11-06",
+    "percentile": 82.0,
     "zone": "high",
     "zone_label": "More expensive than usual",
     "points": 67,
@@ -28445,10 +28446,10 @@
     "key": "largemid250",
     "name": "Nifty LargeMidcap 250",
     "nse_name": "NIFTY LargeMidcap 250",
-    "pe": 22.95,
-    "pb": 3.43,
+    "pe": 23.09,
+    "pb": 3.46,
     "dy": 1.2,
-    "date": "2026-11-05",
+    "date": "2026-11-06",
     "percentile": 13.0,
     "zone": "low",
     "zone_label": "Cheaper than usual",
@@ -28732,10 +28733,10 @@
     "key": "midcap150",
     "name": "Nifty Midcap 150",
     "nse_name": "Nifty Midcap 150",
-    "pe": 27.82,
+    "pe": 27.7,
     "pb": 3.9,
-    "dy": 0.96,
-    "date": "2026-11-05",
+    "dy": 0.97,
+    "date": "2026-11-06",
     "percentile": 39.0,
     "zone": "mid",
     "zone_label": "Around usual",
@@ -29019,11 +29020,11 @@
     "key": "smallcap250",
     "name": "Nifty Smallcap 250",
     "nse_name": "Nifty Smallcap 250",
-    "pe": 32.38,
-    "pb": 3.38,
-    "dy": 0.78,
-    "date": "2026-11-05",
-    "percentile": 81.0,
+    "pe": 31.99,
+    "pb": 3.35,
+    "dy": 0.79,
+    "date": "2026-11-06",
+    "percentile": 76.0,
     "zone": "high",
     "zone_label": "More expensive than usual",
     "points": 67,
@@ -29306,10 +29307,10 @@
     "key": "nifty500",
     "name": "Nifty 500",
     "nse_name": "Nifty 500",
-    "pe": 21.94,
-    "pb": 3.25,
+    "pe": 22.13,
+    "pb": 3.29,
     "dy": 1.26,
-    "date": "2026-11-05",
+    "date": "2026-11-06",
     "percentile": 19.0,
     "zone": "low",
     "zone_label": "Cheaper than usual",
@@ -29593,10 +29594,10 @@
     "key": "totalmarket",
     "name": "Nifty Total Market",
     "nse_name": "Nifty Total Market",
-    "pe": 22.04,
-    "pb": 3.24,
-    "dy": 1.23,
-    "date": "2026-11-05",
+    "pe": 22.22,
+    "pb": 3.27,
+    "dy": 1.24,
+    "date": "2026-11-06",
     "percentile": 21.0,
     "zone": "low",
     "zone_label": "Cheaper than usual",
