@@ -3,9 +3,9 @@
  "rate": "SBI telegraphic transfer (TT) buying rate, INR per USD",
  "source": "State Bank of India forex card rates, archived by sbi-fx-ratekeeper (MIT)",
  "source_url": "https://github.com/sahilgupta/sbi-fx-ratekeeper",
- "generated_at": "2026-11-09T15:35:35+05:30",
+ "generated_at": "2026-11-10T14:00:56+05:30",
  "first": "2020-01-06",
- "last": "2026-11-07",
+ "last": "2026-11-09",
  "rates": [
   ["2020-01-06",71.65],
   ["2020-01-07",71.32],
@@ -1625,6 +1625,7 @@
   ["2026-11-04",94.25],
   ["2026-11-05",94.05],
   ["2026-11-06",93.6],
-  ["2026-11-07",93.55]
+  ["2026-11-07",93.55],
+  ["2026-11-09",93.6]
  ]
 }
