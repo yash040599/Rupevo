@@ -3,8 +3,8 @@
  "market": "india",
  "title": "Nifty 100 Ranking",
  "currency": "INR",
- "generated_at": "2026-11-10T13:56:12+05:30",
- "started_at": "2026-11-10T13:55:32+05:30",
+ "generated_at": "2026-11-11T13:15:47+05:30",
+ "started_at": "2026-11-11T13:15:09+05:30",
  "data_through": "2026-11-09",
  "universe": {
   "name": "NIFTY 100",
@@ -1323,7 +1323,7 @@
    "beta": 0.85,
    "range_position_pct": 69.3,
    "atr_pct": 3.77,
-   "avg_turnover": 2169475176.0,
+   "avg_turnover": 2169477596.0,
    "trend_state": "GOLDEN_CROSS"
   },
   {
@@ -1415,7 +1415,7 @@
     "setup": 55.6,
     "trend": 64.0,
     "relative_strength": 27.9,
-    "volume": 38.3,
+    "volume": 38.4,
     "trend_strength": 72.3,
     "volatility_fit": 79.1
    },
@@ -1440,7 +1440,7 @@
    "below_52w_high_pct": 11.16,
    "rsi": 55.7,
    "rs_vs_benchmark_pct": -10.99,
-   "volume_ratio": 1.36,
+   "volume_ratio": 1.37,
    "adx": 30.8,
    "ema_20": 3512.11,
    "sma_50": 3717.73,
@@ -1460,7 +1460,7 @@
    "beta": 1.05,
    "range_position_pct": 62.6,
    "atr_pct": 3.55,
-   "avg_turnover": 860625203.0,
+   "avg_turnover": 860671073.0,
    "trend_state": "GOLDEN_CROSS"
   },
   {
@@ -1594,7 +1594,7 @@
    "beta": 0.46,
    "range_position_pct": 63.7,
    "atr_pct": 2.05,
-   "avg_turnover": 1842375652.0,
+   "avg_turnover": 1842385198.0,
    "trend_state": "GOLDEN_CROSS"
   },
   {
@@ -1742,7 +1742,7 @@
    "beta": 1.5,
    "range_position_pct": 90.0,
    "atr_pct": 2.38,
-   "avg_turnover": 1862349170.0,
+   "avg_turnover": 1862349208.0,
    "trend_state": "GOLDEN_CROSS"
   },
   {
@@ -1949,7 +1949,7 @@
    "beta": 0.75,
    "range_position_pct": 66.7,
    "atr_pct": 4.0,
-   "avg_turnover": 2944705718.0,
+   "avg_turnover": 2944713327.0,
    "trend_state": "GOLDEN_CROSS"
   },
   {
@@ -2093,7 +2093,7 @@
    "beta": 0.39,
    "range_position_pct": 90.5,
    "atr_pct": 2.18,
-   "avg_turnover": 2907871355.0,
+   "avg_turnover": 2907878696.0,
    "trend_state": "DEATH_CROSS"
   },
   {
@@ -2773,7 +2773,7 @@
    "beta": 1.13,
    "range_position_pct": 59.9,
    "atr_pct": 2.1,
-   "avg_turnover": 8728289577.0,
+   "avg_turnover": 8728331782.0,
    "trend_state": "DEATH_CROSS"
   },
   {
@@ -2981,7 +2981,7 @@
    "beta": 1.01,
    "range_position_pct": 51.3,
    "atr_pct": 2.61,
-   "avg_turnover": 1324824238.0,
+   "avg_turnover": 1324839136.0,
    "trend_state": "DEATH_CROSS"
   },
   {
@@ -3188,7 +3188,7 @@
    "beta": 0.43,
    "range_position_pct": 23.6,
    "atr_pct": 2.17,
-   "avg_turnover": 2428640953.0,
+   "avg_turnover": 2428646154.0,
    "trend_state": "DEATH_CROSS"
   },
   {
@@ -4208,7 +4208,7 @@
    "beta": 0.89,
    "range_position_pct": 20.4,
    "atr_pct": 2.45,
-   "avg_turnover": 1255294150.0,
+   "avg_turnover": 1255295592.0,
    "trend_state": "DEATH_CROSS"
   },
   {
@@ -4434,7 +4434,7 @@
    "beta": 1.08,
    "range_position_pct": 30.4,
    "atr_pct": 2.31,
-   "avg_turnover": 6215448071.0,
+   "avg_turnover": 6215507540.0,
    "trend_state": "DEATH_CROSS"
   },
   {
@@ -4663,7 +4663,7 @@
    "beta": 0.81,
    "range_position_pct": 33.8,
    "atr_pct": 3.24,
-   "avg_turnover": 3299972479.0,
+   "avg_turnover": 3299985011.0,
    "trend_state": "DEATH_CROSS"
   },
   {
@@ -5230,7 +5230,7 @@
    "beta": 0.79,
    "range_position_pct": 26.8,
    "atr_pct": 2.56,
-   "avg_turnover": 2137967911.0,
+   "avg_turnover": 2137967998.0,
    "trend_state": "DEATH_CROSS"
   },
   {
@@ -5914,7 +5914,7 @@
    "beta": 0.86,
    "range_position_pct": 55.8,
    "atr_pct": 3.13,
-   "avg_turnover": 1593694468.0,
+   "avg_turnover": 1593702591.0,
    "trend_state": "GOLDEN_CROSS"
   }
  ],
@@ -6128,7 +6128,7 @@
    "beta": 1.48,
    "range_position_pct": 59.5,
    "atr_pct": 2.74,
-   "avg_turnover": 2180501635.0,
+   "avg_turnover": 2180506481.0,
    "trend_state": "DEATH_CROSS"
   },
   {
@@ -6287,7 +6287,7 @@
    "beta": 0.99,
    "range_position_pct": 60.6,
    "atr_pct": 3.2,
-   "avg_turnover": 858577219.0,
+   "avg_turnover": 858586046.0,
    "trend_state": "DEATH_CROSS"
   },
   {
@@ -6340,7 +6340,7 @@
    "beta": 1.02,
    "range_position_pct": 88.0,
    "atr_pct": 2.51,
-   "avg_turnover": 4120761767.0,
+   "avg_turnover": 4120763769.0,
    "trend_state": "GOLDEN_CROSS"
   },
   {
@@ -6399,8 +6399,8 @@
  ],
  "errors": [],
  "fx": {
-  "usd_inr": 93.918,
-  "as_of": "2026-11-10T13:55:32+05:30",
+  "usd_inr": 93.735,
+  "as_of": "2026-11-11T13:15:09+05:30",
   "source": "Yahoo Finance (USDINR=X)"
  },
  "changes": {
